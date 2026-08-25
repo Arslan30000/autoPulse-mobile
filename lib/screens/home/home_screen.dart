@@ -79,7 +79,7 @@ class HomeScreen extends StatelessWidget {
                 crossAxisCount: 2,
                 mainAxisSpacing: 12,
                 crossAxisSpacing: 12,
-                childAspectRatio: 3.0,
+                childAspectRatio: 2.4,
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 children: MockData.vehicleHealth.systems.map((system) {
@@ -123,35 +123,48 @@ class HomeScreen extends StatelessWidget {
               SectionHeader(title: 'Quick Actions')
                   .animate().fadeIn(duration: 400.ms, delay: 800.ms),
               const SizedBox(height: 12),
-              Row(
+              GridView.count(
+                crossAxisCount: 3,
+                mainAxisSpacing: 12,
+                crossAxisSpacing: 12,
+                childAspectRatio: 0.9,
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
                 children: [
-                  Expanded(
-                    child: QuickActionCard(
-                      label: 'Live Monitor',
-                      icon: Icons.speed_rounded,
-                      onTap: () => Navigator.pushNamed(context, AppRouter.live),
-                    ),
+                  QuickActionCard(
+                    label: 'Live Monitor',
+                    icon: Icons.speed_rounded,
+                    onTap: () => Navigator.pushNamed(context, AppRouter.live),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: QuickActionCard(
-                      label: 'Diagnostics',
-                      icon: Icons.build_rounded,
-                      onTap: () => Navigator.pushNamed(
-                        context,
-                        AppRouter.diagnosticDetail,
-                        arguments: MockData.anomalies.first,
-                      ),
-                      color: AppColors.warning,
+                  QuickActionCard(
+                    label: 'Diagnostics',
+                    icon: Icons.build_rounded,
+                    onTap: () => Navigator.pushNamed(
+                      context,
+                      AppRouter.diagnosticDetail,
+                      arguments: MockData.anomalies.first,
                     ),
+                    color: AppColors.warning,
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: QuickActionCard(
-                      label: 'AI Assistant',
-                      icon: Icons.auto_awesome_rounded,
-                      onTap: () => Navigator.pushNamed(context, AppRouter.aiAssistant),
-                    ),
+                  QuickActionCard(
+                    label: 'AI Assistant',
+                    icon: Icons.auto_awesome_rounded,
+                    onTap: () => Navigator.pushNamed(context, AppRouter.aiAssistant),
+                  ),
+                  QuickActionCard(
+                    label: 'Health',
+                    icon: Icons.favorite_rounded,
+                    onTap: () => Navigator.pushNamed(context, AppRouter.vehicleHealth),
+                  ),
+                  QuickActionCard(
+                    label: 'History',
+                    icon: Icons.timeline_rounded,
+                    onTap: () => Navigator.pushNamed(context, AppRouter.healthHistory),
+                  ),
+                  QuickActionCard(
+                    label: 'Report',
+                    icon: Icons.assessment_rounded,
+                    onTap: () => Navigator.pushNamed(context, AppRouter.driveReport),
                   ),
                 ],
               ).animate().fadeIn(duration: 400.ms, delay: 900.ms),

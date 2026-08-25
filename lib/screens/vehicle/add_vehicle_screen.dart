@@ -59,19 +59,25 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
               ),
               const SizedBox(height: 24),
               // Vehicle fields
+              Text('Make', style: AppTextStyles.titleSmall),
+              const SizedBox(height: 8),
               TextField(
                 controller: _makeController,
-                decoration: const InputDecoration(labelText: 'Make'),
+                decoration: const InputDecoration(hintText: 'Enter vehicle make'),
               ),
               const SizedBox(height: 16),
+              Text('Model', style: AppTextStyles.titleSmall),
+              const SizedBox(height: 8),
               TextField(
                 controller: _modelController,
-                decoration: const InputDecoration(labelText: 'Model'),
+                decoration: const InputDecoration(hintText: 'Enter vehicle model'),
               ),
               const SizedBox(height: 16),
+              Text('Year', style: AppTextStyles.titleSmall),
+              const SizedBox(height: 8),
               TextField(
                 controller: _yearController,
-                decoration: const InputDecoration(labelText: 'Year'),
+                decoration: const InputDecoration(hintText: 'Enter vehicle year'),
                 keyboardType: TextInputType.number,
               ),
               const SizedBox(height: 20),

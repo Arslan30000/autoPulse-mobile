@@ -64,7 +64,7 @@ class SystemStatusCard extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
         decoration: BoxDecoration(
           color: AppColors.surface,
           borderRadius: BorderRadius.circular(12),
@@ -74,29 +74,39 @@ class SystemStatusCard extends StatelessWidget {
           children: [
             Container(
               width: 3,
-              height: 32,
+              height: 28,
               decoration: BoxDecoration(
                 color: _statusColor,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
-            const SizedBox(width: 10),
-            Icon(_systemIcon, color: AppColors.textSecondary, size: 20),
-            const SizedBox(width: 10),
+            const SizedBox(width: 8),
+            Icon(_systemIcon, color: AppColors.textSecondary, size: 18),
+            const SizedBox(width: 8),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(systemHealth.name, style: AppTextStyles.titleSmall),
-                  const SizedBox(height: 2),
+                  Text(
+                    systemHealth.name,
+                    style: AppTextStyles.titleSmall.copyWith(fontSize: 13),
+                    overflow: TextOverflow.ellipsis,
+                  ),
                   Row(
                     children: [
-                      Icon(_statusIcon, color: _statusColor, size: 14),
-                      const SizedBox(width: 4),
-                      Text(
-                        systemHealth.statusLabel,
-                        style: AppTextStyles.bodySmall.copyWith(color: _statusColor),
+                      Icon(_statusIcon, color: _statusColor, size: 12),
+                      const SizedBox(width: 3),
+                      Flexible(
+                        child: Text(
+                          systemHealth.statusLabel,
+                          style: AppTextStyles.bodySmall.copyWith(
+                            color: _statusColor,
+                            fontSize: 11,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
                     ],
                   ),
@@ -104,7 +114,7 @@ class SystemStatusCard extends StatelessWidget {
               ),
             ),
             if (onTap != null)
-              Icon(Icons.chevron_right_rounded, color: AppColors.textTertiary, size: 20),
+              Icon(Icons.chevron_right_rounded, color: AppColors.textTertiary, size: 18),
           ],
         ),
       ),

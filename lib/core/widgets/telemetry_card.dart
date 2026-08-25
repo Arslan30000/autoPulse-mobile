@@ -22,7 +22,7 @@ class TelemetryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final color = statusColor ?? AppColors.primary;
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(16),
@@ -30,17 +30,16 @@ class TelemetryCard extends StatelessWidget {
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
         children: [
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(8),
+                padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
+                  color: color.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Icon(icon, color: color, size: 18),
+                child: Icon(icon, color: color, size: 16),
               ),
               const SizedBox(width: 8),
               Expanded(
@@ -52,12 +51,18 @@ class TelemetryCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const Spacer(),
           Row(
             crossAxisAlignment: CrossAxisAlignment.baseline,
             textBaseline: TextBaseline.alphabetic,
             children: [
-              Text(value, style: AppTextStyles.telemetryValue),
+              Flexible(
+                child: Text(
+                  value,
+                  style: AppTextStyles.telemetryValue.copyWith(fontSize: 28),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
               const SizedBox(width: 4),
               Text(unit, style: AppTextStyles.telemetryUnit),
             ],

@@ -53,7 +53,7 @@ class _SplashScreenState extends State<SplashScreen> {
                 .scale(begin: const Offset(0.8, 0.8), end: const Offset(1.0, 1.0), duration: 600.ms, delay: 200.ms),
             const SizedBox(height: 24),
             Text(
-              'AutoSense',
+              'AutoPulseAI',
               style: AppTextStyles.headlineLarge.copyWith(
                 color: AppColors.primary,
                 letterSpacing: 1.5,

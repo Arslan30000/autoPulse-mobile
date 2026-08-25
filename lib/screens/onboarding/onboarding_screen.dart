@@ -128,7 +128,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     PrimaryButton(
                       label: 'Get Started',
                       onPressed: () {
-                        Navigator.pushReplacementNamed(context, AppRouter.login);
+                        Navigator.pushReplacementNamed(context, AppRouter.roleSelection);
                       },
                     )
                   else
@@ -136,7 +136,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       children: [
                         TextButton(
                           onPressed: () {
-                            Navigator.pushReplacementNamed(context, AppRouter.login);
+                            Navigator.pushReplacementNamed(context, AppRouter.roleSelection);
                           },
                           child: Text('Skip', style: AppTextStyles.bodyMedium),
                         ),
