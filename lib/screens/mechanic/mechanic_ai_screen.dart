@@ -38,7 +38,7 @@ class _MechanicAIScreenState extends State<MechanicAIScreen> {
     super.initState();
     // Start with a context message
     _messages.add(AIMessage(
-      content: 'AutoSense Diagnostic AI ready.\n\nVehicle: Toyota Yaris 2020\nActive DTCs: 1 (P0101)\nActive Anomalies: 1 (Airflow Deviation, 82%)\n\nTelemetry, diagnostic codes, anomaly data, and vehicle history are available for analysis.',
+      content: 'AutoPulseAI Diagnostic AI ready.\n\nVehicle: Toyota Yaris 2020\nActive DTCs: 1 (P0101)\nActive Anomalies: 1 (Airflow Deviation, 82%)\n\nTelemetry, diagnostic codes, anomaly data, and vehicle history are available for analysis.',
       isUser: false,
       timestamp: DateTime.now(),
       evidence: ['Live Telemetry', 'DTC Database', 'Anomaly Detection', 'Vehicle History', 'Automotive Knowledge Base'],
@@ -114,7 +114,7 @@ class _MechanicAIScreenState extends State<MechanicAIScreen> {
                 children: [
                   Row(
                     children: [
-                      Text('AutoSense Diagnostic AI', style: AppTextStyles.headlineMedium.copyWith(fontSize: 20)),
+                      Flexible(child: Text('AutoPulseAI Diagnostic AI', style: AppTextStyles.headlineMedium.copyWith(fontSize: 18), overflow: TextOverflow.ellipsis)),
                       const Spacer(),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),

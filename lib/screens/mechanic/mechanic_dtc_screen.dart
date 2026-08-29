@@ -54,10 +54,11 @@ class MechanicDtcScreen extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 16),
-                  Row(
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
                     children: [
                       _buildChip('Severity', 'Moderate', AppColors.warning),
-                      const SizedBox(width: 8),
                       _buildChip('Status', 'Needs Investigation', AppColors.warning),
                     ],
                   ),

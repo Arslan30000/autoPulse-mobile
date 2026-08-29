@@ -66,11 +66,25 @@ class DiagnosticsScreen extends StatelessWidget {
 
               // DTC Card
               Container(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppColors.border),
+                  gradient: LinearGradient(
+                    colors: [
+                      AppColors.surface.withValues(alpha: 0.8),
+                      AppColors.surface.withValues(alpha: 0.4),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: AppColors.warning.withValues(alpha: 0.4), width: 1.5),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.warning.withValues(alpha: 0.15),
+                      blurRadius: 24,
+                      spreadRadius: 2,
+                    ),
+                  ],
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -78,42 +92,55 @@ class DiagnosticsScreen extends StatelessWidget {
                     Row(
                       children: [
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                           decoration: BoxDecoration(
-                            color: AppColors.surfaceTertiary,
+                            color: AppColors.surfaceTertiary.withValues(alpha: 0.8),
                             borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
                           ),
                           child: Text(
                             MockData.dtcs.first.code,
-                            style: AppTextStyles.titleMedium.copyWith(color: AppColors.primary),
+                            style: AppTextStyles.titleMedium.copyWith(
+                              color: AppColors.primary,
+                              shadows: [
+                                Shadow(color: AppColors.primary.withValues(alpha: 0.5), blurRadius: 8),
+                              ],
+                            ),
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 16),
                     Text(MockData.dtcs.first.description, style: AppTextStyles.bodyMedium),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 12),
                     Row(
                       children: [
                         Container(
-                          width: 6,
-                          height: 6,
-                          decoration: const BoxDecoration(
+                          width: 8,
+                          height: 8,
+                          decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             color: AppColors.warning,
+                            boxShadow: [
+                              BoxShadow(color: AppColors.warning.withValues(alpha: 0.6), blurRadius: 6),
+                            ],
                           ),
                         ),
-                        const SizedBox(width: 6),
+                        const SizedBox(width: 8),
                         Text(
                           MockData.dtcs.first.status,
-                          style: AppTextStyles.bodySmall.copyWith(color: AppColors.warning),
+                          style: AppTextStyles.bodySmall.copyWith(color: AppColors.warning, fontWeight: FontWeight.bold),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 16),
                     Align(
                       alignment: Alignment.centerRight,
-                      child: TextButton(
+                      child: OutlinedButton(
+                        style: OutlinedButton.styleFrom(
+                          side: BorderSide(color: AppColors.primary.withValues(alpha: 0.5)),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
                         onPressed: () => Navigator.pushNamed(
                           context,
                           AppRouter.diagnosticDetail,
@@ -132,18 +159,27 @@ class DiagnosticsScreen extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: AppColors.surfaceSecondary,
-                  borderRadius: BorderRadius.circular(12),
+                  gradient: LinearGradient(
+                    colors: [
+                      AppColors.surfaceSecondary.withValues(alpha: 0.6),
+                      AppColors.surfaceSecondary.withValues(alpha: 0.2),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppColors.border.withValues(alpha: 0.3)),
                 ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(Icons.info_outline, color: AppColors.textTertiary, size: 18),
+                    const Icon(Icons.info_outline, color: AppColors.textTertiary, size: 20),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
                         'AutoSense provides diagnostic assistance and does not replace professional inspection.',
-                        style: AppTextStyles.bodySmall.copyWith(fontStyle: FontStyle.italic),
+                        style: AppTextStyles.bodySmall.copyWith(
+                          fontStyle: FontStyle.italic,
+                          color: AppColors.textSecondary,
+                        ),
                       ),
                     ),
                   ],
@@ -161,22 +197,42 @@ class DiagnosticsScreen extends StatelessWidget {
   Widget _buildSummaryCard(String count, String label, Color accentColor) {
     return Expanded(
       child: Container(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.border),
+          gradient: LinearGradient(
+            colors: [
+              AppColors.surface.withValues(alpha: 0.7),
+              AppColors.surface.withValues(alpha: 0.3),
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: accentColor.withValues(alpha: 0.3), width: 1.5),
+          boxShadow: [
+            BoxShadow(
+              color: accentColor.withValues(alpha: 0.15),
+              blurRadius: 16,
+              spreadRadius: 2,
+            ),
+          ],
         ),
         child: Column(
           children: [
             Text(
               count,
-              style: AppTextStyles.titleLarge.copyWith(color: accentColor),
+              style: AppTextStyles.headlineMedium.copyWith(
+                color: accentColor,
+                fontWeight: FontWeight.bold,
+                shadows: [
+                  Shadow(color: accentColor.withValues(alpha: 0.6), blurRadius: 10),
+                ],
+              ),
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 8),
             Text(
               label,
-              style: AppTextStyles.labelSmall,
+              style: AppTextStyles.labelSmall.copyWith(color: AppColors.textSecondary),
               textAlign: TextAlign.center,
             ),
           ],

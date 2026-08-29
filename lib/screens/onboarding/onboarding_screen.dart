@@ -21,17 +21,17 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     _OnboardingSlide(
       icon: Icons.speed_rounded,
       title: 'Know Your Vehicle',
-      subtitle: 'Monitor important vehicle parameters in real time.',
+      subtitle: 'Monitor important vehicle parameters in real time with beautiful futuristic dashboards.',
     ),
     _OnboardingSlide(
       icon: Icons.track_changes_rounded,
       title: 'Detect What Changes',
-      subtitle: 'Identify unusual vehicle behavior before it becomes difficult to understand.',
+      subtitle: 'Identify unusual vehicle behavior and anomalies before they become difficult to understand.',
     ),
     _OnboardingSlide(
       icon: Icons.auto_awesome_rounded,
       title: 'Ask Your Vehicle AI',
-      subtitle: 'Get understandable, evidence-based explanations from your vehicle data.',
+      subtitle: 'Get understandable, evidence-based explanations from your vehicle data via smart AI assistance.',
     ),
   ];
 
@@ -63,28 +63,29 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Container(
-                          padding: const EdgeInsets.all(24),
+                          padding: const EdgeInsets.all(32),
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: AppColors.primary.withOpacity(0.1),
+                            color: AppColors.primary.withValues(alpha: 0.1),
+                            border: Border.all(color: AppColors.primary.withValues(alpha: 0.2), width: 2),
                             boxShadow: [
                               BoxShadow(
-                                color: AppColors.primaryGlow,
-                                blurRadius: 30,
-                                spreadRadius: 5,
+                                color: AppColors.primaryGlow.withValues(alpha: 0.3),
+                                blurRadius: 40,
+                                spreadRadius: 10,
                               ),
                             ],
                           ),
                           child: Icon(
                             slide.icon,
-                            size: 80,
+                            size: 90,
                             color: AppColors.primary,
                           ),
                         )
                             .animate()
-                            .fadeIn(duration: 500.ms)
-                            .scale(begin: const Offset(0.8, 0.8), end: const Offset(1.0, 1.0), duration: 500.ms),
-                        const SizedBox(height: 48),
+                            .fadeIn(duration: 600.ms)
+                            .scale(begin: const Offset(0.8, 0.8), end: const Offset(1.0, 1.0), duration: 600.ms, curve: Curves.easeOutBack),
+                        const SizedBox(height: 56),
                         Text(
                           slide.title,
                           style: AppTextStyles.headlineMedium,
@@ -93,10 +94,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                             .animate()
                             .fadeIn(duration: 500.ms, delay: 200.ms)
                             .slideY(begin: 0.2, end: 0, duration: 500.ms, delay: 200.ms),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 20),
                         Text(
                           slide.subtitle,
-                          style: AppTextStyles.bodyMedium,
+                          style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary, height: 1.5),
                           textAlign: TextAlign.center,
                         )
                             .animate()
@@ -109,52 +110,56 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
               child: Column(
                 children: [
                   SmoothPageIndicator(
                     controller: _pageController,
                     count: _slides.length,
-                    effect: const WormEffect(
-                      dotWidth: 8,
-                      dotHeight: 8,
+                    effect: ExpandingDotsEffect(
+                      dotWidth: 10,
+                      dotHeight: 10,
                       spacing: 12,
                       activeDotColor: AppColors.primary,
                       dotColor: AppColors.surfaceTertiary,
                     ),
                   ),
-                  const SizedBox(height: 32),
-                  if (_currentPage == _slides.length - 1)
-                    PrimaryButton(
-                      label: 'Get Started',
-                      onPressed: () {
-                        Navigator.pushReplacementNamed(context, AppRouter.roleSelection);
-                      },
-                    )
-                  else
-                    Row(
-                      children: [
-                        TextButton(
-                          onPressed: () {
-                            Navigator.pushReplacementNamed(context, AppRouter.roleSelection);
-                          },
-                          child: Text('Skip', style: AppTextStyles.bodyMedium),
-                        ),
-                        const Spacer(),
-                        SizedBox(
-                          width: 120,
-                          child: PrimaryButton(
-                            label: 'Next',
+                  const SizedBox(height: 40),
+                  AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 300),
+                    child: _currentPage == _slides.length - 1
+                        ? PrimaryButton(
+                            key: const ValueKey('get_started'),
+                            label: 'Get Started',
                             onPressed: () {
-                              _pageController.nextPage(
-                                duration: const Duration(milliseconds: 300),
-                                curve: Curves.easeInOut,
-                              );
+                              Navigator.pushReplacementNamed(context, AppRouter.roleSelection);
                             },
-                          ),
-                        ),
-                      ],
-                    ),
+                          ).animate().fadeIn().scale()
+                        : Row(
+                            key: const ValueKey('nav_buttons'),
+                            children: [
+                              TextButton(
+                                onPressed: () {
+                                  Navigator.pushReplacementNamed(context, AppRouter.roleSelection);
+                                },
+                                child: Text('Skip', style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary)),
+                              ),
+                              const Spacer(),
+                              SizedBox(
+                                width: 130,
+                                child: PrimaryButton(
+                                  label: 'Next',
+                                  onPressed: () {
+                                    _pageController.nextPage(
+                                      duration: const Duration(milliseconds: 400),
+                                      curve: Curves.easeInOut,
+                                    );
+                                  },
+                                ),
+                              ),
+                            ],
+                          ).animate().fadeIn(),
+                  ),
                 ],
               ),
             ),

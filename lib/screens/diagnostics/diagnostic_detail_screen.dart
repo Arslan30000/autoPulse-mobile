@@ -29,7 +29,7 @@ class DiagnosticDetailScreen extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: AppColors.warning.withOpacity(0.15),
+                    color: AppColors.warning.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
@@ -105,7 +105,7 @@ class DiagnosticDetailScreen extends StatelessWidget {
                             ),
                             belowBarData: BarAreaData(
                               show: true,
-                              color: AppColors.warning.withOpacity(0.1),
+                              color: AppColors.warning.withValues(alpha: 0.1),
                             ),
                           ),
                         ],

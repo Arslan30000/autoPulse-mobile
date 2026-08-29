@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:autosense_ai/core/theme/app_colors.dart';
@@ -97,149 +98,237 @@ class _AIAssistantScreenState extends State<AIAssistantScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Header
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('AutoSense AI', style: AppTextStyles.headlineMedium),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Your vehicle-aware diagnostic assistant',
-                    style: AppTextStyles.bodySmall,
-                  ),
-                  const SizedBox(height: 12),
-                  // Context banner
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: AppColors.surfaceSecondary,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: AppColors.border),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              AppColors.surfaceSecondary,
+              AppColors.background,
+            ],
+          ),
+        ),
+        child: SafeArea(
+          child: Column(
+            children: [
+              // Header
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
                       children: [
-                        Row(
-                          children: [
-                            const Icon(Icons.directions_car_rounded, color: AppColors.primary, size: 18),
-                            const SizedBox(width: 8),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(MockData.vehicle.fullDisplayName, style: AppTextStyles.titleSmall),
-                                Text(
-                                  'Vehicle Context Active',
-                                  style: AppTextStyles.bodySmall.copyWith(color: AppColors.success),
+                        const Icon(Icons.auto_awesome, color: AppColors.primary, size: 28)
+                            .animate(onPlay: (c) => c.repeat(reverse: true)).shimmer(duration: 2.seconds),
+                        const SizedBox(width: 12),
+                        Text('AutoSense AI', style: AppTextStyles.headlineMedium),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Your vehicle-aware diagnostic assistant',
+                      style: AppTextStyles.bodySmall?.copyWith(color: AppColors.primary.withValues(alpha: 0.8)),
+                    ),
+                    const SizedBox(height: 16),
+                    // Context banner
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppColors.surfaceSecondary.withValues(alpha: 0.5),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: AppColors.primary.withValues(alpha: 0.3), width: 1.5),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.primary.withValues(alpha: 0.05),
+                            blurRadius: 15,
+                            spreadRadius: 1,
+                          ),
+                        ],
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(16),
+                        child: BackdropFilter(
+                          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(6),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.primary.withValues(alpha: 0.2),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(Icons.directions_car_rounded, color: AppColors.primary, size: 16),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(MockData.vehicle.fullDisplayName, style: AppTextStyles.titleSmall),
+                                        Text(
+                                          'Vehicle Context Active',
+                                          style: AppTextStyles.labelSmall?.copyWith(color: AppColors.success),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  Container(
+                                    width: 8,
+                                    height: 8,
+                                    decoration: const BoxDecoration(
+                                      color: AppColors.success,
+                                      shape: BoxShape.circle,
+                                      boxShadow: [
+                                        BoxShadow(color: AppColors.success, blurRadius: 6, spreadRadius: 2)
+                                      ],
+                                    ),
+                                  ).animate(onPlay: (c) => c.repeat(reverse: true)).fade(duration: 1.seconds),
+                                ],
+                              ),
+                              const SizedBox(height: 10),
+                              Text(
+                                'Responses use available vehicle telemetry, detected anomalies, vehicle history and automotive knowledge.',
+                                style: AppTextStyles.bodySmall?.copyWith(fontStyle: FontStyle.italic, color: AppColors.textSecondary),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ).animate().fadeIn(duration: 500.ms).slideY(begin: -0.1),
+                    const SizedBox(height: 8),
+                  ],
+                ),
+              ),
+
+              // Messages
+              Expanded(
+                child: ListView.builder(
+                  controller: _scrollController,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  itemCount: _messages.length + (_isTyping ? 1 : 0),
+                  itemBuilder: (context, index) {
+                    if (index == _messages.length && _isTyping) {
+                      return _buildTypingIndicator();
+                    }
+                    return AIMessageBubble(message: _messages[index])
+                        .animate()
+                        .fadeIn(duration: 300.ms)
+                        .slideY(begin: 0.1, end: 0, duration: 300.ms);
+                  },
+                ),
+              ),
+
+              // Suggested questions
+              if (_messages.length <= 2)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  child: Wrap(
+                    spacing: 10,
+                    runSpacing: 10,
+                    children: MockData.suggestedQuestions.map((q) {
+                      return GestureDetector(
+                        onTap: () => _sendMessage(q),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                          decoration: BoxDecoration(
+                            color: AppColors.surfaceTertiary.withValues(alpha: 0.6),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: AppColors.primary.withValues(alpha: 0.4)),
+                            boxShadow: [
+                              BoxShadow(color: AppColors.primary.withValues(alpha: 0.1), blurRadius: 10)
+                            ]
+                          ),
+                          child: Text(q, style: AppTextStyles.bodySmall?.copyWith(color: AppColors.primary)),
+                        ),
+                      ).animate().fadeIn(delay: 300.ms).slideY(begin: 0.2);
+                    }).toList(),
+                  ),
+                ),
+
+              // Input area
+              ClipRRect(
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: AppColors.surface.withValues(alpha: 0.8),
+                      border: Border(top: BorderSide(color: AppColors.border.withValues(alpha: 0.5))),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.primary.withValues(alpha: 0.05),
+                          blurRadius: 20,
+                          offset: const Offset(0, -5),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: _controller,
+                            style: AppTextStyles.bodyMedium,
+                            decoration: InputDecoration(
+                              hintText: 'Ask about your vehicle...',
+                              hintStyle: AppTextStyles.bodyMedium?.copyWith(color: AppColors.textTertiary),
+                              filled: true,
+                              fillColor: AppColors.surfaceSecondary.withValues(alpha: 0.5),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(24),
+                                borderSide: BorderSide(color: AppColors.borderLight.withValues(alpha: 0.5)),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(24),
+                                borderSide: BorderSide(color: AppColors.borderLight.withValues(alpha: 0.5)),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(24),
+                                borderSide: const BorderSide(color: AppColors.primary),
+                              ),
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                            ),
+                            onSubmitted: _sendMessage,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        GestureDetector(
+                          onTap: () => _sendMessage(_controller.text),
+                          child: Container(
+                            padding: const EdgeInsets.all(14),
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              gradient: const LinearGradient(
+                                colors: [AppColors.primary, AppColors.primaryDim],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: AppColors.primary.withValues(alpha: 0.4),
+                                  blurRadius: 12,
+                                  spreadRadius: 1,
                                 ),
                               ],
                             ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Responses use available vehicle telemetry, detected anomalies, vehicle history and automotive knowledge.',
-                          style: AppTextStyles.bodySmall.copyWith(fontStyle: FontStyle.italic),
+                            child: const Icon(
+                              Icons.send_rounded,
+                              color: AppColors.background,
+                              size: 22,
+                            ),
+                          ),
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 12),
-                ],
-              ),
-            ),
-
-            // Messages
-            Expanded(
-              child: ListView.builder(
-                controller: _scrollController,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                itemCount: _messages.length + (_isTyping ? 1 : 0),
-                itemBuilder: (context, index) {
-                  if (index == _messages.length && _isTyping) {
-                    return _buildTypingIndicator();
-                  }
-                  return AIMessageBubble(message: _messages[index])
-                      .animate()
-                      .fadeIn(duration: 300.ms)
-                      .slideY(begin: 0.1, end: 0, duration: 300.ms);
-                },
-              ),
-            ),
-
-            // Suggested questions
-            if (_messages.length <= 2)
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: MockData.suggestedQuestions.map((q) {
-                    return GestureDetector(
-                      onTap: () => _sendMessage(q),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: AppColors.surfaceTertiary,
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: AppColors.border),
-                        ),
-                        child: Text(q, style: AppTextStyles.bodySmall.copyWith(color: AppColors.primary)),
-                      ),
-                    );
-                  }).toList(),
                 ),
               ),
-
-            // Input area
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: const BoxDecoration(
-                color: AppColors.surface,
-                border: Border(top: BorderSide(color: AppColors.border)),
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _controller,
-                      decoration: InputDecoration(
-                        hintText: 'Ask about your vehicle...',
-                        filled: true,
-                        fillColor: AppColors.surfaceSecondary,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(24),
-                          borderSide: BorderSide.none,
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      ),
-                      onSubmitted: _sendMessage,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  GestureDetector(
-                    onTap: () => _sendMessage(_controller.text),
-                    child: Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: const BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: AppColors.primary,
-                      ),
-                      child: const Icon(
-                        Icons.send_rounded,
-                        color: AppColors.background,
-                        size: 20,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -254,6 +343,13 @@ class _AIAssistantScreenState extends State<AIAssistantScreen> {
         decoration: BoxDecoration(
           color: AppColors.surfaceSecondary,
           borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.primary.withValues(alpha: 0.1),
+              blurRadius: 10,
+            ),
+          ],
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -273,9 +369,9 @@ class _AIAssistantScreenState extends State<AIAssistantScreen> {
     return Container(
       width: 8,
       height: 8,
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         shape: BoxShape.circle,
-        color: AppColors.textTertiary,
+        color: AppColors.primary,
       ),
     )
         .animate(

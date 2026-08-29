@@ -104,8 +104,8 @@ class HealthHistoryScreen extends StatelessWidget {
                           begin: Alignment.topCenter,
                           end: Alignment.bottomCenter,
                           colors: [
-                            AppColors.primary.withOpacity(0.15),
-                            AppColors.primary.withOpacity(0.0),
+                            AppColors.primary.withValues(alpha: 0.15),
+                            AppColors.primary.withValues(alpha: 0.0),
                           ],
                         ),
                       ),
@@ -155,8 +155,8 @@ class HealthHistoryScreen extends StatelessWidget {
                             CircleAvatar(
                               radius: 16,
                               backgroundColor: event.score >= 90
-                                  ? AppColors.success.withOpacity(0.15)
-                                  : AppColors.warning.withOpacity(0.15),
+                                  ? AppColors.success.withValues(alpha: 0.15)
+                                  : AppColors.warning.withValues(alpha: 0.15),
                               child: Text(
                                 '${event.score}',
                                 style: AppTextStyles.labelSmall.copyWith(

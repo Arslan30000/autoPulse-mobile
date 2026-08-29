@@ -130,27 +130,9 @@ class MechanicReportScreen extends StatelessWidget {
             // AI Analysis
             const SectionHeader(title: 'AI Analysis'),
             const SizedBox(height: 8),
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppColors.surface,
-                borderRadius: BorderRadius.circular(12),
-                border: Border(left: BorderSide(color: AppColors.primary, width: 3), top: BorderSide(color: AppColors.border), right: BorderSide(color: AppColors.border), bottom: BorderSide(color: AppColors.border)),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('The airflow anomaly indicates a potential MAF sensor issue or intake restriction. The progressive decline in MAF readings over recent sessions suggests a developing condition rather than an intermittent fault.', style: AppTextStyles.bodyMedium),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Icon(Icons.auto_awesome_rounded, size: 12, color: AppColors.primary),
-                      const SizedBox(width: 4),
-                      Text('Knowledge-grounded response', style: AppTextStyles.labelSmall.copyWith(color: AppColors.primary)),
-                    ],
-                  ),
-                ],
-              ),
+            Text(
+              'The airflow anomaly indicates a potential MAF sensor issue or intake restriction. The progressive decline in MAF readings over recent sessions suggests a developing condition rather than an intermittent fault. Early intervention is recommended to prevent further system degradation.',
+              style: AppTextStyles.bodyMedium,
             ).animate().fadeIn(duration: 400.ms, delay: 400.ms),
 
             const SizedBox(height: 24),
@@ -158,7 +140,14 @@ class MechanicReportScreen extends StatelessWidget {
             // Recommended Inspection
             const SectionHeader(title: 'Recommended Inspection'),
             const SizedBox(height: 8),
-            ...['Inspect air intake system and MAF sensor', 'Perform smoke test for intake leaks', 'Compare MAF readings under load', 'Check for recurring DTCs after clearing'].asMap().entries.map((e) {
+            ...[
+              'Inspect and clean MAF sensor with approved solvent (do not touch sensor element)',
+              'Verify all intake system connections and seals for air leaks',
+              'Perform intake smoke test if suspected restriction',
+              'Compare live MAF readings during various load conditions',
+              'Clear code P0101 and monitor for reoccurrence',
+              'Consider professional diagnostic if issue persists after cleaning',
+            ].asMap().entries.map((e) {
               return Padding(
                 padding: const EdgeInsets.only(bottom: 8),
                 child: Row(

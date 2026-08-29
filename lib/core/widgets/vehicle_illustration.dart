@@ -75,42 +75,19 @@ class VehicleIllustration extends StatelessWidget {
             white-space: nowrap;
           }
           
-          .attention .HotspotDot { background: #FFB74D; box-shadow: 0 0 8px #FFB74D; }
+          .attention .HotspotDot { background: #FFB74D; box-shadow: 0 0 4px rgba(255, 183, 77, 0.4); }
           .attention .HotspotLabel { border: 1px solid rgba(255, 183, 77, 0.6); }
           .attention .icon { color: #FFB74D; }
           
-          .normal .HotspotDot { background: #4CAF50; box-shadow: 0 0 8px #4CAF50; }
+          .normal .HotspotDot { background: #4CAF50; box-shadow: 0 0 4px rgba(76, 175, 80, 0.4); }
           .normal .HotspotLabel { border: 1px solid rgba(76, 175, 80, 0.6); }
           .normal .icon { color: #4CAF50; }
           
-          /* Directional Offsets and Lines */
-          .top-left .HotspotLabel { bottom: 30px; right: 30px; }
-          .top-left::after {
-            content: ""; position: absolute; bottom: 8px; right: 8px;
-            width: 35px; height: 1px; background: rgba(255,255,255,0.4);
-            transform-origin: bottom right; transform: rotate(45deg);
-          }
-          
-          .top-right .HotspotLabel { bottom: 30px; left: 30px; }
-          .top-right::after {
-            content: ""; position: absolute; bottom: 8px; left: 8px;
-            width: 35px; height: 1px; background: rgba(255,255,255,0.4);
-            transform-origin: bottom left; transform: rotate(-45deg);
-          }
-          
-          .bottom-left .HotspotLabel { top: 30px; right: 30px; }
-          .bottom-left::after {
-            content: ""; position: absolute; top: 8px; right: 8px;
-            width: 35px; height: 1px; background: rgba(255,255,255,0.4);
-            transform-origin: top right; transform: rotate(-45deg);
-          }
-          
-          .bottom-right .HotspotLabel { top: 30px; left: 30px; }
-          .bottom-right::after {
-            content: ""; position: absolute; top: 8px; left: 8px;
-            width: 35px; height: 1px; background: rgba(255,255,255,0.4);
-            transform-origin: top left; transform: rotate(45deg);
-          }
+          /* Directional Offsets */
+          .top-left .HotspotLabel { bottom: 20px; right: 20px; }
+          .top-right .HotspotLabel { bottom: 20px; left: 20px; }
+          .bottom-left .HotspotLabel { top: 20px; right: 20px; }
+          .bottom-right .HotspotLabel { top: 20px; left: 20px; }
         ''',
         innerModelViewerHtml: '''
           <!-- Engine -->
@@ -194,7 +171,7 @@ class VehicleIllustration extends StatelessWidget {
                   children: [
                     Container(
                       padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(color: statusColor.withOpacity(0.1), shape: BoxShape.circle),
+                      decoration: BoxDecoration(color: statusColor.withValues(alpha: 0.1), shape: BoxShape.circle),
                       child: Icon(statusIcon, color: statusColor, size: 24),
                     ),
                     const SizedBox(width: 16),
@@ -210,9 +187,9 @@ class VehicleIllustration extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
-                        color: statusColor.withOpacity(0.1),
+                        color: statusColor.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: statusColor.withOpacity(0.3)),
+                        border: Border.all(color: statusColor.withValues(alpha: 0.3)),
                       ),
                       child: Text(
                         status == SystemStatus.normal ? 'Normal' : 'Attention',

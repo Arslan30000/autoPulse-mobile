@@ -63,13 +63,13 @@ class _ConnectionIndicatorState extends State<ConnectionIndicator>
               height: 8,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: color.withOpacity(
+                color: color.withValues(alpha: 
                   widget.isConnected ? _animation.value : 1.0,
                 ),
                 boxShadow: widget.isConnected
                     ? [
                         BoxShadow(
-                          color: color.withOpacity(0.4),
+                          color: color.withValues(alpha: 0.4),
                           blurRadius: 6,
                           spreadRadius: 1,
                         ),

@@ -7,6 +7,7 @@ import 'package:autosense_ai/core/widgets/section_header.dart';
 import 'package:autosense_ai/core/widgets/telemetry_card.dart';
 import 'package:autosense_ai/data/mock/mock_data.dart';
 import 'package:autosense_ai/navigation/app_router.dart';
+import 'dart:ui';
 
 class MechanicHomeScreen extends StatelessWidget {
   const MechanicHomeScreen({super.key});
@@ -21,17 +22,52 @@ class MechanicHomeScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header
-              Text('Diagnostic Center', style: AppTextStyles.headlineMedium)
-                  .animate().fadeIn(duration: 500.ms),
-              const SizedBox(height: 4),
-              Row(
-                children: [
-                  Text(MockData.vehicle.fullDisplayName, style: AppTextStyles.bodyMedium),
-                  const Spacer(),
-                  const ConnectionIndicator(isConnected: true),
-                ],
-              ).animate().fadeIn(duration: 500.ms, delay: 100.ms),
+              // Premium Header
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(16),
+                  gradient: LinearGradient(
+                    colors: [
+                      AppColors.primary.withValues(alpha: 0.15),
+                      AppColors.background,
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  border: Border.all(
+                    color: AppColors.primary.withValues(alpha: 0.3),
+                    width: 1,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.primary.withValues(alpha: 0.05),
+                      blurRadius: 10,
+                      spreadRadius: 2,
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Diagnostic Center', style: AppTextStyles.headlineMedium.copyWith(
+                      fontWeight: FontWeight.bold,
+                    )),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Icon(Icons.directions_car_rounded, color: AppColors.primary, size: 20),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(MockData.vehicle.fullDisplayName, style: AppTextStyles.bodyMedium, overflow: TextOverflow.ellipsis),
+                        ),
+                        const SizedBox(width: 8),
+                        const ConnectionIndicator(isConnected: true),
+                      ],
+                    ),
+                  ],
+                ),
+              ).animate().fadeIn(duration: 600.ms, curve: Curves.easeOutCubic).slideY(begin: -0.1, end: 0),
 
               const SizedBox(height: 24),
 
@@ -42,11 +78,11 @@ class MechanicHomeScreen extends StatelessWidget {
                   const SizedBox(width: 10),
                   _buildSummaryCard('1', 'Active\nDTCs', AppColors.warning),
                   const SizedBox(width: 10),
-                  _buildSummaryCard('1', 'Active\nAnomalies', AppColors.warning),
+                  _buildSummaryCard('1', 'Active\nAlerts', AppColors.warning),
                   const SizedBox(width: 10),
-                  _buildSummaryCard('0', 'Critical', AppColors.success),
+                  _buildSummaryCard('0', 'Critical\nIssues', AppColors.success),
                 ],
-              ).animate().fadeIn(duration: 400.ms, delay: 200.ms),
+              ).animate().fadeIn(duration: 600.ms, delay: 150.ms, curve: Curves.easeOutCubic).slideY(begin: 0.1, end: 0),
 
               const SizedBox(height: 24),
 
@@ -69,7 +105,7 @@ class MechanicHomeScreen extends StatelessWidget {
                     Navigator.pushNamed(context, AppRouter.mechanicHistory);
                   }),
                 ],
-              ).animate().fadeIn(duration: 400.ms, delay: 300.ms),
+              ).animate().fadeIn(duration: 600.ms, delay: 300.ms, curve: Curves.easeOutCubic).slideY(begin: 0.1, end: 0),
 
               const SizedBox(height: 24),
 
@@ -78,7 +114,7 @@ class MechanicHomeScreen extends StatelessWidget {
                 title: 'Live Telemetry',
                 actionText: 'Full View',
                 onAction: () => Navigator.pushNamed(context, AppRouter.mechanicTelemetry),
-              ).animate().fadeIn(duration: 400.ms, delay: 400.ms),
+              ).animate().fadeIn(duration: 600.ms, delay: 450.ms),
               const SizedBox(height: 12),
 
               GridView.count(
@@ -96,70 +132,108 @@ class MechanicHomeScreen extends StatelessWidget {
                   TelemetryCard(label: 'Engine Load', value: '12', unit: '%', icon: Icons.data_usage_rounded),
                   TelemetryCard(label: 'Throttle', value: '18.04', unit: '%', icon: Icons.tune_rounded),
                 ],
-              ).animate().fadeIn(duration: 400.ms, delay: 500.ms),
+              ).animate().fadeIn(duration: 600.ms, delay: 550.ms).slideX(begin: 0.05, end: 0),
 
               const SizedBox(height: 12),
               TelemetryCard(label: 'Mass Air Flow', value: '0.21', unit: 'g/s', icon: Icons.waves_rounded, statusColor: AppColors.warning)
-                  .animate().fadeIn(duration: 400.ms, delay: 550.ms),
+                  .animate().fadeIn(duration: 600.ms, delay: 600.ms).slideX(begin: 0.05, end: 0),
 
-              const SizedBox(height: 24),
+              const SizedBox(height: 32),
 
-              // Active Issues
-              const SectionHeader(title: 'Active Issues'),
+              // Active Issues (Critical Alert Style)
+              const SectionHeader(title: 'Active Issues').animate().fadeIn(duration: 600.ms, delay: 700.ms),
               const SizedBox(height: 12),
+              
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.border),
+                  color: AppColors.background,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppColors.warning, width: 1.5),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.warning.withValues(alpha: 0.2),
+                      blurRadius: 16,
+                      spreadRadius: 2,
+                    ),
+                  ],
+                  gradient: LinearGradient(
+                    colors: [
+                      AppColors.warning.withValues(alpha: 0.1),
+                      Colors.transparent,
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
                       children: [
-                        Icon(Icons.warning_amber_rounded, color: AppColors.warning, size: 18),
-                        const SizedBox(width: 8),
-                        Text('Air Intake Behavior', style: AppTextStyles.titleSmall),
+                        Icon(Icons.warning_rounded, color: AppColors.warning, size: 24)
+                            .animate(onPlay: (controller) => controller.repeat(reverse: true))
+                            .scale(begin: const Offset(1, 1), end: const Offset(1.1, 1.1), duration: 800.ms),
+                        const SizedBox(width: 12),
+                        Text('Air Intake Behavior', style: AppTextStyles.titleMedium.copyWith(
+                          color: AppColors.textPrimary,
+                          fontWeight: FontWeight.bold,
+                        )),
                         const Spacer(),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                           decoration: BoxDecoration(
                             color: AppColors.warning.withValues(alpha: 0.15),
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: AppColors.warning.withValues(alpha: 0.5)),
                           ),
-                          child: Text('82%', style: AppTextStyles.labelSmall.copyWith(color: AppColors.warning)),
+                          child: Text('82%', style: AppTextStyles.labelSmall.copyWith(
+                            color: AppColors.warning,
+                            fontWeight: FontWeight.w900,
+                          )),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 6),
-                    Text('Airflow deviation from learned baseline', style: AppTextStyles.bodySmall),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 12),
+                    Text('Airflow deviation from learned baseline indicates potential intake leak or MAF degradation.', 
+                      style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary)
+                    ),
+                    const SizedBox(height: 16),
                     Row(
                       children: [
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
                             color: AppColors.surfaceTertiary,
                             borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: AppColors.border),
                           ),
                           child: Text('P0101', style: AppTextStyles.labelSmall.copyWith(color: AppColors.primary)),
                         ),
                         const SizedBox(width: 8),
-                        Text('Moderate', style: AppTextStyles.bodySmall.copyWith(color: AppColors.warning)),
-                        const Spacer(),
-                        TextButton(
+                        Expanded(
+                          child: Text('Moderate', style: AppTextStyles.bodySmall.copyWith(color: AppColors.warning), overflow: TextOverflow.ellipsis),
+                        ),
+                        ElevatedButton.icon(
                           onPressed: () => Navigator.pushNamed(context, AppRouter.mechanicAnomaly),
-                          child: const Text('Analyze'),
+                          icon: const Icon(Icons.analytics_rounded, size: 16),
+                          label: const Text('Analyze', style: TextStyle(fontSize: 12)),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.warning.withValues(alpha: 0.15),
+                            foregroundColor: AppColors.warning,
+                            elevation: 0,
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
+                            minimumSize: const Size(0, 32),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          ),
                         ),
                       ],
                     ),
                   ],
                 ),
-              ).animate().fadeIn(duration: 400.ms, delay: 600.ms),
+              ).animate().fadeIn(duration: 600.ms, delay: 800.ms).scale(begin: const Offset(0.95, 0.95)),
 
-              const SizedBox(height: 24),
+              const SizedBox(height: 40),
             ],
           ),
         ),
@@ -170,17 +244,45 @@ class MechanicHomeScreen extends StatelessWidget {
   Widget _buildSummaryCard(String value, String label, Color color) {
     return Expanded(
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
         decoration: BoxDecoration(
           color: AppColors.surface,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.border),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: color.withValues(alpha: 0.3)),
+          boxShadow: [
+            BoxShadow(
+              color: color.withValues(alpha: 0.1),
+              blurRadius: 12,
+              spreadRadius: 1,
+              offset: const Offset(0, 4),
+            ),
+          ],
+          gradient: LinearGradient(
+            colors: [
+              AppColors.surface,
+              color.withValues(alpha: 0.05),
+            ],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
         ),
         child: Column(
           children: [
-            Text(value, style: AppTextStyles.titleLarge.copyWith(color: color)),
-            const SizedBox(height: 4),
-            Text(label, style: AppTextStyles.labelSmall, textAlign: TextAlign.center),
+            Text(value, style: AppTextStyles.titleLarge.copyWith(
+              color: color,
+              fontWeight: FontWeight.w800,
+              shadows: [
+                Shadow(
+                  color: color.withValues(alpha: 0.5),
+                  blurRadius: 8,
+                ),
+              ]
+            )),
+            const SizedBox(height: 6),
+            Text(label, style: AppTextStyles.labelSmall.copyWith(
+              color: AppColors.textSecondary,
+              fontWeight: FontWeight.w600,
+            ), textAlign: TextAlign.center),
           ],
         ),
       ),
@@ -189,22 +291,36 @@ class MechanicHomeScreen extends StatelessWidget {
 
   Widget _buildQuickButton(BuildContext context, String label, IconData icon, Color color, VoidCallback onTap) {
     return Expanded(
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
-          decoration: BoxDecoration(
-            color: AppColors.surfaceSecondary,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppColors.border),
-          ),
-          child: Column(
-            children: [
-              Icon(icon, color: color, size: 22),
-              const SizedBox(height: 6),
-              Text(label, style: AppTextStyles.labelSmall, textAlign: TextAlign.center, maxLines: 2),
-            ],
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(16),
+          splashColor: color.withValues(alpha: 0.2),
+          highlightColor: color.withValues(alpha: 0.1),
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 4),
+            decoration: BoxDecoration(
+              color: AppColors.surfaceSecondary,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: AppColors.border),
+            ),
+            child: Column(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: color.withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(icon, color: color, size: 24),
+                ),
+                const SizedBox(height: 8),
+                Text(label, style: AppTextStyles.labelSmall.copyWith(
+                  fontWeight: FontWeight.w600,
+                ), textAlign: TextAlign.center, maxLines: 2),
+              ],
+            ),
           ),
         ),
       ),

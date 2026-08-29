@@ -22,7 +22,7 @@ class AlertCard extends StatelessWidget {
         border: Border.all(color: AppColors.border),
         boxShadow: [
           BoxShadow(
-            color: AppColors.warning.withOpacity(0.05),
+            color: AppColors.warning.withValues(alpha: 0.05),
             blurRadius: 8,
           ),
         ],

@@ -30,6 +30,7 @@ class TelemetryCard extends StatelessWidget {
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Row(
             children: [
@@ -51,20 +52,22 @@ class TelemetryCard extends StatelessWidget {
               ),
             ],
           ),
-          const Spacer(),
+          const SizedBox(height: 12),
           Row(
-            crossAxisAlignment: CrossAxisAlignment.baseline,
-            textBaseline: TextBaseline.alphabetic,
+            crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Flexible(
                 child: Text(
                   value,
-                  style: AppTextStyles.telemetryValue.copyWith(fontSize: 28),
+                  style: AppTextStyles.telemetryValue.copyWith(fontSize: 28, height: 1.0),
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
               const SizedBox(width: 4),
-              Text(unit, style: AppTextStyles.telemetryUnit),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 2.0),
+                child: Text(unit, style: AppTextStyles.telemetryUnit),
+              ),
             ],
           ),
         ],

@@ -44,8 +44,8 @@ class _SplashScreenState extends State<SplashScreen> {
               ),
               child: const Icon(
                 Icons.sensors_rounded,
-                size: 64,
                 color: AppColors.primary,
+                size: 64,
               ),
             )
                 .animate()
