@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:autopulse_ai/repositories/obd_recording_repository.dart';
+import 'package:autopulse_ai/services/recording_sync_service.dart';
+import 'package:autopulse_ai/screens/history/recordings_screen.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:autopulse_ai/core/theme/app_colors.dart';
 import 'package:autopulse_ai/core/widgets/obd_connection_panel.dart';
@@ -11,58 +14,22 @@ class LiveObdView extends StatelessWidget {
   final ObdController controller;
   const LiveObdView({super.key, required this.title, required this.controller});
   Future<void> _recordings(BuildContext context) async {
-    try {
-      final recordings = await controller.repository.recordings();
-      if (!context.mounted) return;
-      await showModalBottomSheet<void>(
-        context: context,
-        builder: (_) => SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Padding(
-                padding: EdgeInsets.all(20),
-                child: Text(
-                  'Local recordings',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                ),
-              ),
-              if (recordings.isEmpty)
-                const Padding(
-                  padding: EdgeInsets.all(24),
-                  child: Text('No recordings yet'),
-                ),
-              Flexible(
-                child: ListView(
-                  shrinkWrap: true,
-                  children: recordings
-                      .map(
-                        (r) => ListTile(
-                          leading: const Icon(Icons.receipt_long),
-                          title: Text(r.vehicleName),
-                          subtitle: Text(
-                            '${r.startedAt.toLocal().toString().substring(0, 19)}\n${r.sampleCount} parameter samples',
-                          ),
-                          isThreeLine: true,
-                          trailing: Text(
-                            r.endedAt == null ? 'Incomplete' : 'Saved',
-                          ),
-                        ),
-                      )
-                      .toList(),
-                ),
-              ),
-            ],
-          ),
-        ),
+    final repository = controller.repository;
+    if (repository is! RecordingStore) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Recording inspection is unavailable.')),
       );
-    } catch (_) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Local recordings are unavailable.')),
-        );
-      }
+      return;
     }
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => RecordingsScreen(
+          store: repository,
+          sync: RecordingSyncService.instance,
+        ),
+      ),
+    );
   }
 
   @override

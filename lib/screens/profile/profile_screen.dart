@@ -3,12 +3,44 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:autopulse_ai/core/theme/app_colors.dart';
 import 'package:autopulse_ai/core/theme/app_text_styles.dart';
 import 'package:autopulse_ai/core/widgets/section_header.dart';
-import 'package:autopulse_ai/data/mock/mock_data.dart';
+import 'package:autopulse_ai/services/account_service.dart';
+import 'package:autopulse_ai/services/obd/obd_controller.dart';
+import 'package:autopulse_ai/screens/auth/login_screen.dart';
 import 'package:autopulse_ai/services/role_service.dart';
 import 'package:autopulse_ai/navigation/app_router.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  @override
+  void initState() {
+    super.initState();
+    ObdController.instance.addListener(_refresh);
+  }
+
+  void _refresh() {
+    if (mounted) setState(() {});
+  }
+
+  @override
+  void dispose() {
+    ObdController.instance.removeListener(_refresh);
+    super.dispose();
+  }
+
+  Future<void> _account() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const LoginScreen(returnToCaller: true),
+      ),
+    );
+    if (mounted) setState(() {});
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -88,9 +120,14 @@ class ProfileScreen extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Demo User', style: AppTextStyles.titleLarge),
                           Text(
-                            MockData.vehicle.fullDisplayName,
+                            AccountService.instance.email ?? 'Offline user',
+                            style: AppTextStyles.titleLarge,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          Text(
+                            ObdController.instance.vehicle.fullDisplayName,
                             style: AppTextStyles.bodyMedium.copyWith(
                               color: AppColors.textSecondary,
                             ),
@@ -174,7 +211,8 @@ class ProfileScreen extends StatelessWidget {
                               style: AppTextStyles.titleMedium,
                             ),
                             Text(
-                              'ELM327',
+                              ObdController.instance.device?.name ??
+                                  'No adapter selected',
                               style: AppTextStyles.bodyMedium.copyWith(
                                 color: AppColors.textSecondary,
                               ),
@@ -191,10 +229,16 @@ class ProfileScreen extends StatelessWidget {
                           height: 10,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: AppColors.success,
+                            color: ObdController.instance.isReady
+                                ? AppColors.success
+                                : AppColors.textSecondary,
                             boxShadow: [
                               BoxShadow(
-                                color: AppColors.success.withValues(alpha: 0.6),
+                                color:
+                                    (ObdController.instance.isReady
+                                            ? AppColors.success
+                                            : AppColors.textSecondary)
+                                        .withValues(alpha: 0.6),
                                 blurRadius: 8,
                               ),
                             ],
@@ -202,9 +246,13 @@ class ProfileScreen extends StatelessWidget {
                         ),
                         const SizedBox(width: 8),
                         Text(
-                          'Connected',
+                          ObdController.instance.isReady
+                              ? 'Connected'
+                              : 'Disconnected',
                           style: AppTextStyles.bodyMedium.copyWith(
-                            color: AppColors.success,
+                            color: ObdController.instance.isReady
+                                ? AppColors.success
+                                : AppColors.textSecondary,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -229,6 +277,11 @@ class ProfileScreen extends StatelessWidget {
                 ),
                 child: Column(
                   children: [
+                    _buildSettingsItem(
+                      Icons.cloud_outlined,
+                      'Cloud account',
+                      context,
+                    ),
                     _buildSettingsItem(
                       Icons.directions_car_rounded,
                       'My Vehicles',
@@ -339,7 +392,15 @@ class ProfileScreen extends StatelessWidget {
 
   Widget _buildSettingsItem(IconData icon, String title, BuildContext context) {
     return InkWell(
-      onTap: () {},
+      onTap: () {
+        if (title == 'Cloud account') {
+          _account();
+        } else if (title == 'My Vehicles') {
+          Navigator.pushNamed(context, AppRouter.addVehicle);
+        } else if (title == 'OBD-II Connection') {
+          Navigator.pushNamed(context, AppRouter.live);
+        }
+      },
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Row(
