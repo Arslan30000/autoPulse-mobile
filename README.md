@@ -5,7 +5,9 @@
 Android Classic/SPP connection, supported-PID live readings, and local SQLite
 recording are implemented on `feature/elm327-bluetooth`. See
 [the architecture and phone-test guide](docs/obd-bluetooth.md).
-BLE support and cloud recording synchronization are not part of this increment.
+BLE support is not part of this increment. Recording inspection and authenticated
+cloud backup are implemented on `feature/supabase-pid-testing`; see the
+[recording and sync guide](docs/recording-sync.md) for backend setup and validation.
 
 Flutter application with vehicle-owner and mechanic interfaces. Android live
 telemetry and connection status use the real OBD controller. Existing health
@@ -19,11 +21,15 @@ scores, diagnostic reports, and AI responses remain mock prototypes.
 - Ten live parameter types, real RPM history, and explicit missing/stale states.
 - Local SQLite session recording, storage error handling, and recording history.
 - Shared owner/mechanic connection state and foreground-only lifecycle handling.
-- Optional Supabase client initialization; no telemetry cloud sync yet.
+- Optional Supabase client initialization, email/password authentication, and
+  owner-scoped recording backup with durable checkpoints and duplicate-safe retries.
+- Persistent account-specific vehicle selection, recording details, per-PID graphs,
+  acquisition quality reports, and full-session CSV sharing.
 - Browser model-viewer asset fixes and startup/configuration regression tests.
 
-Software validation: 36 tests passed, static analysis clean, Android debug APK
-and web builds succeeded. A physical adapter has not yet been tested. The adapter
+Recording/sync software validation: 56 tests passed and static analysis is clean.
+The original Bluetooth increment also reported successful Android and web builds.
+A physical adapter has not yet been tested. The adapter
 must support Classic/SPP; the ELM "v1.5" label alone does not establish this.
 
 See [the phone-test guide](docs/obd-bluetooth.md) for setup, architecture,
@@ -69,12 +75,11 @@ SUPABASE_ANON_KEY=your-anon-key
 
 Keep `.env` and Android signing credentials private; they are excluded by `.gitignore`. Never commit production secrets. The current workflow builds an unsigned-by-project-configuration release APK and does not publish to an app store.
 
-The app now initializes the Supabase Flutter client when both values are provided.
+The app initializes the Supabase Flutter client when both values are provided.
 Supply the publishable/anon key only, never a service-role or secret key.
-An empty configuration keeps the mock prototype usable. Screens still use mock
-services; client initialization does not itself implement authentication or ingestion.
-The data-ingestion branch migration enables RLS without access policies, so owner
-authentication and owner-scoped policies are required before app CRUD can work.
+An empty configuration keeps local Bluetooth acquisition and recording usable.
+Health scores and AI screens remain mock prototypes. Apply the new owner/recording
+migration before attempting cloud backup; see the [setup guide](docs/recording-sync.md).
 
 ```powershell
 flutter run -d edge --web-port 8766 --dart-define-from-file=.env

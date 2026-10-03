@@ -38,7 +38,8 @@ ECU acquisition timestamp. Values older than six seconds are marked stale in UI.
 `SqliteObdRecordingRepository` saves sessions and per-PID samples in the app-private
 `obd_recordings.db`. Missing readings have null values and explicit quality fields.
 Interrupted sessions remain identifiable as incomplete. Writes are serialized;
-finishing a session waits for accepted writes. No cloud upload is implemented here.
+finishing a session waits for accepted writes. The `feature/supabase-pid-testing`
+increment adds opt-in cloud backup; see [recording sync](recording-sync.md).
 
 The existing owner/mechanic telemetry screens use `LiveObdView`. The Add Vehicle
 screen selects an adapter; dashboard connection indicators use the real controller.
@@ -72,7 +73,7 @@ been verified by software tests alone. Browser preview shows unsupported hardwar
 ## Next increments
 
 - Add BLE using documented vendor GATT characteristics, not guessed UUIDs.
-- Add authenticated, owner-scoped Supabase sync and a deliberate schema mapping.
+- Validate the authenticated recording backup on a development Supabase project.
 - Add foreground-service recording only after Android lifecycle/notification design.
 - Add DTC reads through the same queue; do not add clearing without explicit consent.
 - Benchmark actual per-PID update rates on the available adapter and vehicle.
