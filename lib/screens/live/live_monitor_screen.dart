@@ -9,6 +9,7 @@ import 'package:autopulse_ai/core/theme/app_text_styles.dart';
 import 'package:autopulse_ai/core/widgets/telemetry_card.dart';
 import 'package:autopulse_ai/core/widgets/section_header.dart';
 import 'package:autopulse_ai/data/mock/mock_data.dart';
+import 'package:autopulse_ai/screens/obd/obd2_connection_screen.dart';
 
 class LiveMonitorScreen extends StatefulWidget {
   const LiveMonitorScreen({super.key});
@@ -65,6 +66,17 @@ class _LiveMonitorScreenState extends State<LiveMonitorScreen> {
       appBar: AppBar(
         title: const Text('Live Monitor'),
         actions: [
+          IconButton(
+            tooltip: 'Connect OBD-II adapter',
+            icon: const Icon(Icons.bluetooth_searching_rounded),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => const Obd2ConnectionScreen(),
+                ),
+              );
+            },
+          ),
           IconButton(icon: const Icon(Icons.refresh_rounded), onPressed: () {}),
         ],
       ),
