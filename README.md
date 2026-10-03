@@ -1,5 +1,33 @@
 # AutoPulseAI
 
+## Bluetooth implementation
+
+Android Classic/SPP connection, supported-PID live readings, and local SQLite
+recording are implemented on `feature/elm327-bluetooth`. See
+[the architecture and phone-test guide](docs/obd-bluetooth.md).
+BLE support and cloud recording synchronization are not part of this increment.
+
+Flutter application with vehicle-owner and mechanic interfaces. Android live
+telemetry and connection status use the real OBD controller. Existing health
+scores, diagnostic reports, and AI responses remain mock prototypes.
+
+## Implementation status
+
+- Paired Bluetooth Classic/SPP selection and Android permission handling.
+- ELM initialization, serialized requests, fragmented-response buffering,
+  supported-PID discovery, ECU-source selection, and unit conversion.
+- Ten live parameter types, real RPM history, and explicit missing/stale states.
+- Local SQLite session recording, storage error handling, and recording history.
+- Shared owner/mechanic connection state and foreground-only lifecycle handling.
+- Optional Supabase client initialization; no telemetry cloud sync yet.
+- Browser model-viewer asset fixes and startup/configuration regression tests.
+
+Software validation: 36 tests passed, static analysis clean, Android debug APK
+and web builds succeeded. A physical adapter has not yet been tested. The adapter
+must support Classic/SPP; the ELM "v1.5" label alone does not establish this.
+
+See [the phone-test guide](docs/obd-bluetooth.md) for setup, architecture,
+limitations, and the next implementation increments.
 
 AutoPulseAI is a mobile-first, edge-computing vehicle telemetry, performance, and diagnostic platform designed for the Pakistani Domestic Market (PKDM), with target platforms including the Toyota Yaris (XP150) and Mitsubishi Lancer (CS3A).
 
@@ -40,6 +68,21 @@ SUPABASE_ANON_KEY=your-anon-key
 ```
 
 Keep `.env` and Android signing credentials private; they are excluded by `.gitignore`. Never commit production secrets. The current workflow builds an unsigned-by-project-configuration release APK and does not publish to an app store.
+
+The app now initializes the Supabase Flutter client when both values are provided.
+Supply the publishable/anon key only, never a service-role or secret key.
+An empty configuration keeps the mock prototype usable. Screens still use mock
+services; client initialization does not itself implement authentication or ingestion.
+The data-ingestion branch migration enables RLS without access policies, so owner
+authentication and owner-scoped policies are required before app CRUD can work.
+
+```powershell
+flutter run -d edge --web-port 8766 --dart-define-from-file=.env
+flutter build apk --debug --target-platform android-arm64 --dart-define-from-file=.env
+```
+
+`.env` is read at build time, not loaded as an application asset. Restart/rebuild
+after changing its values. VS Code launch configurations pass it automatically.
 
 ### Install and check
 

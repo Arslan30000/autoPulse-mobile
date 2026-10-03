@@ -72,7 +72,7 @@ class MechanicHomeScreen extends StatelessWidget {
                               ),
                             ),
                             const SizedBox(width: 8),
-                            const ConnectionIndicator(isConnected: true),
+                            const ObdConnectionIndicator(),
                           ],
                         ),
                       ],

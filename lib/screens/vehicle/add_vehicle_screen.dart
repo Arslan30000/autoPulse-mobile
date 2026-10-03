@@ -5,8 +5,9 @@ import 'package:autopulse_ai/core/theme/app_text_styles.dart';
 import 'package:autopulse_ai/core/widgets/primary_button.dart';
 import 'package:autopulse_ai/core/widgets/section_header.dart';
 import 'package:autopulse_ai/navigation/app_router.dart';
-
-enum _ConnectionState { disconnected, searching, connecting, connected }
+import 'package:autopulse_ai/core/widgets/obd_connection_panel.dart';
+import 'package:autopulse_ai/models/vehicle.dart';
+import 'package:autopulse_ai/services/obd/obd_controller.dart';
 
 class AddVehicleScreen extends StatefulWidget {
   const AddVehicleScreen({super.key});
@@ -16,27 +17,50 @@ class AddVehicleScreen extends StatefulWidget {
 }
 
 class _AddVehicleScreenState extends State<AddVehicleScreen> {
-  _ConnectionState _connectionState = _ConnectionState.disconnected;
+  final _obd = ObdController.instance;
   final _makeController = TextEditingController(text: 'Toyota');
   final _modelController = TextEditingController(text: 'Yaris');
   final _yearController = TextEditingController(text: '2020');
 
   @override
+  void initState() {
+    super.initState();
+    _obd.addListener(_refresh);
+  }
+
+  void _refresh() {
+    if (mounted) setState(() {});
+  }
+
+  @override
   void dispose() {
+    _obd.removeListener(_refresh);
     _makeController.dispose();
     _modelController.dispose();
     _yearController.dispose();
     super.dispose();
   }
 
-  Future<void> _simulateConnection() async {
-    setState(() => _connectionState = _ConnectionState.searching);
-    await Future.delayed(const Duration(milliseconds: 1500));
-    if (!mounted) return;
-    setState(() => _connectionState = _ConnectionState.connecting);
-    await Future.delayed(const Duration(milliseconds: 1500));
-    if (!mounted) return;
-    setState(() => _connectionState = _ConnectionState.connected);
+  void _continue() {
+    final year = int.tryParse(_yearController.text.trim());
+    if (_makeController.text.trim().isEmpty ||
+        _modelController.text.trim().isEmpty ||
+        year == null ||
+        year < 1886 ||
+        year > DateTime.now().year + 1) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Enter a valid make, model and year.')),
+      );
+      return;
+    }
+    _obd.setVehicle(
+      Vehicle(
+        make: _makeController.text.trim(),
+        model: _modelController.text.trim(),
+        year: year,
+      ),
+    );
+    Navigator.pushReplacementNamed(context, AppRouter.main);
   }
 
   @override
@@ -154,73 +178,15 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
                   .slideY(begin: 0.1),
               const SizedBox(height: 32),
 
-              // OBD-II Section
-              const SectionHeader(title: 'OBD-II Adapter')
-                  .animate()
-                  .fadeIn(delay: 600.ms),
-              const SizedBox(height: 12),
-
-              Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: AppColors.surface,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: _connectionState == _ConnectionState.connected
-                            ? AppColors.success.withValues(alpha: 0.5)
-                            : AppColors.border,
-                      ),
-                      boxShadow: _connectionState == _ConnectionState.connected
-                          ? [
-                              BoxShadow(
-                                color: AppColors.success.withValues(alpha: 0.2),
-                                blurRadius: 15,
-                                spreadRadius: 1,
-                              ),
-                            ]
-                          : [],
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            const Icon(
-                              Icons.bluetooth_rounded,
-                              color: AppColors.primary,
-                              size: 20,
-                            ),
-                            const SizedBox(width: 8),
-                            Text('ELM327', style: AppTextStyles.titleSmall),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                        _buildConnectionStatus(),
-                        if (_connectionState ==
-                            _ConnectionState.disconnected) ...[
-                          const SizedBox(height: 20),
-                          PrimaryButton(
-                            label: 'Connect OBD-II',
-                            icon: Icons.bluetooth_searching_rounded,
-                            onPressed: _simulateConnection,
-                          ),
-                        ],
-                      ],
-                    ),
-                  )
-                  .animate()
-                  .fadeIn(duration: 500.ms, delay: 700.ms)
-                  .slideY(begin: 0.1),
+              const SectionHeader(title: 'OBD-II Adapter'),
+              const SizedBox(height: 16),
+              ObdConnectionPanel(controller: _obd),
               const SizedBox(height: 32),
-
-              if (_connectionState == _ConnectionState.connected)
-                PrimaryButton(
-                  label: 'Continue',
-                  icon: Icons.arrow_forward_rounded,
-                  onPressed: () {
-                    Navigator.pushReplacementNamed(context, AppRouter.main);
-                  },
-                ).animate().fadeIn().scale(),
+              PrimaryButton(
+                label: _obd.isReady ? 'Continue' : 'Continue offline',
+                icon: Icons.arrow_forward_rounded,
+                onPressed: _obd.isBusy ? null : _continue,
+              ),
             ],
           ),
         ),
@@ -266,88 +232,5 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
         ),
       ),
     );
-  }
-
-  Widget _buildConnectionStatus() {
-    switch (_connectionState) {
-      case _ConnectionState.disconnected:
-        return Row(
-          children: [
-            Container(
-              width: 10,
-              height: 10,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: AppColors.danger,
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.danger.withValues(alpha: 0.5),
-                    blurRadius: 8,
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 10),
-            Text(
-              'Not Connected',
-              style: AppTextStyles.bodySmall.copyWith(color: AppColors.danger),
-            ),
-          ],
-        );
-      case _ConnectionState.searching:
-      case _ConnectionState.connecting:
-        return Row(
-              children: [
-                const SizedBox(
-                  width: 18,
-                  height: 18,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2.5,
-                    color: AppColors.warning,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Text(
-                  _connectionState == _ConnectionState.searching
-                      ? 'Searching for adapter...'
-                      : 'Connecting to vehicle...',
-                  style: AppTextStyles.bodySmall.copyWith(
-                    color: AppColors.warning,
-                  ),
-                ),
-              ],
-            )
-            .animate(onPlay: (controller) => controller.repeat())
-            .shimmer(duration: 1500.ms);
-      case _ConnectionState.connected:
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const Icon(
-                  Icons.check_circle_rounded,
-                  color: AppColors.success,
-                  size: 20,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  'OBD-II Connected',
-                  style: AppTextStyles.bodyMedium.copyWith(
-                    color: AppColors.success,
-                  ),
-                ),
-              ],
-            ).animate().fadeIn().slideX(),
-            const SizedBox(height: 6),
-            Text(
-              'Vehicle ECU detected',
-              style: AppTextStyles.bodySmall.copyWith(
-                color: AppColors.textSecondary,
-              ),
-            ).animate().fadeIn(delay: 200.ms),
-          ],
-        );
-    }
   }
 }

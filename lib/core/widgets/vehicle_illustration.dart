@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:model_viewer_plus/model_viewer_plus.dart';
 import 'package:autopulse_ai/models/health.dart';
 import 'package:autopulse_ai/core/theme/app_colors.dart';
@@ -19,7 +20,9 @@ class VehicleIllustration extends StatelessWidget {
       width: double.infinity,
       height: actualHeight,
       child: ModelViewer(
-        src: 'assets/models/car/car.glb', // Path to your GLB
+        src: kIsWeb
+            ? 'assets/assets/models/car/car.glb'
+            : 'assets/models/car/car.glb',
         alt: 'A 3D model of a car',
         ar: false,
         autoRotate: true,

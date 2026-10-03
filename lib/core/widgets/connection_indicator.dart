@@ -1,6 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:autopulse_ai/core/theme/app_colors.dart';
 import 'package:autopulse_ai/core/theme/app_text_styles.dart';
+import 'package:autopulse_ai/services/obd/obd_controller.dart';
+
+class ObdConnectionIndicator extends StatelessWidget {
+  const ObdConnectionIndicator({super.key});
+  @override
+  Widget build(BuildContext context) => ListenableBuilder(
+    listenable: ObdController.instance,
+    builder: (_, _) =>
+        ConnectionIndicator(isConnected: ObdController.instance.isReady),
+  );
+}
 
 class ConnectionIndicator extends StatefulWidget {
   final bool isConnected;
