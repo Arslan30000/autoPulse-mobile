@@ -130,7 +130,7 @@ class SqliteObdRecordingRepository implements RecordingStore {
 
   static Future<void> _upgrade(Database db) async {
     await db.execute('''CREATE TABLE local_vehicles (
-      id TEXT PRIMARY KEY, owner_id TEXT)''');
+      id TEXT PRIMARY KEY, owner_id TEXT, source_id TEXT NOT NULL)''');
     for (final column in [
       'cloud_id TEXT',
       'vehicle_id TEXT REFERENCES local_vehicles(id)',
@@ -147,7 +147,10 @@ class SqliteObdRecordingRepository implements RecordingStore {
     // Preserve v1 rows. Unknown make/model are explicit, never guessed from a label.
     for (final row in await db.query('sessions')) {
       final vehicleId = const Uuid().v4();
-      await db.insert('local_vehicles', {'id': vehicleId});
+      await db.insert('local_vehicles', {
+        'id': vehicleId,
+        'source_id': vehicleId,
+      });
       await db.update(
         'sessions',
         {
@@ -166,6 +169,9 @@ class SqliteObdRecordingRepository implements RecordingStore {
     await db.execute(
       'CREATE INDEX samples_session_id ON samples(session_id, id)',
     );
+    await db.execute(
+      "CREATE UNIQUE INDEX local_vehicle_source_owner ON local_vehicles(source_id, ifnull(owner_id, ''))",
+    );
     await db.execute('CREATE INDEX sessions_owner ON sessions(owner_id, id)');
   }
 
@@ -182,19 +188,30 @@ class SqliteObdRecordingRepository implements RecordingStore {
         'Select a vehicle for the current account before recording.',
       );
     }
-    final vehicleId = vehicle.id ?? const Uuid().v4();
+    final sourceId = vehicle.id ?? const Uuid().v4();
     return (await database).transaction((tx) async {
       final existing = await tx.query(
         'local_vehicles',
-        where: 'id = ?',
-        whereArgs: [vehicleId],
+        where: owner == null
+            ? 'source_id = ? AND owner_id IS NULL'
+            : 'source_id = ? AND owner_id = ?',
+        whereArgs: [sourceId, ?owner],
       );
-      if (existing.isEmpty) {
-        await tx.insert('local_vehicles', {'id': vehicleId, 'owner_id': owner});
-      } else if (existing.single['owner_id'] != owner) {
-        throw StateError(
-          'Vehicle belongs to another account. Select a new vehicle.',
+      String vehicleId;
+      if (existing.isNotEmpty) {
+        vehicleId = existing.single['id'] as String;
+      } else {
+        final original = await tx.query(
+          'local_vehicles',
+          where: 'id = ?',
+          whereArgs: [sourceId],
         );
+        vehicleId = original.isEmpty ? sourceId : const Uuid().v4();
+        await tx.insert('local_vehicles', {
+          'id': vehicleId,
+          'owner_id': owner,
+          'source_id': sourceId,
+        });
       }
       return tx.insert('sessions', {
         'cloud_id': const Uuid().v4(),
@@ -291,9 +308,9 @@ class SqliteObdRecordingRepository implements RecordingStore {
   }) async {
     _limit(limit);
     final rows = await (await database).rawQuery(
-      '$_select WHERE (s.owner_id IS NULL OR s.owner_id = ?) '
+      '$_select WHERE ${owner == null ? 's.owner_id IS NULL' : '(s.owner_id IS NULL OR s.owner_id = ?)'} '
       'AND (? = 0 OR s.id < ?) ORDER BY s.id DESC LIMIT ?',
-      [owner, beforeId, beforeId, limit],
+      [?owner, beforeId, beforeId, limit],
     );
     return rows.map(_recording).toList();
   }
@@ -388,16 +405,27 @@ class SqliteObdRecordingRepository implements RecordingStore {
           vehicles.single['owner_id'] != owner) {
         throw StateError('This vehicle was assigned to another account.');
       }
-      await tx.update(
+      final sameOwner = await tx.query(
         'local_vehicles',
-        {'owner_id': owner},
-        where: 'id = ?',
-        whereArgs: [row['vehicle_id']],
+        where: 'source_id = ? AND owner_id = ?',
+        whereArgs: [vehicles.single['source_id'], owner],
       );
+      final targetVehicle = sameOwner.isEmpty
+          ? row['vehicle_id']
+          : sameOwner.single['id'];
+      if (sameOwner.isEmpty) {
+        await tx.update(
+          'local_vehicles',
+          {'owner_id': owner},
+          where: 'id = ?',
+          whereArgs: [row['vehicle_id']],
+        );
+      }
       await tx.update(
         'sessions',
         {
           'owner_id': owner,
+          'vehicle_id': targetVehicle,
           'sync_state': row['sync_state'] == 'synced' ? 'synced' : 'pending',
           'sync_error': null,
         },
@@ -429,8 +457,10 @@ class SqliteObdRecordingRepository implements RecordingStore {
     final count = await (await database).update(
       'sessions',
       {'uploaded_sample_id': sampleId},
-      where: 'id = ? AND owner_id = ? AND uploaded_sample_id <= ?',
-      whereArgs: [id, owner, sampleId],
+      where:
+          'id = ? AND owner_id = ? AND uploaded_sample_id <= ? '
+          'AND EXISTS (SELECT 1 FROM samples WHERE session_id = ? AND id = ?)',
+      whereArgs: [id, owner, sampleId, id, sampleId],
     );
     if (count != 1) throw StateError('Invalid upload checkpoint.');
   }
