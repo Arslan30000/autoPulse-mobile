@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:math';
-import 'package:autosense_ai/models/telemetry.dart';
-import 'package:autosense_ai/data/mock/mock_data.dart';
+import 'package:autopulse_ai/models/telemetry.dart';
+import 'package:autopulse_ai/data/mock/mock_data.dart';
 
 abstract class TelemetryService {
   Stream<TelemetryData> getTelemetryStream();

@@ -1,4 +1,4 @@
-package com.example.autosense_ai
+package com.example.autopulse_ai
 
 import io.flutter.embedding.android.FlutterActivity
 

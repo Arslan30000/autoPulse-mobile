@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:autosense_ai/core/theme/app_theme.dart';
-import 'package:autosense_ai/navigation/app_router.dart';
+import 'package:autopulse_ai/core/theme/app_theme.dart';
+import 'package:autopulse_ai/navigation/app_router.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -12,16 +12,16 @@ void main() {
     statusBarColor: Colors.transparent,
     statusBarIconBrightness: Brightness.light,
   ));
-  runApp(const AutoSenseApp());
+  runApp(const AutoPulseApp());
 }
 
-class AutoSenseApp extends StatelessWidget {
-  const AutoSenseApp({super.key});
+class AutoPulseApp extends StatelessWidget {
+  const AutoPulseApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'AutoSense',
+      title: 'AutoPulse_ai',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.darkTheme,
       initialRoute: AppRouter.splash,

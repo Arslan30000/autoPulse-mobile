@@ -1,5 +1,5 @@
-import 'package:autosense_ai/models/diagnostic.dart';
-import 'package:autosense_ai/data/mock/mock_data.dart';
+import 'package:autopulse_ai/models/diagnostic.dart';
+import 'package:autopulse_ai/data/mock/mock_data.dart';
 
 abstract class DiagnosticService {
   Future<List<Anomaly>> getAnomalies();

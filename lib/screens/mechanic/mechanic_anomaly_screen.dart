@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:autosense_ai/core/theme/app_colors.dart';
-import 'package:autosense_ai/core/theme/app_text_styles.dart';
-import 'package:autosense_ai/core/widgets/section_header.dart';
-import 'package:autosense_ai/core/widgets/primary_button.dart';
-import 'package:autosense_ai/data/mock/mock_data.dart';
-import 'package:autosense_ai/navigation/app_router.dart';
+import 'package:autopulse_ai/core/theme/app_colors.dart';
+import 'package:autopulse_ai/core/theme/app_text_styles.dart';
+import 'package:autopulse_ai/core/widgets/section_header.dart';
+import 'package:autopulse_ai/core/widgets/primary_button.dart';
+import 'package:autopulse_ai/data/mock/mock_data.dart';
+import 'package:autopulse_ai/navigation/app_router.dart';
 
 class MechanicAnomalyScreen extends StatelessWidget {
   const MechanicAnomalyScreen({super.key});

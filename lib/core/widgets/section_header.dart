@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:autosense_ai/core/theme/app_colors.dart';
-import 'package:autosense_ai/core/theme/app_text_styles.dart';
+import 'package:autopulse_ai/core/theme/app_colors.dart';
+import 'package:autopulse_ai/core/theme/app_text_styles.dart';
 
 class SectionHeader extends StatelessWidget {
   final String title;

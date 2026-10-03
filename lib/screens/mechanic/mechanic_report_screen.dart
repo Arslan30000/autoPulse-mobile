@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:autosense_ai/core/theme/app_colors.dart';
-import 'package:autosense_ai/core/theme/app_text_styles.dart';
-import 'package:autosense_ai/core/widgets/health_score_widget.dart';
-import 'package:autosense_ai/core/widgets/section_header.dart';
-import 'package:autosense_ai/core/widgets/primary_button.dart';
-import 'package:autosense_ai/data/mock/mock_data.dart';
+import 'package:autopulse_ai/core/theme/app_colors.dart';
+import 'package:autopulse_ai/core/theme/app_text_styles.dart';
+import 'package:autopulse_ai/core/widgets/health_score_widget.dart';
+import 'package:autopulse_ai/core/widgets/section_header.dart';
+import 'package:autopulse_ai/core/widgets/primary_button.dart';
+import 'package:autopulse_ai/data/mock/mock_data.dart';
 
 class MechanicReportScreen extends StatelessWidget {
   const MechanicReportScreen({super.key});
@@ -35,7 +35,7 @@ class MechanicReportScreen extends StatelessWidget {
                     children: [
                       Icon(Icons.sensors_rounded, color: AppColors.primary, size: 24),
                       const SizedBox(width: 8),
-                      Text('AutoSense', style: AppTextStyles.titleMedium.copyWith(color: AppColors.primary)),
+                      Text('autopulse', style: AppTextStyles.titleMedium.copyWith(color: AppColors.primary)),
                       const Spacer(),
                       Text('Diagnostic Report', style: AppTextStyles.labelSmall),
                     ],
@@ -172,7 +172,7 @@ class MechanicReportScreen extends StatelessWidget {
                 children: [
                   const Icon(Icons.info_outline, color: AppColors.textTertiary, size: 16),
                   const SizedBox(width: 8),
-                  Expanded(child: Text('AutoSense provides diagnostic assistance and does not replace professional vehicle inspection.', style: AppTextStyles.bodySmall.copyWith(fontStyle: FontStyle.italic))),
+                  Expanded(child: Text('autopulse provides diagnostic assistance and does not replace professional vehicle inspection.', style: AppTextStyles.bodySmall.copyWith(fontStyle: FontStyle.italic))),
                 ],
               ),
             ),

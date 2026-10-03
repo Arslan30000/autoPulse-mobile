@@ -1,5 +1,5 @@
-import 'package:autosense_ai/models/ai_message.dart';
-import 'package:autosense_ai/data/mock/mock_data.dart';
+import 'package:autopulse_ai/models/ai_message.dart';
+import 'package:autopulse_ai/data/mock/mock_data.dart';
 
 abstract class AIService {
   Future<AIMessage> sendMessage(String message);

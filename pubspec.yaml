@@ -1,4 +1,4 @@
-name: autosense_ai
+name: autopulse_ai
 description: "AI-assisted vehicle health monitoring and diagnostic application."
 publish_to: 'none'
 version: 1.0.0+1

@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:autosense_ai/core/theme/app_colors.dart';
-import 'package:autosense_ai/services/role_service.dart';
-import 'package:autosense_ai/screens/home/home_screen.dart';
-import 'package:autosense_ai/screens/live/live_monitor_screen.dart';
-import 'package:autosense_ai/screens/health/vehicle_health_screen.dart';
-import 'package:autosense_ai/screens/diagnostics/diagnostics_screen.dart';
-import 'package:autosense_ai/screens/ai/ai_assistant_screen.dart';
-import 'package:autosense_ai/screens/profile/profile_screen.dart';
-import 'package:autosense_ai/screens/mechanic/mechanic_home_screen.dart';
-import 'package:autosense_ai/screens/mechanic/mechanic_telemetry_screen.dart';
-import 'package:autosense_ai/screens/mechanic/mechanic_ai_screen.dart';
+import 'package:autopulse_ai/core/theme/app_colors.dart';
+import 'package:autopulse_ai/services/role_service.dart';
+import 'package:autopulse_ai/screens/home/home_screen.dart';
+import 'package:autopulse_ai/screens/live/live_monitor_screen.dart';
+import 'package:autopulse_ai/screens/health/vehicle_health_screen.dart';
+import 'package:autopulse_ai/screens/diagnostics/diagnostics_screen.dart';
+import 'package:autopulse_ai/screens/ai/ai_assistant_screen.dart';
+import 'package:autopulse_ai/screens/profile/profile_screen.dart';
+import 'package:autopulse_ai/screens/mechanic/mechanic_home_screen.dart';
+import 'package:autopulse_ai/screens/mechanic/mechanic_telemetry_screen.dart';
+import 'package:autopulse_ai/screens/mechanic/mechanic_ai_screen.dart';
 
 class BottomNavShell extends StatefulWidget {
   const BottomNavShell({super.key});

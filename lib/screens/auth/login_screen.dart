@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:autosense_ai/core/theme/app_colors.dart';
-import 'package:autosense_ai/core/theme/app_text_styles.dart';
-import 'package:autosense_ai/core/widgets/primary_button.dart';
-import 'package:autosense_ai/navigation/app_router.dart';
+import 'package:autopulse_ai/core/theme/app_colors.dart';
+import 'package:autopulse_ai/core/theme/app_text_styles.dart';
+import 'package:autopulse_ai/core/widgets/primary_button.dart';
+import 'package:autopulse_ai/navigation/app_router.dart';
 
 class LoginScreen extends StatelessWidget {
   const LoginScreen({super.key});
@@ -43,13 +43,13 @@ class LoginScreen extends StatelessWidget {
               const SizedBox(height: 16),
               Center(
                 child: Text(
-                  'AutoSense',
+                  'autopulse',
                   style: AppTextStyles.titleLarge.copyWith(color: AppColors.primary),
                 ),
               ).animate().fadeIn(duration: 500.ms, delay: 100.ms),
               const SizedBox(height: 40),
               Text(
-                'Welcome to AutoSense',
+                'Welcome to autopulse',
                 style: AppTextStyles.headlineMedium,
                 textAlign: TextAlign.center,
               ).animate().fadeIn(duration: 500.ms, delay: 200.ms),

@@ -90,12 +90,12 @@ BEGIN
         BLOCK "040904e4"
         BEGIN
             VALUE "CompanyName", "com.example" "\0"
-            VALUE "FileDescription", "autosense_ai" "\0"
+            VALUE "FileDescription", "autopulse_ai" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "autosense_ai" "\0"
+            VALUE "InternalName", "autopulse_ai" "\0"
             VALUE "LegalCopyright", "Copyright (C) 2026 com.example. All rights reserved." "\0"
-            VALUE "OriginalFilename", "autosense_ai.exe" "\0"
-            VALUE "ProductName", "autosense_ai" "\0"
+            VALUE "OriginalFilename", "autopulse_ai.exe" "\0"
+            VALUE "ProductName", "autopulse_ai" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

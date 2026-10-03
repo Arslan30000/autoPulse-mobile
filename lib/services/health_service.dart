@@ -1,7 +1,7 @@
-import 'package:autosense_ai/models/health.dart';
-import 'package:autosense_ai/models/health_event.dart';
-import 'package:autosense_ai/models/drive_report.dart';
-import 'package:autosense_ai/data/mock/mock_data.dart';
+import 'package:autopulse_ai/models/health.dart';
+import 'package:autopulse_ai/models/health_event.dart';
+import 'package:autopulse_ai/models/drive_report.dart';
+import 'package:autopulse_ai/data/mock/mock_data.dart';
 
 abstract class HealthService {
   Future<VehicleHealth> getVehicleHealth();

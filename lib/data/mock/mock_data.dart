@@ -1,10 +1,10 @@
-import 'package:autosense_ai/models/vehicle.dart';
-import 'package:autosense_ai/models/telemetry.dart';
-import 'package:autosense_ai/models/health.dart';
-import 'package:autosense_ai/models/diagnostic.dart';
-import 'package:autosense_ai/models/ai_message.dart';
-import 'package:autosense_ai/models/drive_report.dart';
-import 'package:autosense_ai/models/health_event.dart';
+import 'package:autopulse_ai/models/vehicle.dart';
+import 'package:autopulse_ai/models/telemetry.dart';
+import 'package:autopulse_ai/models/health.dart';
+import 'package:autopulse_ai/models/diagnostic.dart';
+import 'package:autopulse_ai/models/ai_message.dart';
+import 'package:autopulse_ai/models/drive_report.dart';
+import 'package:autopulse_ai/models/health_event.dart';
 
 class MockData {
   MockData._();

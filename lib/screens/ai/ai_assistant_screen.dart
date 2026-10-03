@@ -1,11 +1,11 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:autosense_ai/core/theme/app_colors.dart';
-import 'package:autosense_ai/core/theme/app_text_styles.dart';
-import 'package:autosense_ai/core/widgets/ai_message_bubble.dart';
-import 'package:autosense_ai/models/ai_message.dart';
-import 'package:autosense_ai/data/mock/mock_data.dart';
+import 'package:autopulse_ai/core/theme/app_colors.dart';
+import 'package:autopulse_ai/core/theme/app_text_styles.dart';
+import 'package:autopulse_ai/core/widgets/ai_message_bubble.dart';
+import 'package:autopulse_ai/models/ai_message.dart';
+import 'package:autopulse_ai/data/mock/mock_data.dart';
 
 class AIAssistantScreen extends StatefulWidget {
   const AIAssistantScreen({super.key});
@@ -123,7 +123,7 @@ class _AIAssistantScreenState extends State<AIAssistantScreen> {
                         const Icon(Icons.auto_awesome, color: AppColors.primary, size: 28)
                             .animate(onPlay: (c) => c.repeat(reverse: true)).shimmer(duration: 2.seconds),
                         const SizedBox(width: 12),
-                        Text('AutoSense AI', style: AppTextStyles.headlineMedium),
+                        Text('autopulse AI', style: AppTextStyles.headlineMedium),
                       ],
                     ),
                     const SizedBox(height: 6),
