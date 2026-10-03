@@ -33,6 +33,15 @@ migrate_working_dir/
 /build/
 /coverage/
 
+# Local environment and Android signing credentials
+.env
+.env.*
+!.env.example
+*.jks
+*.keystore
+key.properties
+key.properties.*
+
 # Symbolication related
 app.*.symbols
 
