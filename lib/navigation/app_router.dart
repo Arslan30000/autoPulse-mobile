@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:autopulse_ai/screens/auth/login_screen.dart';
 import 'package:autopulse_ai/screens/splash/splash_screen.dart';
 import 'package:autopulse_ai/screens/onboarding/onboarding_screen.dart';
 import 'package:autopulse_ai/screens/role/role_selection_screen.dart';
@@ -19,6 +20,7 @@ import 'package:autopulse_ai/navigation/bottom_nav_shell.dart';
 import 'package:autopulse_ai/models/diagnostic.dart';
 
 class AppRouter {
+  static const String login = '/login';
   static const String splash = '/splash';
   static const String onboarding = '/onboarding';
   static const String roleSelection = '/role-selection';
@@ -40,6 +42,8 @@ class AppRouter {
 
   static Route<dynamic> generateRoute(RouteSettings settings) {
     switch (settings.name) {
+      case login:
+        return MaterialPageRoute(builder: (_) => const LoginScreen());
       case splash:
         return MaterialPageRoute(builder: (_) => const SplashScreen());
       case onboarding:

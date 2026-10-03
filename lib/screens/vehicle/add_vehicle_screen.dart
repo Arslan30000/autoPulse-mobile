@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:autopulse_ai/repositories/local_vehicle_repository.dart';
+import 'package:autopulse_ai/services/account_service.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:autopulse_ai/core/theme/app_colors.dart';
 import 'package:autopulse_ai/core/theme/app_text_styles.dart';
@@ -17,6 +19,8 @@ class AddVehicleScreen extends StatefulWidget {
 }
 
 class _AddVehicleScreenState extends State<AddVehicleScreen> {
+  bool _saving = false;
+  final _vehicles = LocalVehicleRepository();
   final _obd = ObdController.instance;
   final _makeController = TextEditingController(text: 'Toyota');
   final _modelController = TextEditingController(text: 'Yaris');
@@ -26,6 +30,21 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
   void initState() {
     super.initState();
     _obd.addListener(_refresh);
+    _loadVehicle();
+  }
+
+  Future<void> _loadVehicle() async {
+    try {
+      final vehicle = await _vehicles.load(AccountService.instance.userId);
+      if (!mounted || vehicle == null) return;
+      setState(() {
+        _makeController.text = vehicle.make;
+        _modelController.text = vehicle.model;
+        _yearController.text = vehicle.year.toString();
+      });
+    } catch (_) {
+      // A missing local preference must not prevent entering vehicle details.
+    }
   }
 
   void _refresh() {
@@ -41,7 +60,8 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
     super.dispose();
   }
 
-  void _continue() {
+  Future<void> _continue() async {
+    if (_saving || _obd.isRecording || _obd.recordingBusy) return;
     final year = int.tryParse(_yearController.text.trim());
     if (_makeController.text.trim().isEmpty ||
         _modelController.text.trim().isEmpty ||
@@ -53,14 +73,30 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
       );
       return;
     }
-    _obd.setVehicle(
-      Vehicle(
-        make: _makeController.text.trim(),
-        model: _modelController.text.trim(),
-        year: year,
-      ),
-    );
-    Navigator.pushReplacementNamed(context, AppRouter.main);
+    setState(() => _saving = true);
+    try {
+      final vehicle = await _vehicles.save(
+        Vehicle(
+          make: _makeController.text.trim(),
+          model: _modelController.text.trim(),
+          year: year,
+        ),
+        AccountService.instance.userId,
+      );
+      if (!mounted) return;
+      _obd.setVehicle(vehicle);
+      Navigator.pushReplacementNamed(context, AppRouter.main);
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Could not save the vehicle. Please try again.'),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
   }
 
   @override
@@ -183,9 +219,19 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
               ObdConnectionPanel(controller: _obd),
               const SizedBox(height: 32),
               PrimaryButton(
-                label: _obd.isReady ? 'Continue' : 'Continue offline',
+                label: _saving
+                    ? 'Saving vehicle?'
+                    : _obd.isReady
+                    ? 'Continue'
+                    : 'Continue offline',
                 icon: Icons.arrow_forward_rounded,
-                onPressed: _obd.isBusy ? null : _continue,
+                onPressed:
+                    _obd.isBusy ||
+                        _saving ||
+                        _obd.isRecording ||
+                        _obd.recordingBusy
+                    ? null
+                    : _continue,
               ),
             ],
           ),
