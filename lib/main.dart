@@ -5,6 +5,11 @@ import 'package:autopulse_ai/core/config/supabase_config.dart';
 import 'package:autopulse_ai/core/theme/app_theme.dart';
 import 'package:autopulse_ai/navigation/app_router.dart';
 import 'package:autopulse_ai/services/account_service.dart';
+import 'package:flutter/foundation.dart';
+import 'package:autopulse_ai/services/obd/obd_controller.dart';
+import 'package:autopulse_ai/services/recording_sync_service.dart';
+import 'package:autopulse_ai/repositories/obd_recording_repository.dart';
+import 'package:autopulse_ai/repositories/cloud_recording_repository.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -16,6 +21,14 @@ Future<void> main() async {
       publishableKey: backend.publicKey,
     );
     AccountService.instance.configure(Supabase.instance.client);
+    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+      final sync = RecordingSyncService(
+        store: ObdController.instance.repository as RecordingStore,
+        cloud: SupabaseRecordingRepository(Supabase.instance.client),
+      );
+      RecordingSyncService.instance = sync;
+      sync.start(Supabase.instance.client);
+    }
   }
   SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
   SystemChrome.setSystemUIOverlayStyle(
