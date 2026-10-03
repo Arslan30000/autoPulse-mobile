@@ -3,10 +3,8 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:autopulse_ai/core/theme/app_colors.dart';
 import 'package:autopulse_ai/core/theme/app_text_styles.dart';
-import 'package:autopulse_ai/core/widgets/section_header.dart';
 import 'package:autopulse_ai/data/mock/mock_data.dart';
 
 class MechanicTelemetryScreen extends StatefulWidget {
@@ -20,8 +18,8 @@ class MechanicTelemetryScreen extends StatefulWidget {
 class _MechanicTelemetryScreenState extends State<MechanicTelemetryScreen> {
   final Random _random = Random();
   Timer? _timer;
+  final double _speed = 0;
   double _rpm = 780,
-      _speed = 0,
       _coolant = 69,
       _intake = 63,
       _load = 12,
@@ -190,7 +188,7 @@ class _MechanicTelemetryScreenState extends State<MechanicTelemetryScreen> {
                               barWidth: 2,
                               dotData: FlDotData(
                                 show: true,
-                                getDotPainter: (_, __, ___, ____) =>
+                                getDotPainter: (_, _, _, _) =>
                                     FlDotCirclePainter(
                                       radius: 2.5,
                                       color: AppColors.warning,

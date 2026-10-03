@@ -9,7 +9,6 @@ import 'package:autopulse_ai/screens/diagnostics/diagnostic_detail_screen.dart';
 import 'package:autopulse_ai/screens/ai/ai_assistant_screen.dart';
 import 'package:autopulse_ai/screens/history/health_history_screen.dart';
 import 'package:autopulse_ai/screens/reports/drive_report_screen.dart';
-import 'package:autopulse_ai/screens/mechanic/mechanic_home_screen.dart';
 import 'package:autopulse_ai/screens/mechanic/mechanic_telemetry_screen.dart';
 import 'package:autopulse_ai/screens/mechanic/mechanic_anomaly_screen.dart';
 import 'package:autopulse_ai/screens/mechanic/mechanic_dtc_screen.dart';

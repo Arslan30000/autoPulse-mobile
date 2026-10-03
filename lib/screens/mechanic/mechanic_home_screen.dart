@@ -8,8 +8,6 @@ import 'package:autopulse_ai/core/widgets/telemetry_card.dart';
 import 'package:autopulse_ai/data/mock/mock_data.dart';
 import 'package:autopulse_ai/navigation/app_router.dart';
 
-import 'dart:ui';
-
 class MechanicHomeScreen extends StatelessWidget {
   const MechanicHomeScreen({super.key});
 

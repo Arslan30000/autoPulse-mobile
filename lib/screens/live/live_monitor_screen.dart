@@ -22,7 +22,7 @@ class _LiveMonitorScreenState extends State<LiveMonitorScreen> {
   Timer? _timer;
 
   double _rpm = 780;
-  double _speed = 0;
+  final double _speed = 0;
   double _coolantTemp = 69;
   double _intakeTemp = 63;
   double _engineLoad = 12;

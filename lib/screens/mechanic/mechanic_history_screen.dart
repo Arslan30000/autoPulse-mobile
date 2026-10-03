@@ -119,7 +119,7 @@ class MechanicHistoryScreen extends StatelessWidget {
                       barWidth: 2.5,
                       dotData: FlDotData(
                         show: true,
-                        getDotPainter: (_, __, ___, ____) => FlDotCirclePainter(
+                        getDotPainter: (_, _, _, _) => FlDotCirclePainter(
                           radius: 4,
                           color: AppColors.primary,
                           strokeWidth: 2,

@@ -5,7 +5,6 @@ import 'package:autopulse_ai/core/theme/app_colors.dart';
 import 'package:autopulse_ai/core/theme/app_text_styles.dart';
 import 'package:autopulse_ai/core/widgets/section_header.dart';
 import 'package:autopulse_ai/core/widgets/primary_button.dart';
-import 'package:autopulse_ai/data/mock/mock_data.dart';
 import 'package:autopulse_ai/navigation/app_router.dart';
 
 class MechanicAnomalyScreen extends StatelessWidget {
@@ -202,12 +201,11 @@ class MechanicAnomalyScreen extends StatelessWidget {
                             barWidth: 2.5,
                             dotData: FlDotData(
                               show: true,
-                              getDotPainter: (_, __, ___, ____) =>
-                                  FlDotCirclePainter(
-                                    radius: 2.5,
-                                    color: AppColors.warning,
-                                    strokeWidth: 0,
-                                  ),
+                              getDotPainter: (_, _, _, _) => FlDotCirclePainter(
+                                radius: 2.5,
+                                color: AppColors.warning,
+                                strokeWidth: 0,
+                              ),
                             ),
                             belowBarData: BarAreaData(
                               show: true,

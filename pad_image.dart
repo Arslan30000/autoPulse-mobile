@@ -5,13 +5,13 @@ import 'package:image/image.dart';
 void main() {
   final file = File('assets/app_icon.png');
   if (!file.existsSync()) {
-    print('File not found');
+    stdout.writeln('File not found');
     return;
   }
 
   final image = decodeImage(file.readAsBytesSync());
   if (image == null) {
-    print('Could not decode image');
+    stdout.writeln('Could not decode image');
     return;
   }
 
@@ -28,5 +28,5 @@ void main() {
   compositeImage(newImage, image, dstX: offsetX, dstY: offsetY);
 
   file.writeAsBytesSync(encodePng(newImage));
-  print('Image padded successfully to \${maxDim}x\${maxDim}');
+  stdout.writeln('Image padded successfully to \${maxDim}x\${maxDim}');
 }

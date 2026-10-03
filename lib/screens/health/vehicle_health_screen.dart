@@ -150,7 +150,7 @@ class _VehicleHealthScreenState extends State<VehicleHealthScreen> {
                 transitionBuilder: (Widget child, Animation<double> animation) {
                   return SizeTransition(
                     sizeFactor: animation,
-                    axisAlignment: -1.0,
+                    alignment: Alignment(-1.0, -1.0),
                     child: FadeTransition(opacity: animation, child: child),
                   );
                 },

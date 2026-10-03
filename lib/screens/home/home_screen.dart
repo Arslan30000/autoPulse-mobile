@@ -50,7 +50,7 @@ class HomeScreen extends StatelessWidget {
                       children: [
                         Text(
                           MockData.vehicle.fullDisplayName,
-                          style: AppTextStyles.bodyMedium?.copyWith(
+                          style: AppTextStyles.bodyMedium.copyWith(
                             color: AppColors.primary,
                           ),
                         ),
@@ -252,7 +252,7 @@ class HomeScreen extends StatelessWidget {
                     const SizedBox(width: 6),
                     Text(
                       'Last Scan • Today • 12:28 PM',
-                      style: AppTextStyles.labelSmall?.copyWith(
+                      style: AppTextStyles.labelSmall.copyWith(
                         color: AppColors.primary,
                       ),
                     ),

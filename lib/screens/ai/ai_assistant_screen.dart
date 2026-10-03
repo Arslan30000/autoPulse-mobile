@@ -139,7 +139,7 @@ class _AIAssistantScreenState extends State<AIAssistantScreen> {
                     const SizedBox(height: 6),
                     Text(
                       'Your vehicle-aware diagnostic assistant',
-                      style: AppTextStyles.bodySmall?.copyWith(
+                      style: AppTextStyles.bodySmall.copyWith(
                         color: AppColors.primary.withValues(alpha: 0.8),
                       ),
                     ),
@@ -200,7 +200,7 @@ class _AIAssistantScreenState extends State<AIAssistantScreen> {
                                         Text(
                                           'Vehicle Context Active',
                                           style: AppTextStyles.labelSmall
-                                              ?.copyWith(
+                                              .copyWith(
                                                 color: AppColors.success,
                                               ),
                                         ),
@@ -231,7 +231,7 @@ class _AIAssistantScreenState extends State<AIAssistantScreen> {
                               const SizedBox(height: 10),
                               Text(
                                 'Responses use available vehicle telemetry, detected anomalies, vehicle history and automotive knowledge.',
-                                style: AppTextStyles.bodySmall?.copyWith(
+                                style: AppTextStyles.bodySmall.copyWith(
                                   fontStyle: FontStyle.italic,
                                   color: AppColors.textSecondary,
                                 ),
@@ -302,7 +302,7 @@ class _AIAssistantScreenState extends State<AIAssistantScreen> {
                           ),
                           child: Text(
                             q,
-                            style: AppTextStyles.bodySmall?.copyWith(
+                            style: AppTextStyles.bodySmall.copyWith(
                               color: AppColors.primary,
                             ),
                           ),
@@ -341,7 +341,7 @@ class _AIAssistantScreenState extends State<AIAssistantScreen> {
                             style: AppTextStyles.bodyMedium,
                             decoration: InputDecoration(
                               hintText: 'Ask about your vehicle...',
-                              hintStyle: AppTextStyles.bodyMedium?.copyWith(
+                              hintStyle: AppTextStyles.bodyMedium.copyWith(
                                 color: AppColors.textTertiary,
                               ),
                               filled: true,
