@@ -34,20 +34,35 @@ class MechanicDtcScreen extends StatelessWidget {
                   Row(
                     children: [
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 8,
+                        ),
                         decoration: BoxDecoration(
                           color: AppColors.primary.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(10),
                         ),
-                        child: Text('P0101', style: AppTextStyles.titleLarge.copyWith(color: AppColors.primary, letterSpacing: 1)),
+                        child: Text(
+                          'P0101',
+                          style: AppTextStyles.titleLarge.copyWith(
+                            color: AppColors.primary,
+                            letterSpacing: 1,
+                          ),
+                        ),
                       ),
                       const SizedBox(width: 16),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('Mass or Volume Air Flow', style: AppTextStyles.titleSmall),
-                            Text('Circuit Range/Performance', style: AppTextStyles.bodySmall),
+                            Text(
+                              'Mass or Volume Air Flow',
+                              style: AppTextStyles.titleSmall,
+                            ),
+                            Text(
+                              'Circuit Range/Performance',
+                              style: AppTextStyles.bodySmall,
+                            ),
                           ],
                         ),
                       ),
@@ -59,7 +74,11 @@ class MechanicDtcScreen extends StatelessWidget {
                     runSpacing: 8,
                     children: [
                       _buildChip('Severity', 'Moderate', AppColors.warning),
-                      _buildChip('Status', 'Needs Investigation', AppColors.warning),
+                      _buildChip(
+                        'Status',
+                        'Needs Investigation',
+                        AppColors.warning,
+                      ),
                     ],
                   ),
                 ],
@@ -73,7 +92,11 @@ class MechanicDtcScreen extends StatelessWidget {
             const SizedBox(height: 8),
             Container(
               padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(12), border: Border.all(color: AppColors.border)),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.border),
+              ),
               child: Text(
                 'This code is set when the PCM detects that the MAF sensor signal is outside the expected range for the current engine operating conditions. The ECU compares actual airflow readings against predicted values based on RPM, throttle position, and other parameters.',
                 style: AppTextStyles.bodyMedium,
@@ -86,16 +109,28 @@ class MechanicDtcScreen extends StatelessWidget {
             const SectionHeader(title: 'Observed Evidence'),
             const SizedBox(height: 8),
             Container(
-              decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(12), border: Border.all(color: AppColors.border)),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.border),
+              ),
               child: Column(
                 children: [
                   _buildRow('MAF Reading', '0.21 g/s', AppColors.warning),
                   const Divider(height: 1),
-                  _buildRow('Expected Range', '2.5 - 4.0 g/s', AppColors.textSecondary),
+                  _buildRow(
+                    'Expected Range',
+                    '2.5 - 4.0 g/s',
+                    AppColors.textSecondary,
+                  ),
                   const Divider(height: 1),
                   _buildRow('Engine Load', '12%', AppColors.textPrimary),
                   const Divider(height: 1),
-                  _buildRow('Throttle Position', '18.04%', AppColors.textPrimary),
+                  _buildRow(
+                    'Throttle Position',
+                    '18.04%',
+                    AppColors.textPrimary,
+                  ),
                   const Divider(height: 1),
                   _buildRow('Engine RPM', '780 rpm', AppColors.textPrimary),
                 ],
@@ -133,7 +168,8 @@ class MechanicDtcScreen extends StatelessWidget {
             PrimaryButton(
               label: 'AI Analysis',
               icon: Icons.auto_awesome_rounded,
-              onPressed: () => Navigator.pushNamed(context, AppRouter.mechanicAI),
+              onPressed: () =>
+                  Navigator.pushNamed(context, AppRouter.mechanicAI),
             ).animate().fadeIn(duration: 400.ms, delay: 400.ms),
 
             const SizedBox(height: 24),
@@ -150,7 +186,10 @@ class MechanicDtcScreen extends StatelessWidget {
         color: color.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(8),
       ),
-      child: Text('$label: $value', style: AppTextStyles.labelSmall.copyWith(color: color)),
+      child: Text(
+        '$label: $value',
+        style: AppTextStyles.labelSmall.copyWith(color: color),
+      ),
     );
   }
 
@@ -160,8 +199,16 @@ class MechanicDtcScreen extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: AppTextStyles.bodySmall.copyWith(color: AppColors.textPrimary)),
-          Text(value, style: AppTextStyles.titleSmall.copyWith(color: valueColor)),
+          Text(
+            label,
+            style: AppTextStyles.bodySmall.copyWith(
+              color: AppColors.textPrimary,
+            ),
+          ),
+          Text(
+            value,
+            style: AppTextStyles.titleSmall.copyWith(color: valueColor),
+          ),
         ],
       ),
     );
@@ -177,7 +224,13 @@ class MechanicDtcScreen extends StatelessWidget {
             CircleAvatar(
               radius: 11,
               backgroundColor: AppColors.surfaceTertiary,
-              child: Text('${entry.key + 1}', style: AppTextStyles.labelSmall.copyWith(color: color, fontWeight: FontWeight.bold)),
+              child: Text(
+                '${entry.key + 1}',
+                style: AppTextStyles.labelSmall.copyWith(
+                  color: color,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
             const SizedBox(width: 10),
             Expanded(child: Text(entry.value, style: AppTextStyles.bodyMedium)),

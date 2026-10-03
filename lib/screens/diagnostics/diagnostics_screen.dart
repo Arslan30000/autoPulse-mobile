@@ -20,29 +20,42 @@ class DiagnosticsScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Diagnostics', style: AppTextStyles.headlineMedium)
-                  .animate().fadeIn(duration: 500.ms),
+              Text(
+                'Diagnostics',
+                style: AppTextStyles.headlineMedium,
+              ).animate().fadeIn(duration: 500.ms),
               const SizedBox(height: 4),
-              Text(MockData.vehicle.fullDisplayName, style: AppTextStyles.bodyMedium)
-                  .animate().fadeIn(duration: 500.ms, delay: 100.ms),
+              Text(
+                MockData.vehicle.fullDisplayName,
+                style: AppTextStyles.bodyMedium,
+              ).animate().fadeIn(duration: 500.ms, delay: 100.ms),
 
               const SizedBox(height: 24),
 
               // Summary cards
               Row(
                 children: [
-                  _buildSummaryCard('1', 'Active\nAnomalies', AppColors.warning),
+                  _buildSummaryCard(
+                    '1',
+                    'Active\nAnomalies',
+                    AppColors.warning,
+                  ),
                   const SizedBox(width: 12),
                   _buildSummaryCard('0', 'Critical\nIssues', AppColors.success),
                   const SizedBox(width: 12),
-                  _buildSummaryCard('1', 'Diagnostic\nCodes', AppColors.primary),
+                  _buildSummaryCard(
+                    '1',
+                    'Diagnostic\nCodes',
+                    AppColors.primary,
+                  ),
                 ],
               ).animate().fadeIn(duration: 400.ms, delay: 200.ms),
 
               const SizedBox(height: 24),
 
               SectionHeader(title: 'Active Anomalies')
-                  .animate().fadeIn(duration: 400.ms, delay: 300.ms),
+                  .animate()
+                  .fadeIn(duration: 400.ms, delay: 300.ms),
               const SizedBox(height: 12),
 
               DiagnosticCard(
@@ -61,7 +74,8 @@ class DiagnosticsScreen extends StatelessWidget {
               const SizedBox(height: 24),
 
               SectionHeader(title: 'Diagnostic Trouble Codes')
-                  .animate().fadeIn(duration: 400.ms, delay: 500.ms),
+                  .animate()
+                  .fadeIn(duration: 400.ms, delay: 500.ms),
               const SizedBox(height: 12),
 
               // DTC Card
@@ -77,7 +91,10 @@ class DiagnosticsScreen extends StatelessWidget {
                     end: Alignment.bottomRight,
                   ),
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: AppColors.warning.withValues(alpha: 0.4), width: 1.5),
+                  border: Border.all(
+                    color: AppColors.warning.withValues(alpha: 0.4),
+                    width: 1.5,
+                  ),
                   boxShadow: [
                     BoxShadow(
                       color: AppColors.warning.withValues(alpha: 0.15),
@@ -92,18 +109,30 @@ class DiagnosticsScreen extends StatelessWidget {
                     Row(
                       children: [
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 8,
+                          ),
                           decoration: BoxDecoration(
-                            color: AppColors.surfaceTertiary.withValues(alpha: 0.8),
+                            color: AppColors.surfaceTertiary.withValues(
+                              alpha: 0.8,
+                            ),
                             borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
+                            border: Border.all(
+                              color: AppColors.primary.withValues(alpha: 0.3),
+                            ),
                           ),
                           child: Text(
                             MockData.dtcs.first.code,
                             style: AppTextStyles.titleMedium.copyWith(
                               color: AppColors.primary,
                               shadows: [
-                                Shadow(color: AppColors.primary.withValues(alpha: 0.5), blurRadius: 8),
+                                Shadow(
+                                  color: AppColors.primary.withValues(
+                                    alpha: 0.5,
+                                  ),
+                                  blurRadius: 8,
+                                ),
                               ],
                             ),
                           ),
@@ -111,7 +140,10 @@ class DiagnosticsScreen extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 16),
-                    Text(MockData.dtcs.first.description, style: AppTextStyles.bodyMedium),
+                    Text(
+                      MockData.dtcs.first.description,
+                      style: AppTextStyles.bodyMedium,
+                    ),
                     const SizedBox(height: 12),
                     Row(
                       children: [
@@ -122,14 +154,20 @@ class DiagnosticsScreen extends StatelessWidget {
                             shape: BoxShape.circle,
                             color: AppColors.warning,
                             boxShadow: [
-                              BoxShadow(color: AppColors.warning.withValues(alpha: 0.6), blurRadius: 6),
+                              BoxShadow(
+                                color: AppColors.warning.withValues(alpha: 0.6),
+                                blurRadius: 6,
+                              ),
                             ],
                           ),
                         ),
                         const SizedBox(width: 8),
                         Text(
                           MockData.dtcs.first.status,
-                          style: AppTextStyles.bodySmall.copyWith(color: AppColors.warning, fontWeight: FontWeight.bold),
+                          style: AppTextStyles.bodySmall.copyWith(
+                            color: AppColors.warning,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ],
                     ),
@@ -138,8 +176,12 @@ class DiagnosticsScreen extends StatelessWidget {
                       alignment: Alignment.centerRight,
                       child: OutlinedButton(
                         style: OutlinedButton.styleFrom(
-                          side: BorderSide(color: AppColors.primary.withValues(alpha: 0.5)),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          side: BorderSide(
+                            color: AppColors.primary.withValues(alpha: 0.5),
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
                         onPressed: () => Navigator.pushNamed(
                           context,
@@ -166,12 +208,18 @@ class DiagnosticsScreen extends StatelessWidget {
                     ],
                   ),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppColors.border.withValues(alpha: 0.3)),
+                  border: Border.all(
+                    color: AppColors.border.withValues(alpha: 0.3),
+                  ),
                 ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(Icons.info_outline, color: AppColors.textTertiary, size: 20),
+                    const Icon(
+                      Icons.info_outline,
+                      color: AppColors.textTertiary,
+                      size: 20,
+                    ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
@@ -208,7 +256,10 @@ class DiagnosticsScreen extends StatelessWidget {
             end: Alignment.bottomRight,
           ),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: accentColor.withValues(alpha: 0.3), width: 1.5),
+          border: Border.all(
+            color: accentColor.withValues(alpha: 0.3),
+            width: 1.5,
+          ),
           boxShadow: [
             BoxShadow(
               color: accentColor.withValues(alpha: 0.15),
@@ -225,14 +276,19 @@ class DiagnosticsScreen extends StatelessWidget {
                 color: accentColor,
                 fontWeight: FontWeight.bold,
                 shadows: [
-                  Shadow(color: accentColor.withValues(alpha: 0.6), blurRadius: 10),
+                  Shadow(
+                    color: accentColor.withValues(alpha: 0.6),
+                    blurRadius: 10,
+                  ),
                 ],
               ),
             ),
             const SizedBox(height: 8),
             Text(
               label,
-              style: AppTextStyles.labelSmall.copyWith(color: AppColors.textSecondary),
+              style: AppTextStyles.labelSmall.copyWith(
+                color: AppColors.textSecondary,
+              ),
               textAlign: TextAlign.center,
             ),
           ],

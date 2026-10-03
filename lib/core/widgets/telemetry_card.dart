@@ -59,7 +59,10 @@ class TelemetryCard extends StatelessWidget {
               Flexible(
                 child: Text(
                   value,
-                  style: AppTextStyles.telemetryValue.copyWith(fontSize: 28, height: 1.0),
+                  style: AppTextStyles.telemetryValue.copyWith(
+                    fontSize: 28,
+                    height: 1.0,
+                  ),
                   overflow: TextOverflow.ellipsis,
                 ),
               ),

@@ -67,7 +67,9 @@ class AppRouter {
       case driveReport:
         return MaterialPageRoute(builder: (_) => const DriveReportScreen());
       case mechanicTelemetry:
-        return MaterialPageRoute(builder: (_) => const MechanicTelemetryScreen());
+        return MaterialPageRoute(
+          builder: (_) => const MechanicTelemetryScreen(),
+        );
       case mechanicAnomaly:
         return MaterialPageRoute(builder: (_) => const MechanicAnomalyScreen());
       case mechanicDtc:
@@ -81,9 +83,7 @@ class AppRouter {
       default:
         return MaterialPageRoute(
           builder: (_) => Scaffold(
-            body: Center(
-              child: Text('No route defined for ${settings.name}'),
-            ),
+            body: Center(child: Text('No route defined for ${settings.name}')),
           ),
         );
     }

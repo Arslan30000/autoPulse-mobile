@@ -44,7 +44,9 @@ class LoginScreen extends StatelessWidget {
               Center(
                 child: Text(
                   'autopulse',
-                  style: AppTextStyles.titleLarge.copyWith(color: AppColors.primary),
+                  style: AppTextStyles.titleLarge.copyWith(
+                    color: AppColors.primary,
+                  ),
                 ),
               ).animate().fadeIn(duration: 500.ms, delay: 100.ms),
               const SizedBox(height: 40),
@@ -62,21 +64,27 @@ class LoginScreen extends StatelessWidget {
               const SizedBox(height: 40),
               // Email field
               TextField(
-                decoration: const InputDecoration(
-                  hintText: 'Email',
-                  prefixIcon: Icon(Icons.email_outlined),
-                ),
-                keyboardType: TextInputType.emailAddress,
-              ).animate().fadeIn(duration: 400.ms, delay: 400.ms).slideY(begin: 0.1, end: 0),
+                    decoration: const InputDecoration(
+                      hintText: 'Email',
+                      prefixIcon: Icon(Icons.email_outlined),
+                    ),
+                    keyboardType: TextInputType.emailAddress,
+                  )
+                  .animate()
+                  .fadeIn(duration: 400.ms, delay: 400.ms)
+                  .slideY(begin: 0.1, end: 0),
               const SizedBox(height: 16),
               // Password field
               TextField(
-                obscureText: true,
-                decoration: const InputDecoration(
-                  hintText: 'Password',
-                  prefixIcon: Icon(Icons.lock_outlined),
-                ),
-              ).animate().fadeIn(duration: 400.ms, delay: 500.ms).slideY(begin: 0.1, end: 0),
+                    obscureText: true,
+                    decoration: const InputDecoration(
+                      hintText: 'Password',
+                      prefixIcon: Icon(Icons.lock_outlined),
+                    ),
+                  )
+                  .animate()
+                  .fadeIn(duration: 400.ms, delay: 500.ms)
+                  .slideY(begin: 0.1, end: 0),
               const SizedBox(height: 24),
               // Log In
               PrimaryButton(
@@ -92,7 +100,10 @@ class LoginScreen extends StatelessWidget {
                 height: 52,
                 child: OutlinedButton(
                   onPressed: () {
-                    Navigator.pushReplacementNamed(context, AppRouter.addVehicle);
+                    Navigator.pushReplacementNamed(
+                      context,
+                      AppRouter.addVehicle,
+                    );
                   },
                   child: const Text('Create Account'),
                 ),
@@ -102,11 +113,16 @@ class LoginScreen extends StatelessWidget {
               Center(
                 child: TextButton(
                   onPressed: () {
-                    Navigator.pushReplacementNamed(context, AppRouter.addVehicle);
+                    Navigator.pushReplacementNamed(
+                      context,
+                      AppRouter.addVehicle,
+                    );
                   },
                   child: Text(
                     'Continue as Demo',
-                    style: AppTextStyles.bodyMedium.copyWith(color: AppColors.primary),
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      color: AppColors.primary,
+                    ),
                   ),
                 ),
               ).animate().fadeIn(duration: 400.ms, delay: 800.ms),

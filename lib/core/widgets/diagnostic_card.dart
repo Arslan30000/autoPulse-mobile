@@ -47,20 +47,27 @@ class DiagnosticCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(Icons.warning_amber_rounded, color: _severityColor, size: 20),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(title, style: AppTextStyles.titleSmall),
+              Icon(
+                Icons.warning_amber_rounded,
+                color: _severityColor,
+                size: 20,
               ),
+              const SizedBox(width: 8),
+              Expanded(child: Text(title, style: AppTextStyles.titleSmall)),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: _severityColor.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
                   severity,
-                  style: AppTextStyles.labelSmall.copyWith(color: _severityColor),
+                  style: AppTextStyles.labelSmall.copyWith(
+                    color: _severityColor,
+                  ),
                 ),
               ),
             ],
@@ -88,10 +95,7 @@ class DiagnosticCard extends StatelessWidget {
           const SizedBox(height: 12),
           Align(
             alignment: Alignment.centerRight,
-            child: TextButton(
-              onPressed: onAction,
-              child: Text(actionLabel),
-            ),
+            child: TextButton(onPressed: onAction, child: Text(actionLabel)),
           ),
         ],
       ),

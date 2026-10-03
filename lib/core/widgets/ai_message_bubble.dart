@@ -37,13 +37,17 @@ class AIMessageBubble extends StatelessWidget {
                 color: isUser ? AppColors.background : AppColors.textPrimary,
               ),
             ),
-            if (!isUser && message.evidence != null && message.evidence!.isNotEmpty) ...[
+            if (!isUser &&
+                message.evidence != null &&
+                message.evidence!.isNotEmpty) ...[
               const SizedBox(height: 12),
               const Divider(color: AppColors.border, height: 1),
               const SizedBox(height: 8),
               Text(
                 'Evidence Used',
-                style: AppTextStyles.labelSmall.copyWith(color: AppColors.textSecondary),
+                style: AppTextStyles.labelSmall.copyWith(
+                  color: AppColors.textSecondary,
+                ),
               ),
               const SizedBox(height: 8),
               Wrap(
@@ -51,7 +55,10 @@ class AIMessageBubble extends StatelessWidget {
                 runSpacing: 6,
                 children: message.evidence!.map((e) {
                   return Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: AppColors.surfaceTertiary,
                       borderRadius: BorderRadius.circular(6),
@@ -59,9 +66,18 @@ class AIMessageBubble extends StatelessWidget {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.check_circle_outline, size: 12, color: AppColors.success),
+                        Icon(
+                          Icons.check_circle_outline,
+                          size: 12,
+                          color: AppColors.success,
+                        ),
                         const SizedBox(width: 4),
-                        Text(e, style: AppTextStyles.labelSmall.copyWith(color: AppColors.textSecondary)),
+                        Text(
+                          e,
+                          style: AppTextStyles.labelSmall.copyWith(
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
                       ],
                     ),
                   );
@@ -78,7 +94,9 @@ class AIMessageBubble extends StatelessWidget {
                 ),
                 child: Text(
                   'RAG-supported response',
-                  style: AppTextStyles.labelSmall.copyWith(color: AppColors.primary),
+                  style: AppTextStyles.labelSmall.copyWith(
+                    color: AppColors.primary,
+                  ),
                 ),
               ),
             ],

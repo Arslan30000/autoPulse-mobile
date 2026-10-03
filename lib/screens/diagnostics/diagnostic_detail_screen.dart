@@ -27,14 +27,19 @@ class DiagnosticDetailScreen extends StatelessWidget {
             Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: AppColors.warning.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
                     anomaly.severity,
-                    style: AppTextStyles.labelSmall.copyWith(color: AppColors.warning),
+                    style: AppTextStyles.labelSmall.copyWith(
+                      color: AppColors.warning,
+                    ),
                   ),
                 ),
                 const Spacer(),
@@ -121,8 +126,10 @@ class DiagnosticDetailScreen extends StatelessWidget {
 
             const SectionHeader(title: 'What We Detected'),
             const SizedBox(height: 8),
-            Text(anomaly.detailedDescription, style: AppTextStyles.bodyMedium)
-                .animate().fadeIn(duration: 400.ms, delay: 200.ms),
+            Text(
+              anomaly.detailedDescription,
+              style: AppTextStyles.bodyMedium,
+            ).animate().fadeIn(duration: 400.ms, delay: 200.ms),
 
             const SizedBox(height: 24),
 
@@ -135,9 +142,15 @@ class DiagnosticDetailScreen extends StatelessWidget {
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Icon(Icons.arrow_right_rounded, color: AppColors.warning, size: 20),
+                      Icon(
+                        Icons.arrow_right_rounded,
+                        color: AppColors.warning,
+                        size: 20,
+                      ),
                       const SizedBox(width: 8),
-                      Expanded(child: Text(factor, style: AppTextStyles.bodyMedium)),
+                      Expanded(
+                        child: Text(factor, style: AppTextStyles.bodyMedium),
+                      ),
                     ],
                   ),
                 );
@@ -160,11 +173,18 @@ class DiagnosticDetailScreen extends StatelessWidget {
                         backgroundColor: AppColors.surfaceTertiary,
                         child: Text(
                           '${entry.key + 1}',
-                          style: AppTextStyles.labelSmall.copyWith(color: AppColors.textPrimary),
+                          style: AppTextStyles.labelSmall.copyWith(
+                            color: AppColors.textPrimary,
+                          ),
                         ),
                       ),
                       const SizedBox(width: 12),
-                      Expanded(child: Text(entry.value, style: AppTextStyles.bodyMedium)),
+                      Expanded(
+                        child: Text(
+                          entry.value,
+                          style: AppTextStyles.bodyMedium,
+                        ),
+                      ),
                     ],
                   ),
                 );
@@ -176,7 +196,8 @@ class DiagnosticDetailScreen extends StatelessWidget {
             PrimaryButton(
               label: 'Ask autopulse AI',
               icon: Icons.auto_awesome_rounded,
-              onPressed: () => Navigator.pushNamed(context, AppRouter.aiAssistant),
+              onPressed: () =>
+                  Navigator.pushNamed(context, AppRouter.aiAssistant),
             ).animate().fadeIn(duration: 400.ms, delay: 500.ms),
 
             const SizedBox(height: 24),

@@ -51,8 +51,16 @@ class DriveReportScreen extends StatelessWidget {
               physics: const NeverScrollableScrollPhysics(),
               children: [
                 _buildStatCard('Distance', '${report.distance} km', null),
-                _buildStatCard('Avg Speed', '${report.avgSpeed.toStringAsFixed(0)} km/h', null),
-                _buildStatCard('Anomalies', '${report.anomalyCount}', AppColors.warning),
+                _buildStatCard(
+                  'Avg Speed',
+                  '${report.avgSpeed.toStringAsFixed(0)} km/h',
+                  null,
+                ),
+                _buildStatCard(
+                  'Anomalies',
+                  '${report.anomalyCount}',
+                  AppColors.warning,
+                ),
                 _buildStatCard('DTCs', '${report.dtcCount}', AppColors.warning),
               ],
             ).animate().fadeIn(duration: 400.ms, delay: 200.ms),
@@ -89,22 +97,34 @@ class DriveReportScreen extends StatelessWidget {
                   return Column(
                     children: [
                       Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
                         child: Row(
                           children: [
                             Expanded(
-                              child: Text(entry.key, style: AppTextStyles.bodyMedium),
+                              child: Text(
+                                entry.key,
+                                style: AppTextStyles.bodyMedium,
+                              ),
                             ),
                             Icon(
-                              isNormal ? Icons.check_circle_rounded : Icons.warning_amber_rounded,
-                              color: isNormal ? AppColors.success : AppColors.warning,
+                              isNormal
+                                  ? Icons.check_circle_rounded
+                                  : Icons.warning_amber_rounded,
+                              color: isNormal
+                                  ? AppColors.success
+                                  : AppColors.warning,
                               size: 18,
                             ),
                             const SizedBox(width: 6),
                             Text(
                               entry.value,
                               style: AppTextStyles.bodySmall.copyWith(
-                                color: isNormal ? AppColors.success : AppColors.warning,
+                                color: isNormal
+                                    ? AppColors.success
+                                    : AppColors.warning,
                               ),
                             ),
                           ],

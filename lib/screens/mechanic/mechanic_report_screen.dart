@@ -33,11 +33,23 @@ class MechanicReportScreen extends StatelessWidget {
                 children: [
                   Row(
                     children: [
-                      Icon(Icons.sensors_rounded, color: AppColors.primary, size: 24),
+                      Icon(
+                        Icons.sensors_rounded,
+                        color: AppColors.primary,
+                        size: 24,
+                      ),
                       const SizedBox(width: 8),
-                      Text('autopulse', style: AppTextStyles.titleMedium.copyWith(color: AppColors.primary)),
+                      Text(
+                        'autopulse',
+                        style: AppTextStyles.titleMedium.copyWith(
+                          color: AppColors.primary,
+                        ),
+                      ),
                       const Spacer(),
-                      Text('Diagnostic Report', style: AppTextStyles.labelSmall),
+                      Text(
+                        'Diagnostic Report',
+                        style: AppTextStyles.labelSmall,
+                      ),
                     ],
                   ),
                   const SizedBox(height: 16),
@@ -46,14 +58,23 @@ class MechanicReportScreen extends StatelessWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        Text('Vehicle', style: AppTextStyles.labelSmall),
-                        Text(MockData.vehicle.fullDisplayName, style: AppTextStyles.titleSmall),
-                      ]),
-                      Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                        Text('Date', style: AppTextStyles.labelSmall),
-                        Text('25 Aug 2026', style: AppTextStyles.titleSmall),
-                      ]),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Vehicle', style: AppTextStyles.labelSmall),
+                          Text(
+                            MockData.vehicle.fullDisplayName,
+                            style: AppTextStyles.titleSmall,
+                          ),
+                        ],
+                      ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text('Date', style: AppTextStyles.labelSmall),
+                          Text('25 Aug 2026', style: AppTextStyles.titleSmall),
+                        ],
+                      ),
                     ],
                   ),
                 ],
@@ -82,21 +103,40 @@ class MechanicReportScreen extends StatelessWidget {
             const SizedBox(height: 8),
             Container(
               padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(12), border: Border.all(color: AppColors.border)),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.border),
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     children: [
-                      Icon(Icons.warning_amber_rounded, color: AppColors.warning, size: 18),
+                      Icon(
+                        Icons.warning_amber_rounded,
+                        color: AppColors.warning,
+                        size: 18,
+                      ),
                       const SizedBox(width: 8),
-                      Text('Airflow Deviation', style: AppTextStyles.titleSmall),
+                      Text(
+                        'Airflow Deviation',
+                        style: AppTextStyles.titleSmall,
+                      ),
                       const Spacer(),
-                      Text('Moderate', style: AppTextStyles.bodySmall.copyWith(color: AppColors.warning)),
+                      Text(
+                        'Moderate',
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: AppColors.warning,
+                        ),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 8),
-                  Text('MAF sensor reading (0.21 g/s) deviates significantly from learned baseline (2.5-4.0 g/s). Associated DTC P0101 active.', style: AppTextStyles.bodySmall),
+                  Text(
+                    'MAF sensor reading (0.21 g/s) deviates significantly from learned baseline (2.5-4.0 g/s). Associated DTC P0101 active.',
+                    style: AppTextStyles.bodySmall,
+                  ),
                 ],
               ),
             ).animate().fadeIn(duration: 400.ms, delay: 200.ms),
@@ -107,7 +147,11 @@ class MechanicReportScreen extends StatelessWidget {
             const SectionHeader(title: 'Evidence'),
             const SizedBox(height: 8),
             Container(
-              decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(12), border: Border.all(color: AppColors.border)),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.border),
+              ),
               child: Column(
                 children: [
                   _buildEvidenceRow('MAF Reading', '0.21 g/s', false),
@@ -153,9 +197,21 @@ class MechanicReportScreen extends StatelessWidget {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    CircleAvatar(radius: 11, backgroundColor: AppColors.surfaceTertiary, child: Text('${e.key + 1}', style: AppTextStyles.labelSmall.copyWith(color: AppColors.primary, fontWeight: FontWeight.bold))),
+                    CircleAvatar(
+                      radius: 11,
+                      backgroundColor: AppColors.surfaceTertiary,
+                      child: Text(
+                        '${e.key + 1}',
+                        style: AppTextStyles.labelSmall.copyWith(
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
                     const SizedBox(width: 10),
-                    Expanded(child: Text(e.value, style: AppTextStyles.bodyMedium)),
+                    Expanded(
+                      child: Text(e.value, style: AppTextStyles.bodyMedium),
+                    ),
                   ],
                 ),
               );
@@ -166,13 +222,27 @@ class MechanicReportScreen extends StatelessWidget {
             // Disclaimer
             Container(
               padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(color: AppColors.surfaceSecondary, borderRadius: BorderRadius.circular(10)),
+              decoration: BoxDecoration(
+                color: AppColors.surfaceSecondary,
+                borderRadius: BorderRadius.circular(10),
+              ),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(Icons.info_outline, color: AppColors.textTertiary, size: 16),
+                  const Icon(
+                    Icons.info_outline,
+                    color: AppColors.textTertiary,
+                    size: 16,
+                  ),
                   const SizedBox(width: 8),
-                  Expanded(child: Text('autopulse provides diagnostic assistance and does not replace professional vehicle inspection.', style: AppTextStyles.bodySmall.copyWith(fontStyle: FontStyle.italic))),
+                  Expanded(
+                    child: Text(
+                      'autopulse provides diagnostic assistance and does not replace professional vehicle inspection.',
+                      style: AppTextStyles.bodySmall.copyWith(
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -182,9 +252,21 @@ class MechanicReportScreen extends StatelessWidget {
             // Buttons
             Row(
               children: [
-                Expanded(child: OutlinedButton.icon(onPressed: () {}, icon: const Icon(Icons.picture_as_pdf_rounded, size: 18), label: const Text('Generate Report'))),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () {},
+                    icon: const Icon(Icons.picture_as_pdf_rounded, size: 18),
+                    label: const Text('Generate Report'),
+                  ),
+                ),
                 const SizedBox(width: 12),
-                Expanded(child: ElevatedButton.icon(onPressed: () {}, icon: const Icon(Icons.share_rounded, size: 18), label: const Text('Share Report'))),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () {},
+                    icon: const Icon(Icons.share_rounded, size: 18),
+                    label: const Text('Share Report'),
+                  ),
+                ),
               ],
             ).animate().fadeIn(duration: 400.ms, delay: 500.ms),
 
@@ -199,12 +281,20 @@ class MechanicReportScreen extends StatelessWidget {
     return Expanded(
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 6),
-        decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(12), border: Border.all(color: AppColors.border)),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.border),
+        ),
         child: Column(
           children: [
             Text(value, style: AppTextStyles.titleSmall.copyWith(color: color)),
             const SizedBox(height: 4),
-            Text(label, style: AppTextStyles.labelSmall, textAlign: TextAlign.center),
+            Text(
+              label,
+              style: AppTextStyles.labelSmall,
+              textAlign: TextAlign.center,
+            ),
           ],
         ),
       ),
@@ -216,8 +306,20 @@ class MechanicReportScreen extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       child: Row(
         children: [
-          Expanded(child: Text(label, style: AppTextStyles.bodySmall.copyWith(color: AppColors.textPrimary))),
-          Text(value, style: AppTextStyles.titleSmall.copyWith(color: normal ? AppColors.textPrimary : AppColors.warning)),
+          Expanded(
+            child: Text(
+              label,
+              style: AppTextStyles.bodySmall.copyWith(
+                color: AppColors.textPrimary,
+              ),
+            ),
+          ),
+          Text(
+            value,
+            style: AppTextStyles.titleSmall.copyWith(
+              color: normal ? AppColors.textPrimary : AppColors.warning,
+            ),
+          ),
         ],
       ),
     );

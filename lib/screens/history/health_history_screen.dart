@@ -48,14 +48,25 @@ class HealthHistoryScreen extends StatelessWidget {
                     },
                   ),
                   titlesData: FlTitlesData(
-                    leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                    topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                    rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    leftTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
+                    topTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
+                    rightTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
                     bottomTitles: AxisTitles(
                       sideTitles: SideTitles(
                         showTitles: true,
                         getTitlesWidget: (value, meta) {
-                          const labels = ['Aug 12', 'Aug 17', 'Aug 20', 'Aug 24'];
+                          const labels = [
+                            'Aug 12',
+                            'Aug 17',
+                            'Aug 20',
+                            'Aug 24',
+                          ];
                           final idx = value.toInt();
                           if (idx >= 0 && idx < labels.length) {
                             return Padding(
@@ -124,8 +135,22 @@ class HealthHistoryScreen extends StatelessWidget {
             // Events list
             ...history.asMap().entries.map((entry) {
               final event = entry.value;
-              final monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-              final dateStr = '${monthNames[event.date.month - 1]} ${event.date.day}';
+              final monthNames = [
+                'Jan',
+                'Feb',
+                'Mar',
+                'Apr',
+                'May',
+                'Jun',
+                'Jul',
+                'Aug',
+                'Sep',
+                'Oct',
+                'Nov',
+                'Dec',
+              ];
+              final dateStr =
+                  '${monthNames[event.date.month - 1]} ${event.date.day}';
               final hasTap = event.anomalyId != null;
 
               return Padding(
@@ -133,10 +158,10 @@ class HealthHistoryScreen extends StatelessWidget {
                 child: InkWell(
                   onTap: hasTap
                       ? () => Navigator.pushNamed(
-                            context,
-                            AppRouter.diagnosticDetail,
-                            arguments: MockData.anomalies.first,
-                          )
+                          context,
+                          AppRouter.diagnosticDetail,
+                          arguments: MockData.anomalies.first,
+                        )
                       : null,
                   borderRadius: BorderRadius.circular(12),
                   child: Container(
@@ -160,7 +185,9 @@ class HealthHistoryScreen extends StatelessWidget {
                               child: Text(
                                 '${event.score}',
                                 style: AppTextStyles.labelSmall.copyWith(
-                                  color: event.score >= 90 ? AppColors.success : AppColors.warning,
+                                  color: event.score >= 90
+                                      ? AppColors.success
+                                      : AppColors.warning,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
@@ -169,10 +196,17 @@ class HealthHistoryScreen extends StatelessWidget {
                         ),
                         const SizedBox(width: 16),
                         Expanded(
-                          child: Text(event.description, style: AppTextStyles.bodyMedium),
+                          child: Text(
+                            event.description,
+                            style: AppTextStyles.bodyMedium,
+                          ),
                         ),
                         if (hasTap)
-                          const Icon(Icons.chevron_right_rounded, color: AppColors.textTertiary, size: 20),
+                          const Icon(
+                            Icons.chevron_right_rounded,
+                            color: AppColors.textTertiary,
+                            size: 20,
+                          ),
                       ],
                     ),
                   ),

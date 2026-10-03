@@ -47,10 +47,7 @@ class HealthScoreWidget extends StatelessWidget {
                     ? AppTextStyles.telemetryValue.copyWith(fontSize: 36)
                     : AppTextStyles.healthScore,
               ),
-              Text(
-                ' /100',
-                style: AppTextStyles.bodySmall,
-              ),
+              Text(' /100', style: AppTextStyles.bodySmall),
             ],
           ),
           const SizedBox(height: 4),

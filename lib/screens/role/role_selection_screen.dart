@@ -21,65 +21,97 @@ class RoleSelectionScreen extends StatelessWidget {
               const Spacer(flex: 1),
               // Logo
               Center(
-                child: Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: AppColors.surface,
-                    border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.primaryGlow.withValues(alpha: 0.4),
-                        blurRadius: 35,
-                        spreadRadius: 8,
+                    child: Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: AppColors.surface,
+                        border: Border.all(
+                          color: AppColors.primary.withValues(alpha: 0.3),
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.primaryGlow.withValues(alpha: 0.4),
+                            blurRadius: 35,
+                            spreadRadius: 8,
+                          ),
+                        ],
                       ),
-                    ],
+                      child: const Icon(
+                        Icons.sensors_rounded,
+                        size: 48,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                  )
+                  .animate()
+                  .fadeIn(duration: 600.ms)
+                  .scale(
+                    begin: const Offset(0.8, 0.8),
+                    curve: Curves.easeOutBack,
                   ),
-                  child: const Icon(Icons.sensors_rounded, size: 48, color: AppColors.primary),
-                ),
-              ).animate().fadeIn(duration: 600.ms).scale(begin: const Offset(0.8, 0.8), curve: Curves.easeOutBack),
               const SizedBox(height: 32),
               Center(
-                child: Text(
-                  'How will you use autopulse?',
-                  style: AppTextStyles.headlineMedium,
-                  textAlign: TextAlign.center,
-                ),
-              ).animate().fadeIn(duration: 500.ms, delay: 100.ms).slideY(begin: 0.1),
+                    child: Text(
+                      'How will you use autopulse?',
+                      style: AppTextStyles.headlineMedium,
+                      textAlign: TextAlign.center,
+                    ),
+                  )
+                  .animate()
+                  .fadeIn(duration: 500.ms, delay: 100.ms)
+                  .slideY(begin: 0.1),
               const SizedBox(height: 12),
               Center(
-                child: Text(
-                  'Choose your experience to personalize the interface.',
-                  style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
-                  textAlign: TextAlign.center,
-                ),
-              ).animate().fadeIn(duration: 500.ms, delay: 200.ms).slideY(begin: 0.1),
+                    child: Text(
+                      'Choose your experience to personalize the interface.',
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        color: AppColors.textSecondary,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  )
+                  .animate()
+                  .fadeIn(duration: 500.ms, delay: 200.ms)
+                  .slideY(begin: 0.1),
               const Spacer(flex: 1),
-              
+
               // Car Owner Card
               _RoleCard(
-                icon: Icons.directions_car_rounded,
-                title: 'Car Owner',
-                description: 'Monitor your vehicle\'s health, understand warnings, and get AI-powered explanations.',
-                accentColor: AppColors.primary,
-                onTap: () {
-                  RoleService().setRole(UserRole.carOwner);
-                  Navigator.pushReplacementNamed(context, AppRouter.addVehicle);
-                },
-              ).animate().fadeIn(duration: 500.ms, delay: 300.ms).slideY(begin: 0.1, duration: 500.ms),
+                    icon: Icons.directions_car_rounded,
+                    title: 'Car Owner',
+                    description: 'Monitor your vehicle\'s health, understand warnings, and get AI-powered explanations.',
+                    accentColor: AppColors.primary,
+                    onTap: () {
+                      RoleService().setRole(UserRole.carOwner);
+                      Navigator.pushReplacementNamed(
+                        context,
+                        AppRouter.addVehicle,
+                      );
+                    },
+                  )
+                  .animate()
+                  .fadeIn(duration: 500.ms, delay: 300.ms)
+                  .slideY(begin: 0.1, duration: 500.ms),
               const SizedBox(height: 20),
-              
+
               // Mechanic Card
               _RoleCard(
-                icon: Icons.build_circle_rounded,
-                title: 'Mechanic',
-                description: 'Inspect live telemetry, diagnostic codes, anomalies, and detailed vehicle reports.',
-                accentColor: AppColors.warning,
-                onTap: () {
-                  RoleService().setRole(UserRole.mechanic);
-                  Navigator.pushReplacementNamed(context, AppRouter.addVehicle);
-                },
-              ).animate().fadeIn(duration: 500.ms, delay: 450.ms).slideY(begin: 0.1, duration: 500.ms),
+                    icon: Icons.build_circle_rounded,
+                    title: 'Mechanic',
+                    description: 'Inspect live telemetry, diagnostic codes, anomalies, and detailed vehicle reports.',
+                    accentColor: AppColors.warning,
+                    onTap: () {
+                      RoleService().setRole(UserRole.mechanic);
+                      Navigator.pushReplacementNamed(
+                        context,
+                        AppRouter.addVehicle,
+                      );
+                    },
+                  )
+                  .animate()
+                  .fadeIn(duration: 500.ms, delay: 450.ms)
+                  .slideY(begin: 0.1, duration: 500.ms),
               const Spacer(flex: 2),
             ],
           ),
@@ -137,7 +169,7 @@ class _RoleCard extends StatelessWidget {
                   BoxShadow(
                     color: accentColor.withValues(alpha: 0.2),
                     blurRadius: 10,
-                  )
+                  ),
                 ],
               ),
               child: Icon(icon, color: accentColor, size: 32),
@@ -151,7 +183,9 @@ class _RoleCard extends StatelessWidget {
                   const SizedBox(height: 6),
                   Text(
                     description,
-                    style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
                   ),
                 ],
               ),
@@ -163,7 +197,11 @@ class _RoleCard extends StatelessWidget {
                 color: accentColor.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
-              child: Icon(Icons.arrow_forward_rounded, color: accentColor, size: 20),
+              child: Icon(
+                Icons.arrow_forward_rounded,
+                color: accentColor,
+                size: 20,
+              ),
             ),
           ],
         ),

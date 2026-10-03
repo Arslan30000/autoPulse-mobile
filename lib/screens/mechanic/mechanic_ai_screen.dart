@@ -37,13 +37,21 @@ class _MechanicAIScreenState extends State<MechanicAIScreen> {
   void initState() {
     super.initState();
     // Start with a context message
-    _messages.add(AIMessage(
-      content: 'AutoPulseAI Diagnostic AI ready.\n\nVehicle: Toyota Yaris 2020\nActive DTCs: 1 (P0101)\nActive Anomalies: 1 (Airflow Deviation, 82%)\n\nTelemetry, diagnostic codes, anomaly data, and vehicle history are available for analysis.',
-      isUser: false,
-      timestamp: DateTime.now(),
-      evidence: ['Live Telemetry', 'DTC Database', 'Anomaly Detection', 'Vehicle History', 'Automotive Knowledge Base'],
-      isRAGSupported: true,
-    ));
+    _messages.add(
+      AIMessage(
+        content: 'AutoPulseAI Diagnostic AI ready.\n\nVehicle: Toyota Yaris 2020\nActive DTCs: 1 (P0101)\nActive Anomalies: 1 (Airflow Deviation, 82%)\n\nTelemetry, diagnostic codes, anomaly data, and vehicle history are available for analysis.',
+        isUser: false,
+        timestamp: DateTime.now(),
+        evidence: [
+          'Live Telemetry',
+          'DTC Database',
+          'Anomaly Detection',
+          'Vehicle History',
+          'Automotive Knowledge Base',
+        ],
+        isRAGSupported: true,
+      ),
+    );
   }
 
   @override
@@ -57,7 +65,13 @@ class _MechanicAIScreenState extends State<MechanicAIScreen> {
     if (text.trim().isEmpty) return;
 
     setState(() {
-      _messages.add(AIMessage(content: text.trim(), isUser: true, timestamp: DateTime.now()));
+      _messages.add(
+        AIMessage(
+          content: text.trim(),
+          isUser: true,
+          timestamp: DateTime.now(),
+        ),
+      );
       _isTyping = true;
     });
     _controller.clear();
@@ -75,13 +89,21 @@ class _MechanicAIScreenState extends State<MechanicAIScreen> {
       }
       setState(() {
         _isTyping = false;
-        _messages.add(AIMessage(
-          content: response,
-          isUser: false,
-          timestamp: DateTime.now(),
-          evidence: ['Live Telemetry', 'DTC Database', 'Anomaly Detection', 'Vehicle History', 'Automotive Knowledge Base'],
-          isRAGSupported: true,
-        ));
+        _messages.add(
+          AIMessage(
+            content: response,
+            isUser: false,
+            timestamp: DateTime.now(),
+            evidence: [
+              'Live Telemetry',
+              'DTC Database',
+              'Anomaly Detection',
+              'Vehicle History',
+              'Automotive Knowledge Base',
+            ],
+            isRAGSupported: true,
+          ),
+        );
       });
       _scrollToBottom();
     });
@@ -114,10 +136,21 @@ class _MechanicAIScreenState extends State<MechanicAIScreen> {
                 children: [
                   Row(
                     children: [
-                      Flexible(child: Text('AutoPulseAI Diagnostic AI', style: AppTextStyles.headlineMedium.copyWith(fontSize: 18), overflow: TextOverflow.ellipsis)),
+                      Flexible(
+                        child: Text(
+                          'AutoPulseAI Diagnostic AI',
+                          style: AppTextStyles.headlineMedium.copyWith(
+                            fontSize: 18,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
                       const Spacer(),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
                           color: AppColors.warning.withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(8),
@@ -125,9 +158,18 @@ class _MechanicAIScreenState extends State<MechanicAIScreen> {
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.build_circle_rounded, size: 14, color: AppColors.warning),
+                            Icon(
+                              Icons.build_circle_rounded,
+                              size: 14,
+                              color: AppColors.warning,
+                            ),
                             const SizedBox(width: 4),
-                            Text('Mechanic', style: AppTextStyles.labelSmall.copyWith(color: AppColors.warning)),
+                            Text(
+                              'Mechanic',
+                              style: AppTextStyles.labelSmall.copyWith(
+                                color: AppColors.warning,
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -144,17 +186,33 @@ class _MechanicAIScreenState extends State<MechanicAIScreen> {
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.directions_car_rounded, color: AppColors.primary, size: 16),
+                        const Icon(
+                          Icons.directions_car_rounded,
+                          color: AppColors.primary,
+                          size: 16,
+                        ),
                         const SizedBox(width: 8),
-                        Text(MockData.vehicle.fullDisplayName, style: AppTextStyles.bodySmall),
+                        Text(
+                          MockData.vehicle.fullDisplayName,
+                          style: AppTextStyles.bodySmall,
+                        ),
                         const Spacer(),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
                           decoration: BoxDecoration(
                             color: AppColors.primary.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(6),
                           ),
-                          child: Text('Knowledge-grounded', style: AppTextStyles.labelSmall.copyWith(color: AppColors.primary, fontSize: 9)),
+                          child: Text(
+                            'Knowledge-grounded',
+                            style: AppTextStyles.labelSmall.copyWith(
+                              color: AppColors.primary,
+                              fontSize: 9,
+                            ),
+                          ),
                         ),
                       ],
                     ),
@@ -168,7 +226,10 @@ class _MechanicAIScreenState extends State<MechanicAIScreen> {
             Expanded(
               child: ListView.builder(
                 controller: _scrollController,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
                 itemCount: _messages.length + (_isTyping ? 1 : 0),
                 itemBuilder: (context, index) {
                   if (index == _messages.length && _isTyping) {
@@ -182,7 +243,10 @@ class _MechanicAIScreenState extends State<MechanicAIScreen> {
             // Suggested questions
             if (_messages.length <= 2)
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
                 child: Wrap(
                   spacing: 8,
                   runSpacing: 8,
@@ -190,13 +254,21 @@ class _MechanicAIScreenState extends State<MechanicAIScreen> {
                     return GestureDetector(
                       onTap: () => _sendMessage(q),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
                         decoration: BoxDecoration(
                           color: AppColors.surfaceTertiary,
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(color: AppColors.border),
                         ),
-                        child: Text(q, style: AppTextStyles.bodySmall.copyWith(color: AppColors.primary)),
+                        child: Text(
+                          q,
+                          style: AppTextStyles.bodySmall.copyWith(
+                            color: AppColors.primary,
+                          ),
+                        ),
                       ),
                     );
                   }).toList(),
@@ -219,8 +291,14 @@ class _MechanicAIScreenState extends State<MechanicAIScreen> {
                         hintText: 'Ask about diagnostics...',
                         filled: true,
                         fillColor: AppColors.surfaceSecondary,
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(24), borderSide: BorderSide.none),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(24),
+                          borderSide: BorderSide.none,
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
                       ),
                       onSubmitted: _sendMessage,
                     ),
@@ -230,8 +308,15 @@ class _MechanicAIScreenState extends State<MechanicAIScreen> {
                     onTap: () => _sendMessage(_controller.text),
                     child: Container(
                       padding: const EdgeInsets.all(12),
-                      decoration: const BoxDecoration(shape: BoxShape.circle, color: AppColors.primary),
-                      child: const Icon(Icons.send_rounded, color: AppColors.background, size: 20),
+                      decoration: const BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: AppColors.primary,
+                      ),
+                      child: const Icon(
+                        Icons.send_rounded,
+                        color: AppColors.background,
+                        size: 20,
+                      ),
                     ),
                   ),
                 ],
@@ -249,13 +334,32 @@ class _MechanicAIScreenState extends State<MechanicAIScreen> {
       child: Container(
         margin: const EdgeInsets.symmetric(vertical: 4),
         padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(color: AppColors.surfaceSecondary, borderRadius: BorderRadius.circular(16)),
+        decoration: BoxDecoration(
+          color: AppColors.surfaceSecondary,
+          borderRadius: BorderRadius.circular(16),
+        ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
-          children: List.generate(3, (i) => Container(
-            width: 8, height: 8, margin: const EdgeInsets.symmetric(horizontal: 2),
-            decoration: BoxDecoration(shape: BoxShape.circle, color: AppColors.textTertiary),
-          ).animate(onPlay: (c) => c.repeat()).fadeIn(duration: 600.ms, delay: Duration(milliseconds: i * 200)).then().fadeOut(duration: 600.ms)),
+          children: List.generate(
+            3,
+            (i) =>
+                Container(
+                      width: 8,
+                      height: 8,
+                      margin: const EdgeInsets.symmetric(horizontal: 2),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: AppColors.textTertiary,
+                      ),
+                    )
+                    .animate(onPlay: (c) => c.repeat())
+                    .fadeIn(
+                      duration: 600.ms,
+                      delay: Duration(milliseconds: i * 200),
+                    )
+                    .then()
+                    .fadeOut(duration: 600.ms),
+          ),
         ),
       ),
     );

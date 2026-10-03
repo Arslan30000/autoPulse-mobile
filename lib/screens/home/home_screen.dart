@@ -1,4 +1,5 @@
 import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:autopulse_ai/core/theme/app_colors.dart';
@@ -40,31 +41,48 @@ class HomeScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Greeting
-                Text('Good Morning 👋', style: AppTextStyles.headlineMedium)
-                    .animate().fadeIn(duration: 500.ms).slideX(begin: -0.1),
+                Text(
+                  'Good Morning 👋',
+                  style: AppTextStyles.headlineMedium,
+                ).animate().fadeIn(duration: 500.ms).slideX(begin: -0.1),
                 const SizedBox(height: 4),
                 Row(
-                  children: [
-                    Text(MockData.vehicle.fullDisplayName, style: AppTextStyles.bodyMedium?.copyWith(color: AppColors.primary)),
-                    const Spacer(),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: AppColors.surfaceTertiary.withValues(alpha: 0.5),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppColors.primary.withValues(alpha: 0.1),
-                            blurRadius: 8,
-                            spreadRadius: 1,
+                      children: [
+                        Text(
+                          MockData.vehicle.fullDisplayName,
+                          style: AppTextStyles.bodyMedium?.copyWith(
+                            color: AppColors.primary,
                           ),
-                        ],
-                      ),
-                      child: const ConnectionIndicator(isConnected: true),
-                    ),
-                  ],
-                ).animate().fadeIn(duration: 500.ms, delay: 100.ms).slideX(begin: 0.1),
+                        ),
+                        const Spacer(),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.surfaceTertiary.withValues(
+                              alpha: 0.5,
+                            ),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: AppColors.primary.withValues(alpha: 0.3),
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: AppColors.primary.withValues(alpha: 0.1),
+                                blurRadius: 8,
+                                spreadRadius: 1,
+                              ),
+                            ],
+                          ),
+                          child: const ConnectionIndicator(isConnected: true),
+                        ),
+                      ],
+                    )
+                    .animate()
+                    .fadeIn(duration: 500.ms, delay: 100.ms)
+                    .slideX(begin: 0.1),
 
                 const SizedBox(height: 24),
 
@@ -72,27 +90,31 @@ class HomeScreen extends StatelessWidget {
                 SectionHeader(
                   title: 'Vehicle Health',
                   actionText: 'Details',
-                  onAction: () => Navigator.pushNamed(context, AppRouter.vehicleHealth),
+                  onAction: () =>
+                      Navigator.pushNamed(context, AppRouter.vehicleHealth),
                 ).animate().fadeIn(duration: 400.ms, delay: 200.ms),
                 const SizedBox(height: 16),
                 Center(
-                  child: Container(
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColors.primary.withValues(alpha: 0.15),
-                          blurRadius: 40,
-                          spreadRadius: 5,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppColors.primary.withValues(alpha: 0.15),
+                              blurRadius: 40,
+                              spreadRadius: 5,
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
-                    child: HealthScoreWidget(
-                      score: MockData.vehicleHealth.score,
-                      status: MockData.vehicleHealth.status,
-                    ),
-                  ),
-                ).animate().fadeIn(duration: 600.ms, delay: 300.ms).scale(
+                        child: HealthScoreWidget(
+                          score: MockData.vehicleHealth.score,
+                          status: MockData.vehicleHealth.status,
+                        ),
+                      ),
+                    )
+                    .animate()
+                    .fadeIn(duration: 600.ms, delay: 300.ms)
+                    .scale(
                       begin: const Offset(0.8, 0.8),
                       end: const Offset(1.0, 1.0),
                       duration: 600.ms,
@@ -103,37 +125,43 @@ class HomeScreen extends StatelessWidget {
 
                 // Vehicle Illustration
                 Center(
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      Container(
-                        width: 250,
-                        height: 100,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.rectangle,
-                          borderRadius: BorderRadius.circular(50),
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppColors.primary.withValues(alpha: 0.1),
-                              blurRadius: 50,
-                              spreadRadius: 10,
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          Container(
+                            width: 250,
+                            height: 100,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.rectangle,
+                              borderRadius: BorderRadius.circular(50),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: AppColors.primary.withValues(
+                                    alpha: 0.1,
+                                  ),
+                                  blurRadius: 50,
+                                  spreadRadius: 10,
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
+                          ),
+                          VehicleIllustration(
+                            systems: MockData.vehicleHealth.systems,
+                            height: 180,
+                          ),
+                        ],
                       ),
-                      VehicleIllustration(
-                        systems: MockData.vehicleHealth.systems,
-                        height: 180,
-                      ),
-                    ],
-                  ),
-                ).animate().fadeIn(duration: 500.ms, delay: 400.ms).slideY(begin: 0.2),
+                    )
+                    .animate()
+                    .fadeIn(duration: 500.ms, delay: 400.ms)
+                    .slideY(begin: 0.2),
 
                 const SizedBox(height: 24),
 
                 // Systems
                 SectionHeader(title: 'Systems')
-                    .animate().fadeIn(duration: 400.ms, delay: 500.ms),
+                    .animate()
+                    .fadeIn(duration: 400.ms, delay: 500.ms),
                 const SizedBox(height: 12),
                 GridView.count(
                   crossAxisCount: 2,
@@ -146,22 +174,26 @@ class HomeScreen extends StatelessWidget {
                     return Container(
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(16),
-                        boxShadow: system.status != SystemStatus.normal ? [
-                          BoxShadow(
-                            color: AppColors.warning.withValues(alpha: 0.15),
-                            blurRadius: 12,
-                            spreadRadius: 1,
-                          ),
-                        ] : null,
+                        boxShadow: system.status != SystemStatus.normal
+                            ? [
+                                BoxShadow(
+                                  color: AppColors.warning.withValues(
+                                    alpha: 0.15,
+                                  ),
+                                  blurRadius: 12,
+                                  spreadRadius: 1,
+                                ),
+                              ]
+                            : null,
                       ),
                       child: SystemStatusCard(
                         systemHealth: system,
                         onTap: system.status != SystemStatus.normal
                             ? () => Navigator.pushNamed(
-                                  context,
-                                  AppRouter.diagnosticDetail,
-                                  arguments: MockData.anomalies.first,
-                                )
+                                context,
+                                AppRouter.diagnosticDetail,
+                                arguments: MockData.anomalies.first,
+                              )
                             : null,
                       ),
                     );
@@ -172,40 +204,58 @@ class HomeScreen extends StatelessWidget {
 
                 // Recent Alert
                 Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: AppColors.warning.withValues(alpha: 0.5), width: 1.5),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.warning.withValues(alpha: 0.1),
-                        blurRadius: 20,
-                        spreadRadius: 2,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: AppColors.warning.withValues(alpha: 0.5),
+                          width: 1.5,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.warning.withValues(alpha: 0.1),
+                            blurRadius: 20,
+                            spreadRadius: 2,
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(16),
-                    child: BackdropFilter(
-                      filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
-                      child: AlertCard(
-                        message: 'Air intake behavior shows a minor deviation from the vehicle\'s normal pattern.',
-                        onViewDetails: () => Navigator.pushNamed(
-                          context,
-                          AppRouter.diagnosticDetail,
-                          arguments: MockData.anomalies.first,
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(16),
+                        child: BackdropFilter(
+                          filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+                          child: AlertCard(
+                            message: 'Air intake behavior shows a minor deviation from the vehicle\'s normal pattern.',
+                            onViewDetails: () => Navigator.pushNamed(
+                              context,
+                              AppRouter.diagnosticDetail,
+                              arguments: MockData.anomalies.first,
+                            ),
+                          ),
                         ),
                       ),
+                    )
+                    .animate()
+                    .fadeIn(duration: 400.ms, delay: 700.ms)
+                    .shimmer(
+                      duration: 2.seconds,
+                      color: AppColors.warning.withValues(alpha: 0.2),
                     ),
-                  ),
-                ).animate().fadeIn(duration: 400.ms, delay: 700.ms).shimmer(duration: 2.seconds, color: AppColors.warning.withValues(alpha: 0.2)),
 
                 const SizedBox(height: 12),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.access_time_rounded, size: 14, color: AppColors.primary),
+                    Icon(
+                      Icons.access_time_rounded,
+                      size: 14,
+                      color: AppColors.primary,
+                    ),
                     const SizedBox(width: 6),
-                    Text('Last Scan • Today • 12:28 PM', style: AppTextStyles.labelSmall?.copyWith(color: AppColors.primary)),
+                    Text(
+                      'Last Scan • Today • 12:28 PM',
+                      style: AppTextStyles.labelSmall?.copyWith(
+                        color: AppColors.primary,
+                      ),
+                    ),
                   ],
                 ).animate().fadeIn(duration: 400.ms, delay: 750.ms),
 
@@ -213,7 +263,8 @@ class HomeScreen extends StatelessWidget {
 
                 // Quick Actions
                 SectionHeader(title: 'Quick Actions')
-                    .animate().fadeIn(duration: 400.ms, delay: 800.ms),
+                    .animate()
+                    .fadeIn(duration: 400.ms, delay: 800.ms),
                 const SizedBox(height: 12),
                 GridView.count(
                   crossAxisCount: 3,
@@ -241,22 +292,26 @@ class HomeScreen extends StatelessWidget {
                     QuickActionCard(
                       label: 'AI Assistant',
                       icon: Icons.auto_awesome_rounded,
-                      onTap: () => Navigator.pushNamed(context, AppRouter.aiAssistant),
+                      onTap: () =>
+                          Navigator.pushNamed(context, AppRouter.aiAssistant),
                     ),
                     QuickActionCard(
                       label: 'Health',
                       icon: Icons.favorite_rounded,
-                      onTap: () => Navigator.pushNamed(context, AppRouter.vehicleHealth),
+                      onTap: () =>
+                          Navigator.pushNamed(context, AppRouter.vehicleHealth),
                     ),
                     QuickActionCard(
                       label: 'History',
                       icon: Icons.timeline_rounded,
-                      onTap: () => Navigator.pushNamed(context, AppRouter.healthHistory),
+                      onTap: () =>
+                          Navigator.pushNamed(context, AppRouter.healthHistory),
                     ),
                     QuickActionCard(
                       label: 'Report',
                       icon: Icons.assessment_rounded,
-                      onTap: () => Navigator.pushNamed(context, AppRouter.driveReport),
+                      onTap: () =>
+                          Navigator.pushNamed(context, AppRouter.driveReport),
                     ),
                   ],
                 ).animate().fadeIn(duration: 400.ms, delay: 900.ms),

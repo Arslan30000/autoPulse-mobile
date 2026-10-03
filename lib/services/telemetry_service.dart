@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:math';
+
 import 'package:autopulse_ai/models/telemetry.dart';
 import 'package:autopulse_ai/data/mock/mock_data.dart';
 
@@ -27,8 +28,10 @@ class MockTelemetryService implements TelemetryService {
     final base = MockData.currentTelemetry;
     return base.copyWith(
       rpm: base.rpm + (_random.nextDouble() * 60 - 30),
-      coolantTemperature: base.coolantTemperature + (_random.nextDouble() * 2 - 1),
-      intakeTemperature: base.intakeTemperature + (_random.nextDouble() * 2 - 1),
+      coolantTemperature:
+          base.coolantTemperature + (_random.nextDouble() * 2 - 1),
+      intakeTemperature:
+          base.intakeTemperature + (_random.nextDouble() * 2 - 1),
       engineLoad: base.engineLoad + (_random.nextDouble() * 3 - 1.5),
       throttlePosition: base.throttlePosition + (_random.nextDouble() * 2 - 1),
       maf: base.maf + (_random.nextDouble() * 0.04 - 0.02),

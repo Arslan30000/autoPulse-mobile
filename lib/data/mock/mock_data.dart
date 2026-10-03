@@ -32,16 +32,32 @@ class MockData {
     status: 'Good',
     systems: [
       SystemHealth(name: 'Engine', status: SystemStatus.normal, icon: 'engine'),
-      SystemHealth(name: 'Cooling', status: SystemStatus.normal, icon: 'cooling'),
+      SystemHealth(
+        name: 'Cooling',
+        status: SystemStatus.normal,
+        icon: 'cooling',
+      ),
       SystemHealth(
         name: 'Air Intake',
         status: SystemStatus.attention,
         description: 'Airflow-related telemetry has deviated from the vehicle\'s learned baseline.',
         icon: 'air_intake',
       ),
-      SystemHealth(name: 'Sensors', status: SystemStatus.normal, icon: 'sensors'),
-      SystemHealth(name: 'Electrical', status: SystemStatus.normal, icon: 'electrical'),
-      SystemHealth(name: 'Transmission', status: SystemStatus.normal, icon: 'transmission'),
+      SystemHealth(
+        name: 'Sensors',
+        status: SystemStatus.normal,
+        icon: 'sensors',
+      ),
+      SystemHealth(
+        name: 'Electrical',
+        status: SystemStatus.normal,
+        icon: 'electrical',
+      ),
+      SystemHealth(
+        name: 'Transmission',
+        status: SystemStatus.normal,
+        icon: 'transmission',
+      ),
     ],
   );
 
@@ -51,9 +67,9 @@ class MockData {
       title: 'Air Intake Behavior',
       severity: 'Moderate',
       status: 'Needs Attention',
-      description: 'Telemetry differs from the vehicle\'s normal operating pattern.',
-      detailedDescription:
-          'Airflow-related telemetry differs from the vehicle\'s historical operating pattern.',
+      description:
+          'Telemetry differs from the vehicle\'s normal operating pattern.',
+      detailedDescription: 'Airflow-related telemetry differs from the vehicle\'s historical operating pattern.',
       detectedAt: DateTime(2025, 8, 24, 12, 28),
       contributingFactors: [
         'Airflow sensor behavior',
@@ -112,8 +128,7 @@ class MockData {
     anomalyCount: 1,
     dtcCount: 1,
     healthScore: 87,
-    summary:
-        'Vehicle operated normally for most of the drive. One moderate airflow-related anomaly was detected.',
+    summary: 'Vehicle operated normally for most of the drive. One moderate airflow-related anomaly was detected.',
     systemStatuses: {
       'Engine': 'Normal',
       'Cooling': 'Normal',
@@ -130,8 +145,7 @@ class MockData {
       timestamp: DateTime(2025, 8, 24, 12, 30),
     ),
     AIMessage(
-      content:
-          'An airflow-related anomaly was detected because the vehicle\'s current telemetry differs from its learned operating pattern under similar conditions.\n\nPossible contributing factors include unusual MAF sensor behavior, an intake restriction, or a related sensor issue.\n\nThis does not confirm a mechanical fault. Further inspection is recommended if the behavior persists.',
+      content: 'An airflow-related anomaly was detected because the vehicle\'s current telemetry differs from its learned operating pattern under similar conditions.\n\nPossible contributing factors include unusual MAF sensor behavior, an intake restriction, or a related sensor issue.\n\nThis does not confirm a mechanical fault. Further inspection is recommended if the behavior persists.',
       isUser: false,
       timestamp: DateTime(2025, 8, 24, 12, 30),
       evidence: [

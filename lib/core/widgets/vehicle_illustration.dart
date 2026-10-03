@@ -10,11 +10,7 @@ class VehicleIllustration extends StatelessWidget {
   final List<SystemHealth>? systems;
   final double height;
 
-  const VehicleIllustration({
-    super.key,
-    this.systems,
-    this.height = 300,
-  });
+  const VehicleIllustration({super.key, this.systems, this.height = 300});
 
   @override
   Widget build(BuildContext context) {
@@ -123,36 +119,55 @@ class VehicleIllustration extends StatelessWidget {
           </button>
         ''',
         javascriptChannels: {
-          JavascriptChannel('HotspotChannel', onMessageReceived: (message) {
-            final component = message.message;
-            SystemStatus status = SystemStatus.normal;
-            Color statusColor = AppColors.success;
-            IconData statusIcon = Icons.check_circle_outline_rounded;
-            
-            if (component == 'Air Intake') {
-              status = SystemStatus.attention;
-              statusColor = AppColors.warning;
-              statusIcon = Icons.warning_amber_rounded;
-            }
-            
-            _showDetailsSheet(context, component, status, statusColor, statusIcon);
-          }),
+          JavascriptChannel(
+            'HotspotChannel',
+            onMessageReceived: (message) {
+              final component = message.message;
+              SystemStatus status = SystemStatus.normal;
+              Color statusColor = AppColors.success;
+              IconData statusIcon = Icons.check_circle_outline_rounded;
+
+              if (component == 'Air Intake') {
+                status = SystemStatus.attention;
+                statusColor = AppColors.warning;
+                statusIcon = Icons.warning_amber_rounded;
+              }
+
+              _showDetailsSheet(
+                context,
+                component,
+                status,
+                statusColor,
+                statusIcon,
+              );
+            },
+          ),
         },
       ),
     );
   }
 
-  void _showDetailsSheet(BuildContext context, String component, SystemStatus status, Color statusColor, IconData statusIcon) {
+  void _showDetailsSheet(
+    BuildContext context,
+    String component,
+    SystemStatus status,
+    Color statusColor,
+    IconData statusIcon,
+  ) {
     final data = _getDiagnosticData(component);
 
     showModalBottomSheet(
       context: context,
       backgroundColor: AppColors.surface,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       builder: (context) {
         return Padding(
-          padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+          ),
           child: Container(
             padding: const EdgeInsets.all(24),
             child: Column(
@@ -164,14 +179,20 @@ class VehicleIllustration extends StatelessWidget {
                     width: 40,
                     height: 4,
                     margin: const EdgeInsets.only(bottom: 24),
-                    decoration: BoxDecoration(color: AppColors.borderLight, borderRadius: BorderRadius.circular(2)),
+                    decoration: BoxDecoration(
+                      color: AppColors.borderLight,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
                   ),
                 ),
                 Row(
                   children: [
                     Container(
                       padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(color: statusColor.withValues(alpha: 0.1), shape: BoxShape.circle),
+                      decoration: BoxDecoration(
+                        color: statusColor.withValues(alpha: 0.1),
+                        shape: BoxShape.circle,
+                      ),
                       child: Icon(statusIcon, color: statusColor, size: 24),
                     ),
                     const SizedBox(width: 16),
@@ -185,15 +206,23 @@ class VehicleIllustration extends StatelessWidget {
                       ),
                     ),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
                       decoration: BoxDecoration(
                         color: statusColor.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: statusColor.withValues(alpha: 0.3)),
+                        border: Border.all(
+                          color: statusColor.withValues(alpha: 0.3),
+                        ),
                       ),
                       child: Text(
                         status == SystemStatus.normal ? 'Normal' : 'Attention',
-                        style: AppTextStyles.labelSmall.copyWith(color: statusColor, fontWeight: FontWeight.bold),
+                        style: AppTextStyles.labelSmall.copyWith(
+                          color: statusColor,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ],
@@ -201,9 +230,21 @@ class VehicleIllustration extends StatelessWidget {
                 const SizedBox(height: 24),
                 Row(
                   children: [
-                    Expanded(child: _buildInfoBox('Current Reading', data['reading']!, statusColor)),
+                    Expanded(
+                      child: _buildInfoBox(
+                        'Current Reading',
+                        data['reading']!,
+                        statusColor,
+                      ),
+                    ),
                     const SizedBox(width: 16),
-                    Expanded(child: _buildInfoBox('Expected/Baseline', data['baseline']!, AppColors.textSecondary)),
+                    Expanded(
+                      child: _buildInfoBox(
+                        'Expected/Baseline',
+                        data['baseline']!,
+                        AppColors.textSecondary,
+                      ),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 24),
@@ -216,20 +257,35 @@ class VehicleIllustration extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: AppColors.surfaceSecondary,
                     borderRadius: BorderRadius.circular(12),
-                    border: const Border(left: BorderSide(color: AppColors.primary, width: 3)),
+                    border: const Border(
+                      left: BorderSide(color: AppColors.primary, width: 3),
+                    ),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(
                         children: [
-                          const Icon(Icons.auto_awesome, size: 16, color: AppColors.primary),
+                          const Icon(
+                            Icons.auto_awesome,
+                            size: 16,
+                            color: AppColors.primary,
+                          ),
                           const SizedBox(width: 8),
-                          Text('AI Insight', style: AppTextStyles.labelSmall.copyWith(color: AppColors.primary, fontWeight: FontWeight.bold)),
+                          Text(
+                            'AI Insight',
+                            style: AppTextStyles.labelSmall.copyWith(
+                              color: AppColors.primary,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                         ],
                       ),
                       const SizedBox(height: 8),
-                      Text(data['insight']!, style: AppTextStyles.bodySmall.copyWith(height: 1.4)),
+                      Text(
+                        data['insight']!,
+                        style: AppTextStyles.bodySmall.copyWith(height: 1.4),
+                      ),
                     ],
                   ),
                 ),
@@ -241,7 +297,9 @@ class VehicleIllustration extends StatelessWidget {
                         onPressed: () => Navigator.pop(context),
                         style: OutlinedButton.styleFrom(
                           side: const BorderSide(color: AppColors.borderLight),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                           padding: const EdgeInsets.symmetric(vertical: 16),
                         ),
                         child: const Text('View Details'),
@@ -257,11 +315,19 @@ class VehicleIllustration extends StatelessWidget {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.primary,
                           foregroundColor: AppColors.background,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                           padding: const EdgeInsets.symmetric(vertical: 16),
                         ),
-                        icon: const Icon(Icons.chat_bubble_outline_rounded, size: 18),
-                        label: const Text('Ask AI', style: TextStyle(fontWeight: FontWeight.bold)),
+                        icon: const Icon(
+                          Icons.chat_bubble_outline_rounded,
+                          size: 18,
+                        ),
+                        label: const Text(
+                          'Ask AI',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
                       ),
                     ),
                   ],
@@ -287,7 +353,10 @@ class VehicleIllustration extends StatelessWidget {
         children: [
           Text(label, style: AppTextStyles.labelSmall),
           const SizedBox(height: 8),
-          Text(value, style: AppTextStyles.titleMedium.copyWith(color: valueColor)),
+          Text(
+            value,
+            style: AppTextStyles.titleMedium.copyWith(color: valueColor),
+          ),
         ],
       ),
     );

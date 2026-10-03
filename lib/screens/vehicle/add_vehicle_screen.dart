@@ -54,130 +54,165 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Add Your Vehicle', style: AppTextStyles.headlineMedium).animate().fadeIn(duration: 400.ms).slideX(begin: -0.1),
+              Text(
+                'Add Your Vehicle',
+                style: AppTextStyles.headlineMedium,
+              ).animate().fadeIn(duration: 400.ms).slideX(begin: -0.1),
               const SizedBox(height: 8),
               Text(
-                'Connect your vehicle to start monitoring its health.',
-                style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
-              ).animate().fadeIn(duration: 400.ms, delay: 100.ms).slideX(begin: -0.1),
+                    'Connect your vehicle to start monitoring its health.',
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
+                  )
+                  .animate()
+                  .fadeIn(duration: 400.ms, delay: 100.ms)
+                  .slideX(begin: -0.1),
               const SizedBox(height: 32),
-              
+
               // Vehicle fields
               _buildInputLabel('Make').animate().fadeIn(delay: 200.ms),
               const SizedBox(height: 8),
-              _buildTextField(_makeController, 'Enter vehicle make').animate().fadeIn(delay: 250.ms),
+              _buildTextField(
+                _makeController,
+                'Enter vehicle make',
+              ).animate().fadeIn(delay: 250.ms),
               const SizedBox(height: 16),
-              
+
               _buildInputLabel('Model').animate().fadeIn(delay: 300.ms),
               const SizedBox(height: 8),
-              _buildTextField(_modelController, 'Enter vehicle model').animate().fadeIn(delay: 350.ms),
+              _buildTextField(
+                _modelController,
+                'Enter vehicle model',
+              ).animate().fadeIn(delay: 350.ms),
               const SizedBox(height: 16),
-              
+
               _buildInputLabel('Year').animate().fadeIn(delay: 400.ms),
               const SizedBox(height: 8),
-              _buildTextField(_yearController, 'Enter vehicle year', isNumber: true).animate().fadeIn(delay: 450.ms),
+              _buildTextField(
+                _yearController,
+                'Enter vehicle year',
+                isNumber: true,
+              ).animate().fadeIn(delay: 450.ms),
               const SizedBox(height: 24),
-              
+
               // Vehicle preview card
               Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceSecondary.withValues(alpha: 0.5),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.primaryGlow.withValues(alpha: 0.05),
-                      blurRadius: 20,
-                      spreadRadius: 2,
-                    ),
-                  ],
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: AppColors.primary.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: AppColors.surfaceSecondary.withValues(alpha: 0.5),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: AppColors.border.withValues(alpha: 0.5),
                       ),
-                      child: const Icon(
-                        Icons.directions_car_rounded,
-                        color: AppColors.primary,
-                        size: 28,
-                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.primaryGlow.withValues(alpha: 0.05),
+                          blurRadius: 20,
+                          spreadRadius: 2,
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: 16),
-                    Column(
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: AppColors.primary.withValues(alpha: 0.3),
+                            ),
+                          ),
+                          child: const Icon(
+                            Icons.directions_car_rounded,
+                            color: AppColors.primary,
+                            size: 28,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '${_makeController.text} ${_modelController.text}',
+                              style: AppTextStyles.titleMedium,
+                            ),
+                            Text(
+                              _yearController.text,
+                              style: AppTextStyles.bodySmall.copyWith(
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  )
+                  .animate()
+                  .fadeIn(duration: 500.ms, delay: 500.ms)
+                  .slideY(begin: 0.1),
+              const SizedBox(height: 32),
+
+              // OBD-II Section
+              const SectionHeader(title: 'OBD-II Adapter')
+                  .animate()
+                  .fadeIn(delay: 600.ms),
+              const SizedBox(height: 12),
+
+              Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: AppColors.surface,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: _connectionState == _ConnectionState.connected
+                            ? AppColors.success.withValues(alpha: 0.5)
+                            : AppColors.border,
+                      ),
+                      boxShadow: _connectionState == _ConnectionState.connected
+                          ? [
+                              BoxShadow(
+                                color: AppColors.success.withValues(alpha: 0.2),
+                                blurRadius: 15,
+                                spreadRadius: 1,
+                              ),
+                            ]
+                          : [],
+                    ),
+                    child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          '${_makeController.text} ${_modelController.text}',
-                          style: AppTextStyles.titleMedium,
+                        Row(
+                          children: [
+                            const Icon(
+                              Icons.bluetooth_rounded,
+                              color: AppColors.primary,
+                              size: 20,
+                            ),
+                            const SizedBox(width: 8),
+                            Text('ELM327', style: AppTextStyles.titleSmall),
+                          ],
                         ),
-                        Text(
-                          _yearController.text,
-                          style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
-                        ),
+                        const SizedBox(height: 16),
+                        _buildConnectionStatus(),
+                        if (_connectionState ==
+                            _ConnectionState.disconnected) ...[
+                          const SizedBox(height: 20),
+                          PrimaryButton(
+                            label: 'Connect OBD-II',
+                            icon: Icons.bluetooth_searching_rounded,
+                            onPressed: _simulateConnection,
+                          ),
+                        ],
                       ],
                     ),
-                  ],
-                ),
-              ).animate().fadeIn(duration: 500.ms, delay: 500.ms).slideY(begin: 0.1),
+                  )
+                  .animate()
+                  .fadeIn(duration: 500.ms, delay: 700.ms)
+                  .slideY(begin: 0.1),
               const SizedBox(height: 32),
-              
-              // OBD-II Section
-              const SectionHeader(title: 'OBD-II Adapter').animate().fadeIn(delay: 600.ms),
-              const SizedBox(height: 12),
-              
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: _connectionState == _ConnectionState.connected 
-                        ? AppColors.success.withValues(alpha: 0.5) 
-                        : AppColors.border,
-                  ),
-                  boxShadow: _connectionState == _ConnectionState.connected ? [
-                    BoxShadow(
-                      color: AppColors.success.withValues(alpha: 0.2),
-                      blurRadius: 15,
-                      spreadRadius: 1,
-                    )
-                  ] : [],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        const Icon(
-                          Icons.bluetooth_rounded,
-                          color: AppColors.primary,
-                          size: 20,
-                        ),
-                        const SizedBox(width: 8),
-                        Text('ELM327', style: AppTextStyles.titleSmall),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    _buildConnectionStatus(),
-                    if (_connectionState == _ConnectionState.disconnected) ...[
-                      const SizedBox(height: 20),
-                      PrimaryButton(
-                        label: 'Connect OBD-II',
-                        icon: Icons.bluetooth_searching_rounded,
-                        onPressed: _simulateConnection,
-                      ),
-                    ],
-                  ],
-                ),
-              ).animate().fadeIn(duration: 500.ms, delay: 700.ms).slideY(begin: 0.1),
-              const SizedBox(height: 32),
-              
+
               if (_connectionState == _ConnectionState.connected)
                 PrimaryButton(
                   label: 'Continue',
@@ -197,23 +232,33 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
     return Text(text, style: AppTextStyles.titleSmall);
   }
 
-  Widget _buildTextField(TextEditingController controller, String hint, {bool isNumber = false}) {
+  Widget _buildTextField(
+    TextEditingController controller,
+    String hint, {
+    bool isNumber = false,
+  }) {
     return TextField(
       controller: controller,
       keyboardType: isNumber ? TextInputType.number : TextInputType.text,
       style: AppTextStyles.bodyMedium,
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
+        hintStyle: AppTextStyles.bodyMedium.copyWith(
+          color: AppColors.textSecondary,
+        ),
         filled: true,
         fillColor: AppColors.surfaceSecondary.withValues(alpha: 0.3),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: AppColors.border.withValues(alpha: 0.5)),
+          borderSide: BorderSide(
+            color: AppColors.border.withValues(alpha: 0.5),
+          ),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: AppColors.border.withValues(alpha: 0.5)),
+          borderSide: BorderSide(
+            color: AppColors.border.withValues(alpha: 0.5),
+          ),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -235,7 +280,10 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
                 shape: BoxShape.circle,
                 color: AppColors.danger,
                 boxShadow: [
-                  BoxShadow(color: AppColors.danger.withValues(alpha: 0.5), blurRadius: 8)
+                  BoxShadow(
+                    color: AppColors.danger.withValues(alpha: 0.5),
+                    blurRadius: 8,
+                  ),
                 ],
               ),
             ),
@@ -249,40 +297,54 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
       case _ConnectionState.searching:
       case _ConnectionState.connecting:
         return Row(
-          children: [
-            const SizedBox(
-              width: 18,
-              height: 18,
-              child: CircularProgressIndicator(
-                strokeWidth: 2.5,
-                color: AppColors.warning,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Text(
-              _connectionState == _ConnectionState.searching ? 'Searching for adapter...' : 'Connecting to vehicle...',
-              style: AppTextStyles.bodySmall.copyWith(color: AppColors.warning),
-            ),
-          ],
-        ).animate(onPlay: (controller) => controller.repeat()).shimmer(duration: 1500.ms);
+              children: [
+                const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2.5,
+                    color: AppColors.warning,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  _connectionState == _ConnectionState.searching
+                      ? 'Searching for adapter...'
+                      : 'Connecting to vehicle...',
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: AppColors.warning,
+                  ),
+                ),
+              ],
+            )
+            .animate(onPlay: (controller) => controller.repeat())
+            .shimmer(duration: 1500.ms);
       case _ConnectionState.connected:
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
-                const Icon(Icons.check_circle_rounded, color: AppColors.success, size: 20),
+                const Icon(
+                  Icons.check_circle_rounded,
+                  color: AppColors.success,
+                  size: 20,
+                ),
                 const SizedBox(width: 8),
                 Text(
                   'OBD-II Connected',
-                  style: AppTextStyles.bodyMedium.copyWith(color: AppColors.success),
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: AppColors.success,
+                  ),
                 ),
               ],
             ).animate().fadeIn().slideX(),
             const SizedBox(height: 6),
             Text(
               'Vehicle ECU detected',
-              style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
+              style: AppTextStyles.bodySmall.copyWith(
+                color: AppColors.textSecondary,
+              ),
             ).animate().fadeIn(delay: 200.ms),
           ],
         );

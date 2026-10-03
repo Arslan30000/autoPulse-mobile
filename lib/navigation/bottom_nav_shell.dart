@@ -46,17 +46,41 @@ class _BottomNavShellState extends State<BottomNavShell> {
       return const [
         BottomNavigationBarItem(icon: Icon(Icons.home_rounded), label: 'Home'),
         BottomNavigationBarItem(icon: Icon(Icons.speed_rounded), label: 'Live'),
-        BottomNavigationBarItem(icon: Icon(Icons.favorite_rounded), label: 'Health'),
-        BottomNavigationBarItem(icon: Icon(Icons.auto_awesome_rounded), label: 'AI'),
-        BottomNavigationBarItem(icon: Icon(Icons.person_rounded), label: 'Profile'),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.favorite_rounded),
+          label: 'Health',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.auto_awesome_rounded),
+          label: 'AI',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.person_rounded),
+          label: 'Profile',
+        ),
       ];
     } else {
       return const [
-        BottomNavigationBarItem(icon: Icon(Icons.dashboard_rounded), label: 'Dashboard'),
-        BottomNavigationBarItem(icon: Icon(Icons.speed_rounded), label: 'Telemetry'),
-        BottomNavigationBarItem(icon: Icon(Icons.build_rounded), label: 'Diagnostics'),
-        BottomNavigationBarItem(icon: Icon(Icons.auto_awesome_rounded), label: 'AI'),
-        BottomNavigationBarItem(icon: Icon(Icons.person_rounded), label: 'Profile'),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.dashboard_rounded),
+          label: 'Dashboard',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.speed_rounded),
+          label: 'Telemetry',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.build_rounded),
+          label: 'Diagnostics',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.auto_awesome_rounded),
+          label: 'AI',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.person_rounded),
+          label: 'Profile',
+        ),
       ];
     }
   }
@@ -65,10 +89,7 @@ class _BottomNavShellState extends State<BottomNavShell> {
   Widget build(BuildContext context) {
     final screens = _screens;
     return Scaffold(
-      body: IndexedStack(
-        index: _currentIndex,
-        children: screens,
-      ),
+      body: IndexedStack(index: _currentIndex, children: screens),
       bottomNavigationBar: Container(
         decoration: const BoxDecoration(
           border: Border(top: BorderSide(color: AppColors.border, width: 1)),

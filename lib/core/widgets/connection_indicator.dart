@@ -23,9 +23,10 @@ class _ConnectionIndicatorState extends State<ConnectionIndicator>
       vsync: this,
       duration: const Duration(milliseconds: 1500),
     );
-    _animation = Tween<double>(begin: 0.4, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
+    _animation = Tween<double>(
+      begin: 0.4,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
     if (widget.isConnected) {
       _controller.repeat(reverse: true);
     }
@@ -63,8 +64,8 @@ class _ConnectionIndicatorState extends State<ConnectionIndicator>
               height: 8,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: color.withValues(alpha: 
-                  widget.isConnected ? _animation.value : 1.0,
+                color: color.withValues(
+                  alpha: widget.isConnected ? _animation.value : 1.0,
                 ),
                 boxShadow: widget.isConnected
                     ? [

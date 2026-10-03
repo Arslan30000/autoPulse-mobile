@@ -63,46 +63,71 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Container(
-                          padding: const EdgeInsets.all(32),
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: AppColors.primary.withValues(alpha: 0.1),
-                            border: Border.all(color: AppColors.primary.withValues(alpha: 0.2), width: 2),
-                            boxShadow: [
-                              BoxShadow(
-                                color: AppColors.primaryGlow.withValues(alpha: 0.3),
-                                blurRadius: 40,
-                                spreadRadius: 10,
+                              padding: const EdgeInsets.all(32),
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: AppColors.primary.withValues(alpha: 0.1),
+                                border: Border.all(
+                                  color: AppColors.primary.withValues(
+                                    alpha: 0.2,
+                                  ),
+                                  width: 2,
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: AppColors.primaryGlow.withValues(
+                                      alpha: 0.3,
+                                    ),
+                                    blurRadius: 40,
+                                    spreadRadius: 10,
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
-                          child: Icon(
-                            slide.icon,
-                            size: 90,
-                            color: AppColors.primary,
-                          ),
-                        )
+                              child: Icon(
+                                slide.icon,
+                                size: 90,
+                                color: AppColors.primary,
+                              ),
+                            )
                             .animate()
                             .fadeIn(duration: 600.ms)
-                            .scale(begin: const Offset(0.8, 0.8), end: const Offset(1.0, 1.0), duration: 600.ms, curve: Curves.easeOutBack),
+                            .scale(
+                              begin: const Offset(0.8, 0.8),
+                              end: const Offset(1.0, 1.0),
+                              duration: 600.ms,
+                              curve: Curves.easeOutBack,
+                            ),
                         const SizedBox(height: 56),
                         Text(
-                          slide.title,
-                          style: AppTextStyles.headlineMedium,
-                          textAlign: TextAlign.center,
-                        )
+                              slide.title,
+                              style: AppTextStyles.headlineMedium,
+                              textAlign: TextAlign.center,
+                            )
                             .animate()
                             .fadeIn(duration: 500.ms, delay: 200.ms)
-                            .slideY(begin: 0.2, end: 0, duration: 500.ms, delay: 200.ms),
+                            .slideY(
+                              begin: 0.2,
+                              end: 0,
+                              duration: 500.ms,
+                              delay: 200.ms,
+                            ),
                         const SizedBox(height: 20),
                         Text(
-                          slide.subtitle,
-                          style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary, height: 1.5),
-                          textAlign: TextAlign.center,
-                        )
+                              slide.subtitle,
+                              style: AppTextStyles.bodyMedium.copyWith(
+                                color: AppColors.textSecondary,
+                                height: 1.5,
+                              ),
+                              textAlign: TextAlign.center,
+                            )
                             .animate()
                             .fadeIn(duration: 500.ms, delay: 400.ms)
-                            .slideY(begin: 0.2, end: 0, duration: 500.ms, delay: 400.ms),
+                            .slideY(
+                              begin: 0.2,
+                              end: 0,
+                              duration: 500.ms,
+                              delay: 400.ms,
+                            ),
                       ],
                     ),
                   );
@@ -132,7 +157,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                             key: const ValueKey('get_started'),
                             label: 'Get Started',
                             onPressed: () {
-                              Navigator.pushReplacementNamed(context, AppRouter.roleSelection);
+                              Navigator.pushReplacementNamed(
+                                context,
+                                AppRouter.roleSelection,
+                              );
                             },
                           ).animate().fadeIn().scale()
                         : Row(
@@ -140,9 +168,17 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                             children: [
                               TextButton(
                                 onPressed: () {
-                                  Navigator.pushReplacementNamed(context, AppRouter.roleSelection);
+                                  Navigator.pushReplacementNamed(
+                                    context,
+                                    AppRouter.roleSelection,
+                                  );
                                 },
-                                child: Text('Skip', style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary)),
+                                child: Text(
+                                  'Skip',
+                                  style: AppTextStyles.bodyMedium.copyWith(
+                                    color: AppColors.textSecondary,
+                                  ),
+                                ),
                               ),
                               const Spacer(),
                               SizedBox(
@@ -151,7 +187,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                   label: 'Next',
                                   onPressed: () {
                                     _pageController.nextPage(
-                                      duration: const Duration(milliseconds: 400),
+                                      duration: const Duration(
+                                        milliseconds: 400,
+                                      ),
                                       curve: Curves.easeInOut,
                                     );
                                   },

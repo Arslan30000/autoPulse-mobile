@@ -6,11 +6,7 @@ class AlertCard extends StatelessWidget {
   final String message;
   final VoidCallback? onViewDetails;
 
-  const AlertCard({
-    super.key,
-    required this.message,
-    this.onViewDetails,
-  });
+  const AlertCard({super.key, required this.message, this.onViewDetails});
 
   @override
   Widget build(BuildContext context) {
@@ -41,7 +37,11 @@ class AlertCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 12),
-              Icon(Icons.warning_amber_rounded, color: AppColors.warning, size: 20),
+              Icon(
+                Icons.warning_amber_rounded,
+                color: AppColors.warning,
+                size: 20,
+              ),
               const SizedBox(width: 8),
               Expanded(
                 child: Column(

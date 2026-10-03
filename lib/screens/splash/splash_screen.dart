@@ -31,26 +31,31 @@ class _SplashScreenState extends State<SplashScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.primaryGlow,
-                    blurRadius: 40,
-                    spreadRadius: 10,
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.primaryGlow,
+                        blurRadius: 40,
+                        spreadRadius: 10,
+                      ),
+                    ],
                   ),
-                ],
-              ),
-              child: const Icon(
-                Icons.sensors_rounded,
-                color: AppColors.primary,
-                size: 64,
-              ),
-            )
+                  child: const Icon(
+                    Icons.sensors_rounded,
+                    color: AppColors.primary,
+                    size: 64,
+                  ),
+                )
                 .animate()
                 .fadeIn(duration: 600.ms, delay: 200.ms)
-                .scale(begin: const Offset(0.8, 0.8), end: const Offset(1.0, 1.0), duration: 600.ms, delay: 200.ms),
+                .scale(
+                  begin: const Offset(0.8, 0.8),
+                  end: const Offset(1.0, 1.0),
+                  duration: 600.ms,
+                  delay: 200.ms,
+                ),
             const SizedBox(height: 24),
             Text(
               'AutoPulseAI',
@@ -58,16 +63,12 @@ class _SplashScreenState extends State<SplashScreen> {
                 color: AppColors.primary,
                 letterSpacing: 1.5,
               ),
-            )
-                .animate()
-                .fadeIn(duration: 600.ms, delay: 500.ms),
+            ).animate().fadeIn(duration: 600.ms, delay: 500.ms),
             const SizedBox(height: 8),
             Text(
               'Understand Your Vehicle.',
               style: AppTextStyles.bodyMedium,
-            )
-                .animate()
-                .fadeIn(duration: 600.ms, delay: 700.ms),
+            ).animate().fadeIn(duration: 600.ms, delay: 700.ms),
           ],
         ),
       ),
