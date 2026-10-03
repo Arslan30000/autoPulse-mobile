@@ -1,7 +1,5 @@
 # AutoPulseAI
 
-![Flutter CI](https://github.com/OWNER/REPOSITORY/actions/workflows/flutter_ci.yml/badge.svg?branch=main)
-![Flutter CI on development](https://github.com/OWNER/REPOSITORY/actions/workflows/flutter_ci.yml/badge.svg?branch=development)
 
 AutoPulseAI is a mobile-first, edge-computing vehicle telemetry, performance, and diagnostic platform designed for the Pakistani Domestic Market (PKDM), with target platforms including the Toyota Yaris (XP150) and Mitsubishi Lancer (CS3A).
 
@@ -9,7 +7,7 @@ The product is designed around four core capabilities:
 
 1. **Live Diagnostic Dashboard:** Connects to an ELM327 OBD-II adapter over Bluetooth to stream real-time parameters such as RPM, speed, throttle, coolant temperature, MAF, and fuel trims.
 2. **Semantic RAG Technician:** Uses a Supabase `pgvector` backend containing embedded OEM Factory Service Manuals to translate diagnostic trouble codes (DTCs) into step-by-step mechanical repair guidance.
-3. **Deterministic Physics Engine:** Fuses smartphone six-axis IMU data with OBD-II velocity through a Kalman filter to estimate live dynamic wheel horsepower without overloading the serial connection.
+3. **Deterministic Physics Engine:** Fuses smartphone six-axis IMU data with OBD-II velocity through a Kalman filter to estimate live dynamic wheel horsepower without overloading the serial connection. (additional feature,if feasible)
 4. **Transfer Learning ML Baseline:** Pre-trains on open-source Kaggle OBD-II datasets and fine-tunes on at least 10 hours of real-world driving to map vehicle-specific wear and degradation.
 
 ## CI/CD
