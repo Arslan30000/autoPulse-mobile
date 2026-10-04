@@ -150,4 +150,45 @@ void main() {
     expect((await store.recording(id)).ownerId, isNull);
     expect(cloud.rows, isEmpty);
   });
+
+  test(
+    'progress resumes from counted samples rather than global SQLite IDs',
+    () async {
+      final other = await store.start(fixtureVehicle, fixtureDevice);
+      for (var i = 0; i < 7; i++) {
+        await store.append(other, fixtureSample(i));
+      }
+      await store.finish(other);
+      final target = await store.start(fixtureVehicle, fixtureDevice);
+      for (var i = 0; i < 3; i++) {
+        await store.append(target, fixtureSample(i));
+        await store.append(
+          await store.start(fixtureVehicle, fixtureDevice),
+          fixtureSample(i),
+        );
+      }
+      await store.finish(target);
+      final recording = await store.claimCompleted(target, 'owner-a');
+      final acknowledged = await store.samples(target, limit: 1);
+      await cloud.prepare(recording, 'owner-a');
+      await cloud.upload(recording, 'owner-a', acknowledged);
+      await store.checkpoint(target, 'owner-a', acknowledged.single.id);
+      expect(acknowledged.single.id, greaterThan(1));
+      expect((await store.recording(target)).uploadedSampleCount, 1);
+      final counts = <int>[];
+      sync.addListener(() {
+        if (sync.totalSamples > 0) counts.add(sync.uploadedSamples);
+      });
+      await sync.upload(target);
+      expect(counts, contains(1));
+      expect(sync.uploadedSamples, 3);
+      expect(sync.totalSamples, 3);
+      expect(sync.progress, 1);
+      expect((await store.recording(target)).uploadedSampleCount, 3);
+      expect(sync.message, 'Trip uploaded to Supabase.');
+      await sync.upload(target);
+      expect(sync.message, 'Trip already uploaded to Supabase.');
+      expect(cloud.completions, 1);
+    },
+  );
 }

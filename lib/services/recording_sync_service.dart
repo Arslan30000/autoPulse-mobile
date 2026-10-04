@@ -16,6 +16,11 @@ class RecordingSyncService extends ChangeNotifier with WidgetsBindingObserver {
   bool busy = false;
   int? activeRecordingId;
   String? message;
+  int uploadedSamples = 0;
+  int totalSamples = 0;
+  double? get progress => totalSamples == 0
+      ? null
+      : (uploadedSamples / totalSamples).clamp(0.0, 1.0);
   Timer? _retry;
   int _failures = 0;
   bool _disposed = false;
@@ -58,7 +63,9 @@ class RecordingSyncService extends ChangeNotifier with WidgetsBindingObserver {
     if (owner == null) throw StateError('Sign in before uploading recordings.');
     busy = true;
     activeRecordingId = id;
-    message = 'Preparing upload…';
+    uploadedSamples = 0;
+    totalSamples = 0;
+    message = 'Preparing trip upload...';
     _retry?.cancel();
     _changed();
     var claimed = false;
@@ -66,7 +73,14 @@ class RecordingSyncService extends ChangeNotifier with WidgetsBindingObserver {
       final recording = await store.claimCompleted(id, owner);
       claimed = true;
       _check(owner);
-      if (recording.syncState == RecordingSyncState.synced) return;
+      totalSamples = recording.sampleCount;
+      uploadedSamples = recording.uploadedSampleCount;
+      if (recording.syncState == RecordingSyncState.synced) {
+        message = 'Trip already uploaded to Supabase.';
+        return;
+      }
+      message = 'Uploading trip: $uploadedSamples of $totalSamples samples';
+      _changed();
       await store.setSyncState(id, owner, RecordingSyncState.uploading);
       await cloud.prepare(recording, owner);
       _check(owner);
@@ -84,15 +98,18 @@ class RecordingSyncService extends ChangeNotifier with WidgetsBindingObserver {
         // Persist only after acknowledgment. Lost acknowledgments replay safely.
         cursor = samples.last.id;
         await store.checkpoint(id, owner, cursor);
-        message = 'Uploading ${recording.vehicleName}…';
+        uploadedSamples += samples.length;
+        message = 'Uploading trip: $uploadedSamples of $totalSamples samples';
         _changed();
       }
       _check(owner);
+      message = 'Verifying trip upload...';
+      _changed();
       await cloud.complete(recording, owner);
       _check(owner);
       await store.setSyncState(id, owner, RecordingSyncState.synced);
       _failures = 0;
-      message = 'Recording backed up.';
+      message = 'Trip uploaded to Supabase.';
     } catch (error) {
       message = _errorMessage(error);
       if (claimed) {

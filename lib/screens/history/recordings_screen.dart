@@ -2,7 +2,8 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:fl_chart/fl_chart.dart';
+import 'package:autopulse_ai/core/widgets/obd_telemetry_chart.dart';
+import 'package:autopulse_ai/core/widgets/trip_upload_button.dart';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
@@ -15,11 +16,17 @@ import 'package:autopulse_ai/screens/auth/login_screen.dart';
 
 String _syncLabel(RecordingSyncState state) => switch (state) {
   RecordingSyncState.local => 'Saved on phone',
-  RecordingSyncState.pending => 'Queued for backup',
-  RecordingSyncState.uploading => 'Backing up',
-  RecordingSyncState.synced => 'Backed up',
-  RecordingSyncState.failed => 'Backup failed',
+  RecordingSyncState.pending => 'Queued for upload',
+  RecordingSyncState.uploading => 'Uploading',
+  RecordingSyncState.synced => 'Uploaded to Supabase',
+  RecordingSyncState.failed => 'Upload failed',
 };
+
+String _displayTime(BuildContext context, DateTime timestamp) {
+  final time = timestamp.toLocal();
+  final localizations = MaterialLocalizations.of(context);
+  return '${localizations.formatMediumDate(time)} ${localizations.formatTimeOfDay(TimeOfDay.fromDateTime(time), alwaysUse24HourFormat: MediaQuery.alwaysUse24HourFormatOf(context))}';
+}
 
 class RecordingsScreen extends StatefulWidget {
   final RecordingStore store;
@@ -94,50 +101,6 @@ class _RecordingsScreenState extends State<RecordingsScreen> {
     await _load();
   }
 
-  Future<void> _upload(ObdRecording recording) async {
-    if (AccountService.instance.userId == null) {
-      await _account();
-      if (!mounted || AccountService.instance.userId == null) return;
-    }
-    if (!mounted) return;
-    if (recording.ownerId == null) {
-      final confirmed = await showDialog<bool>(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('Assign and back up recording?'),
-          content: Text(
-            'This offline recording will be assigned to ${AccountService.instance.email ?? 'your account'}. Its vehicle and samples will be uploaded to your private cloud history.',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('Cancel'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: const Text('Back up'),
-            ),
-          ],
-        ),
-      );
-      if (confirmed != true) return;
-    }
-    try {
-      await widget.sync!.upload(recording.id);
-    } catch (_) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              widget.sync?.message ?? 'Upload unavailable. Local data is safe.',
-            ),
-          ),
-        );
-      }
-    }
-    if (mounted) await _load();
-  }
-
   @override
   Widget build(BuildContext context) {
     final sync = widget.sync;
@@ -163,12 +126,12 @@ class _RecordingsScreenState extends State<RecordingsScreen> {
           padding: const EdgeInsets.all(16),
           children: [
             const Text(
-              'Recordings stay on this phone. Finished sessions can be backed up to your account.',
+              'Recordings stay on this phone. Finished trips can be uploaded to your Supabase account.',
             ),
             const SizedBox(height: 12),
             if (sync == null)
               const Text(
-                'Cloud backup is unavailable in this build. Local inspection and export remain available.',
+                'Cloud upload needs a configured app build. Your trips are saved on this phone.',
               ),
             if (sync?.message != null)
               ListTile(
@@ -185,7 +148,7 @@ class _RecordingsScreenState extends State<RecordingsScreen> {
               TextButton.icon(
                 onPressed: sync.busy ? null : () => sync.retryPending(),
                 icon: const Icon(Icons.sync),
-                label: const Text('Retry queued backups'),
+                label: const Text('Retry queued uploads'),
               ),
             if (_error != null) Text(_error!),
             if (!_loading && _recordings.isEmpty && _error == null)
@@ -204,7 +167,7 @@ class _RecordingsScreenState extends State<RecordingsScreen> {
                       ListTile(
                         title: Text(recording.vehicleName),
                         subtitle: Text(
-                          '${recording.startedAt.toLocal()}\n${recording.sampleCount} PID samples Â· ${recording.endedAt == null ? 'Open / interrupted' : _syncLabel(recording.syncState)}',
+                          '${_displayTime(context, recording.startedAt)}\n${recording.sampleCount} PID samples \u00b7 ${recording.endedAt == null ? 'Open / interrupted' : _syncLabel(recording.syncState)}',
                         ),
                         isThreeLine: true,
                         trailing: const Icon(Icons.chevron_right),
@@ -215,6 +178,7 @@ class _RecordingsScreenState extends State<RecordingsScreen> {
                               builder: (_) => RecordingDetailsScreen(
                                 store: widget.store,
                                 recording: recording,
+                                sync: widget.sync,
                               ),
                             ),
                           );
@@ -226,23 +190,14 @@ class _RecordingsScreenState extends State<RecordingsScreen> {
                           padding: const EdgeInsets.all(8),
                           child: Text(recording.syncError!),
                         ),
-                      if (recording.endedAt != null &&
-                          recording.syncState != RecordingSyncState.synced &&
-                          sync != null)
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: TextButton.icon(
-                            onPressed: sync.busy
-                                ? null
-                                : () => _upload(recording),
-                            icon: const Icon(Icons.cloud_upload_outlined),
-                            label: Text(
-                              recording.syncState == RecordingSyncState.local
-                                  ? 'Back up'
-                                  : 'Retry backup',
-                            ),
-                          ),
+                      Padding(
+                        padding: const EdgeInsets.all(8),
+                        child: TripUploadButton(
+                          recording: recording,
+                          sync: sync,
+                          onChanged: () => _load(),
                         ),
+                      ),
                     ],
                   ),
                 ),
@@ -262,11 +217,13 @@ class _RecordingsScreenState extends State<RecordingsScreen> {
 
 class RecordingDetailsScreen extends StatefulWidget {
   final RecordingStore store;
+  final RecordingSyncService? sync;
   final ObdRecording recording;
   const RecordingDetailsScreen({
     super.key,
     required this.store,
     required this.recording,
+    this.sync,
   });
   @override
   State<RecordingDetailsScreen> createState() => _RecordingDetailsScreenState();
@@ -279,25 +236,43 @@ class _RecordingDetailsScreenState extends State<RecordingDetailsScreen> {
   String? _error;
   bool _exporting = false;
   int _chartGeneration = 0;
+  bool _chartLoading = false;
+  bool _olderAvailable = false;
+  bool _latestWindow = true;
   late ObdRecording _recording;
   @override
   void initState() {
     super.initState();
     _recording = widget.recording;
+    widget.sync?.addListener(_syncChanged);
     unawaited(_load());
   }
 
-  Future<void> _load() async {
+  @override
+  void dispose() {
+    widget.sync?.removeListener(_syncChanged);
+    super.dispose();
+  }
+
+  void _syncChanged() {
+    if (mounted && widget.sync?.busy == false) {
+      unawaited(_load(reloadChart: false));
+    }
+  }
+
+  Future<void> _load({bool reloadChart = true}) async {
     try {
       final recording = await widget.store.recording(_recording.id);
-      final quality = await analyzeRecording(widget.store, recording.id);
+      final quality = reloadChart || _quality == null
+          ? await analyzeRecording(widget.store, recording.id)
+          : _quality!;
       if (!mounted) return;
       setState(() {
         _recording = recording;
         _quality = quality;
         _error = null;
       });
-      await _loadChart();
+      if (reloadChart) await _loadChart();
     } catch (_) {
       if (mounted) {
         setState(() => _error = 'Recording could not be read. Please retry.');
@@ -305,18 +280,39 @@ class _RecordingDetailsScreenState extends State<RecordingDetailsScreen> {
     }
   }
 
-  Future<void> _loadChart() async {
+  Future<void> _loadChart({bool older = false}) async {
+    if (older && (_chartLoading || _chart.isEmpty)) return;
     final generation = ++_chartGeneration;
+    final beforeId = older ? _chart.first.id : 0;
+    setState(() => _chartLoading = true);
     try {
       final samples = await widget.store.chartSamples(
         _recording.id,
         _parameter,
+        beforeId: beforeId,
       );
       if (mounted && generation == _chartGeneration) {
-        setState(() => _chart = samples);
+        setState(() {
+          // A bounded window keeps long trips responsive; session statistics and
+          // export still include every page. Time remains relative to trip start.
+          if (samples.isNotEmpty || !older) {
+            _chart = samples;
+          }
+          _olderAvailable = samples.length == 600;
+          if (samples.isNotEmpty || !older) {
+            _latestWindow = !older;
+          }
+          _error = null;
+        });
       }
     } catch (_) {
-      if (mounted) setState(() => _error = 'Graph could not be loaded.');
+      if (mounted && generation == _chartGeneration) {
+        setState(() => _error = 'Graph could not be loaded. Please retry.');
+      }
+    } finally {
+      if (mounted && generation == _chartGeneration) {
+        setState(() => _chartLoading = false);
+      }
     }
   }
 
@@ -357,35 +353,10 @@ class _RecordingDetailsScreenState extends State<RecordingDetailsScreen> {
     }
   }
 
-  List<FlSpot> _spots() {
-    if (_chart.isEmpty) return [];
-    final start = _chart.first.sample.receivedAt;
-    final spots = <FlSpot>[];
-    DateTime? previous;
-    for (final row in _chart) {
-      final sample = row.sample;
-      if (previous != null &&
-          sample.receivedAt.difference(previous) > const Duration(seconds: 6)) {
-        spots.add(FlSpot.nullSpot);
-      }
-      spots.add(
-        sample.status == ObdSampleStatus.valid && sample.value != null
-            ? FlSpot(
-                sample.receivedAt.difference(start).inMilliseconds / 1000,
-                sample.value!,
-              )
-            : FlSpot.nullSpot,
-      );
-      previous = sample.receivedAt;
-    }
-    return spots;
-  }
-
   @override
   Widget build(BuildContext context) {
     final quality = _quality;
     final metric = quality?[_parameter];
-    final spots = _spots();
     return Scaffold(
       appBar: AppBar(
         title: const Text('Recording details'),
@@ -419,7 +390,7 @@ class _RecordingDetailsScreenState extends State<RecordingDetailsScreen> {
             style: Theme.of(context).textTheme.headlineSmall,
           ),
           Text(
-            'Adapter: ${_recording.adapterName}\nStarted: ${_recording.startedAt.toLocal()}\n${_recording.sampleCount} recorded PID samples',
+            'Adapter: ${_recording.adapterName}\nStarted: ${_displayTime(context, _recording.startedAt)}\n${_recording.sampleCount} recorded PID samples',
           ),
           if (_recording.endedAt != null)
             Text(
@@ -427,8 +398,16 @@ class _RecordingDetailsScreenState extends State<RecordingDetailsScreen> {
             ),
           if (_recording.endedAt == null)
             const Text(
-              'This session is open or was interrupted. Refresh after stopping a live recording. Cloud backup and export require a finished session.',
+              'This session is open or was interrupted. Refresh after stopping a live recording. Cloud upload and export require a finished session.',
             ),
+          const SizedBox(height: 12),
+          Text(_syncLabel(_recording.syncState)),
+          if (_recording.syncError != null) Text(_recording.syncError!),
+          TripUploadButton(
+            recording: _recording,
+            sync: widget.sync,
+            onChanged: () => _load(reloadChart: false),
+          ),
           const SizedBox(height: 20),
           DropdownButtonFormField<ObdParameter>(
             initialValue: _parameter,
@@ -461,10 +440,10 @@ class _RecordingDetailsScreenState extends State<RecordingDetailsScreen> {
             ),
           if (metric != null) ...[
             Text(
-              '${metric.valid}/${metric.total} valid samples Â· mean latency ${metric.meanLatencyMs.toStringAsFixed(0)} ms',
+              '${metric.valid}/${metric.total} valid samples \u00b7 mean latency ${metric.meanLatencyMs.toStringAsFixed(0)} ms',
             ),
             Text(
-              'Observed rate: ${metric.observedHz?.toStringAsFixed(2) ?? 'unavailable'} Hz Â· longest gap ${(metric.longestGap.inMilliseconds / 1000).toStringAsFixed(2)} s',
+              'Observed rate: ${metric.observedHz?.toStringAsFixed(2) ?? 'unavailable'} Hz \u00b7 longest gap ${(metric.longestGap.inMilliseconds / 1000).toStringAsFixed(2)} s',
             ),
             if (metric.clockDiscontinuities > 0)
               const Text(
@@ -481,32 +460,39 @@ class _RecordingDetailsScreenState extends State<RecordingDetailsScreen> {
                   .toList(),
             ),
           ],
-          if (spots.any((spot) => !spot.isNull())) ...[
+          if (_chartLoading) const LinearProgressIndicator(),
+          if (_chart.isNotEmpty) ...[
             const SizedBox(height: 16),
-            SizedBox(
-              height: 240,
-              child: LineChart(
-                LineChartData(
-                  titlesData: const FlTitlesData(show: false),
-                  borderData: FlBorderData(show: false),
-                  lineBarsData: [
-                    LineChartBarData(
-                      spots: spots,
-                      isCurved: false,
-                      barWidth: 2,
-                      dotData: FlDotData(show: spots.length == 1),
-                    ),
-                  ],
-                ),
-              ),
+            ObdTelemetryChart(
+              key: ValueKey((_parameter, _chart.first.id)),
+              parameter: _parameter,
+              samples: _chart.map((row) => row.sample).toList(),
+              timeOrigin: _recording.startedAt,
             ),
             Text(
-              'Latest ${_chart.length} attempts Â· ${_parameter.unit} versus elapsed seconds. Missing readings and gaps over 6 seconds break the line.',
+              '${_latestWindow ? 'Latest' : 'Earlier'} ${_chart.length} readings. Missing readings and gaps over 6 seconds break the line.',
+            ),
+            Wrap(
+              spacing: 12,
+              children: [
+                if (_olderAvailable)
+                  TextButton(
+                    onPressed: _chartLoading
+                        ? null
+                        : () => _loadChart(older: true),
+                    child: const Text('View earlier readings'),
+                  ),
+                if (!_latestWindow)
+                  TextButton(
+                    onPressed: _chartLoading ? null : () => _loadChart(),
+                    child: const Text('Return to latest readings'),
+                  ),
+              ],
             ),
           ],
           const SizedBox(height: 24),
           const Text(
-            'Quality summary â€” entire saved session',
+            'Quality summary - entire saved session',
             style: TextStyle(fontSize: 18),
           ),
           if (quality != null)
@@ -514,7 +500,7 @@ class _RecordingDetailsScreenState extends State<RecordingDetailsScreen> {
               ListTile(
                 title: Text(entry.key.label),
                 subtitle: Text(
-                  '${entry.value.valid}/${entry.value.total} valid Â· ${entry.value.observedHz?.toStringAsFixed(2) ?? 'â€”'} Hz Â· max latency ${entry.value.maxLatencyMs} ms',
+                  '${entry.value.valid}/${entry.value.total} valid \u00b7 ${entry.value.observedHz?.toStringAsFixed(2) ?? '-'} Hz \u00b7 max latency ${entry.value.maxLatencyMs} ms',
                 ),
               ),
           const Text(

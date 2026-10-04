@@ -20,6 +20,49 @@ void main() {
   );
   tearDown(() => store.close());
 
+  test(
+    'earlier graph pages exclude other PIDs and sessions without overlap',
+    () async {
+      final id = await store.start(fixtureVehicle, fixtureDevice);
+      final other = await store.start(fixtureVehicle, fixtureDevice);
+      for (var i = 0; i < 5; i++) {
+        await store.append(id, fixtureSample(i));
+        await store.append(id, fixtureSample(i, parameter: ObdParameter.speed));
+        await store.append(other, fixtureSample(i));
+      }
+      final latest = await store.chartSamples(id, ObdParameter.rpm, limit: 2);
+      final earlier = await store.chartSamples(
+        id,
+        ObdParameter.rpm,
+        limit: 2,
+        beforeId: latest.first.id,
+      );
+      final first = await store.chartSamples(
+        id,
+        ObdParameter.rpm,
+        limit: 2,
+        beforeId: earlier.first.id,
+      );
+      final combined = [...first, ...earlier, ...latest];
+      expect(combined.map((row) => row.sample.value), [
+        1000,
+        1001,
+        1002,
+        1003,
+        1004,
+      ]);
+      expect(combined.map((row) => row.id).toSet().length, 5);
+      expect(
+        await store.chartSamples(
+          id,
+          ObdParameter.rpm,
+          beforeId: first.first.id,
+        ),
+        isEmpty,
+      );
+    },
+  );
+
   test('SQLite round trip preserves timestamps, nulls, source, and paginated ordering', () async {
     final id = await store.start(fixtureVehicle, fixtureDevice);
     await store.append(id, fixtureSample(0));

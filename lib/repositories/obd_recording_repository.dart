@@ -19,6 +19,7 @@ class ObdRecording {
   final String? ownerId;
   final RecordingSyncState syncState;
   final int uploadedSampleId;
+  final int uploadedSampleCount;
   final String? syncError;
   const ObdRecording({
     required this.id,
@@ -32,6 +33,7 @@ class ObdRecording {
     this.ownerId,
     this.syncState = RecordingSyncState.local,
     this.uploadedSampleId = 0,
+    this.uploadedSampleCount = 0,
     this.syncError,
   });
 }
@@ -68,6 +70,7 @@ abstract interface class RecordingStore implements ObdRecordingRepository {
     int sessionId,
     ObdParameter parameter, {
     int limit = 600,
+    int beforeId = 0,
   });
   Future<ObdRecording> claimCompleted(int id, String owner);
   Future<void> setSyncState(
@@ -271,7 +274,9 @@ class SqliteObdRecordingRepository implements RecordingStore {
   }
 
   static const _select = '''SELECT s.*, (SELECT COUNT(*) FROM samples r
-    WHERE r.session_id = s.id) AS sample_count FROM sessions s''';
+    WHERE r.session_id = s.id) AS sample_count,
+    (SELECT COUNT(*) FROM samples r WHERE r.session_id = s.id
+      AND r.id <= s.uploaded_sample_id) AS uploaded_sample_count FROM sessions s''';
 
   ObdRecording _recording(Map<String, Object?> row) => ObdRecording(
     id: row['id'] as int,
@@ -286,6 +291,7 @@ class SqliteObdRecordingRepository implements RecordingStore {
     ownerId: row['owner_id'] as String?,
     syncState: RecordingSyncState.values.byName(row['sync_state'] as String),
     uploadedSampleId: row['uploaded_sample_id'] as int,
+    uploadedSampleCount: row['uploaded_sample_count'] as int,
     syncError: row['sync_error'] as String?,
     vehicle: Vehicle(
       id: row['vehicle_id'] as String,
@@ -370,12 +376,13 @@ class SqliteObdRecordingRepository implements RecordingStore {
     int sessionId,
     ObdParameter parameter, {
     int limit = 600,
+    int beforeId = 0,
   }) async {
     _limit(limit);
     final rows = await (await database).query(
       'samples',
-      where: 'session_id = ? AND pid = ?',
-      whereArgs: [sessionId, parameter.pid],
+      where: 'session_id = ? AND pid = ? ${beforeId == 0 ? '' : 'AND id < ?'}',
+      whereArgs: [sessionId, parameter.pid, if (beforeId != 0) beforeId],
       orderBy: 'id DESC',
       limit: limit,
     );
