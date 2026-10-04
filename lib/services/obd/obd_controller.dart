@@ -207,7 +207,7 @@ class ObdController extends ChangeNotifier with WidgetsBindingObserver {
             source: ecuSource,
           );
           _samples[parameter] = sample;
-          if (parameter == ObdParameter.rpm && value != null) {
+          if (parameter == ObdParameter.rpm) {
             _rpmHistory.add(sample);
             if (_rpmHistory.length > 120) _rpmHistory.removeAt(0);
           }

@@ -1,3 +1,4 @@
+import 'package:autopulse_ai/core/widgets/chart_labels.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -104,7 +105,7 @@ class MechanicAnomalyScreen extends StatelessWidget {
             const SectionHeader(title: 'Expected vs Observed'),
             const SizedBox(height: 12),
             Container(
-              height: 220,
+              height: 280,
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: AppColors.surfaceSecondary,
@@ -152,6 +153,10 @@ class MechanicAnomalyScreen extends StatelessWidget {
                   const SizedBox(height: 12),
                   Expanded(
                     child: LineChart(
+                      transformationConfig: const FlTransformationConfig(
+                        scaleAxis: FlScaleAxis.horizontal,
+                        maxScale: 8,
+                      ),
                       LineChartData(
                         gridData: FlGridData(
                           show: true,
@@ -161,7 +166,7 @@ class MechanicAnomalyScreen extends StatelessWidget {
                             strokeWidth: 0.5,
                           ),
                         ),
-                        titlesData: const FlTitlesData(show: false),
+                        titlesData: demoChartTitles(),
                         borderData: FlBorderData(show: false),
                         minY: 0,
                         maxY: 0.6,
@@ -213,7 +218,7 @@ class MechanicAnomalyScreen extends StatelessWidget {
                             ),
                           ),
                         ],
-                        lineTouchData: const LineTouchData(enabled: false),
+                        lineTouchData: demoChartTouches(comparison: true),
                       ),
                     ),
                   ),

@@ -50,6 +50,8 @@ void main() {
       controller.samples[ObdParameter.rpm]!.status,
       ObdSampleStatus.noData,
     );
+    expect(controller.rpmHistory.single.status, ObdSampleStatus.noData);
+    expect(controller.rpmHistory.single.value, isNull);
   });
   test(
     'recording saves parameter samples and finalizes on disconnect',

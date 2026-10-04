@@ -1,3 +1,4 @@
+import 'package:autopulse_ai/core/widgets/chart_labels.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -51,7 +52,7 @@ class DiagnosticDetailScreen extends StatelessWidget {
 
             // Chart
             Container(
-              height: 200,
+              height: 280,
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: AppColors.surfaceSecondary,
@@ -65,6 +66,10 @@ class DiagnosticDetailScreen extends StatelessWidget {
                   const SizedBox(height: 12),
                   Expanded(
                     child: LineChart(
+                      transformationConfig: const FlTransformationConfig(
+                        scaleAxis: FlScaleAxis.horizontal,
+                        maxScale: 8,
+                      ),
                       LineChartData(
                         gridData: FlGridData(
                           show: true,
@@ -77,7 +82,7 @@ class DiagnosticDetailScreen extends StatelessWidget {
                             );
                           },
                         ),
-                        titlesData: const FlTitlesData(show: false),
+                        titlesData: demoChartTitles(),
                         borderData: FlBorderData(show: false),
                         minY: 0,
                         maxY: 0.5,
@@ -114,7 +119,7 @@ class DiagnosticDetailScreen extends StatelessWidget {
                             ),
                           ),
                         ],
-                        lineTouchData: const LineTouchData(enabled: false),
+                        lineTouchData: demoChartTouches(),
                       ),
                     ),
                   ),

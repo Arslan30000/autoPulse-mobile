@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:autopulse_ai/repositories/obd_recording_repository.dart';
 import 'package:autopulse_ai/services/recording_sync_service.dart';
 import 'package:autopulse_ai/screens/history/recordings_screen.dart';
-import 'package:fl_chart/fl_chart.dart';
+import 'package:autopulse_ai/core/widgets/obd_telemetry_chart.dart';
 import 'package:autopulse_ai/core/theme/app_colors.dart';
 import 'package:autopulse_ai/core/widgets/obd_connection_panel.dart';
 import 'package:autopulse_ai/core/widgets/telemetry_card.dart';
@@ -146,11 +146,10 @@ class LiveObdView extends StatelessWidget {
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
                 const SizedBox(height: 12),
-                SizedBox(
-                  height: 180,
-                  child: obd.rpmHistory.length < 2
-                      ? const Center(child: Text('Waiting for RPM samples'))
-                      : _chart(obd),
+                ObdTelemetryChart(
+                  samples: obd.rpmHistory,
+                  parameter: ObdParameter.rpm,
+                  live: true,
                 ),
                 const Divider(height: 32),
                 Wrap(
@@ -194,35 +193,6 @@ class LiveObdView extends StatelessWidget {
             ),
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _chart(ObdController obd) {
-    final samples = obd.rpmHistory;
-    final start = samples.first.receivedAt;
-    return LineChart(
-      LineChartData(
-        minY: 0,
-        titlesData: const FlTitlesData(show: false),
-        borderData: FlBorderData(show: false),
-        gridData: const FlGridData(show: true),
-        lineBarsData: [
-          LineChartBarData(
-            spots: samples
-                .map(
-                  (s) => FlSpot(
-                    s.receivedAt.difference(start).inMilliseconds / 1000,
-                    s.value!,
-                  ),
-                )
-                .toList(),
-            color: AppColors.primary,
-            barWidth: 2,
-            isCurved: false,
-            dotData: const FlDotData(show: false),
-          ),
-        ],
       ),
     );
   }
