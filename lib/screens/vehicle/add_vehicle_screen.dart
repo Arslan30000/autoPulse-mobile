@@ -1,18 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:autopulse_ai/repositories/local_vehicle_repository.dart';
+import 'package:autopulse_ai/services/account_data_service.dart';
 import 'package:autopulse_ai/services/account_service.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:autopulse_ai/core/theme/app_colors.dart';
 import 'package:autopulse_ai/core/theme/app_text_styles.dart';
 import 'package:autopulse_ai/core/widgets/primary_button.dart';
-import 'package:autopulse_ai/core/widgets/section_header.dart';
 import 'package:autopulse_ai/navigation/app_router.dart';
-import 'package:autopulse_ai/core/widgets/obd_connection_panel.dart';
 import 'package:autopulse_ai/models/vehicle.dart';
 import 'package:autopulse_ai/services/obd/obd_controller.dart';
 
 class AddVehicleScreen extends StatefulWidget {
-  const AddVehicleScreen({super.key});
+  final bool returnToCaller;
+  const AddVehicleScreen({super.key, this.returnToCaller = false});
 
   @override
   State<AddVehicleScreen> createState() => _AddVehicleScreenState();
@@ -20,7 +19,7 @@ class AddVehicleScreen extends StatefulWidget {
 
 class _AddVehicleScreenState extends State<AddVehicleScreen> {
   bool _saving = false;
-  final _vehicles = LocalVehicleRepository();
+  final _vehicles = AccountDataService.instance.vehicles;
   final _obd = ObdController.instance;
   final _makeController = TextEditingController(text: 'Toyota');
   final _modelController = TextEditingController(text: 'Yaris');
@@ -30,7 +29,7 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
   void initState() {
     super.initState();
     _obd.addListener(_refresh);
-    _loadVehicle();
+    if (!widget.returnToCaller) _loadVehicle();
   }
 
   Future<void> _loadVehicle() async {
@@ -75,17 +74,24 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
     }
     setState(() => _saving = true);
     try {
-      final vehicle = await _vehicles.save(
+      final vehicle = await AccountDataService.instance.addVehicle(
         Vehicle(
           make: _makeController.text.trim(),
           model: _modelController.text.trim(),
           year: year,
         ),
-        AccountService.instance.userId,
       );
       if (!mounted) return;
       _obd.setVehicle(vehicle);
-      Navigator.pushReplacementNamed(context, AppRouter.main);
+      if (widget.returnToCaller) {
+        Navigator.pop(context, true);
+      } else {
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          AppRouter.main,
+          (_) => false,
+        );
+      }
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -120,7 +126,7 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
               ).animate().fadeIn(duration: 400.ms).slideX(begin: -0.1),
               const SizedBox(height: 8),
               Text(
-                    'Connect your vehicle to start monitoring its health.',
+                    'Save your car now. You can connect an OBD-II adapter from the Live tab later.',
                     style: AppTextStyles.bodyMedium.copyWith(
                       color: AppColors.textSecondary,
                     ),
@@ -214,9 +220,6 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
                   .slideY(begin: 0.1),
               const SizedBox(height: 32),
 
-              const SectionHeader(title: 'OBD-II Adapter'),
-              const SizedBox(height: 16),
-              ObdConnectionPanel(controller: _obd),
               const SizedBox(height: 32),
               PrimaryButton(
                 label: _saving

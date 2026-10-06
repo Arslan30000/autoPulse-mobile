@@ -14,6 +14,7 @@ import 'package:autopulse_ai/core/widgets/alert_card.dart';
 import 'package:autopulse_ai/data/mock/mock_data.dart';
 import 'package:autopulse_ai/navigation/app_router.dart';
 import 'package:autopulse_ai/models/health.dart';
+import 'package:autopulse_ai/services/obd/obd_controller.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -48,13 +49,19 @@ class HomeScreen extends StatelessWidget {
                 const SizedBox(height: 4),
                 Row(
                       children: [
-                        Text(
-                          MockData.vehicle.fullDisplayName,
-                          style: AppTextStyles.bodyMedium.copyWith(
-                            color: AppColors.primary,
+                        Expanded(
+                          child: ListenableBuilder(
+                            listenable: ObdController.instance,
+                            builder: (_, _) => Text(
+                              ObdController.instance.vehicle.fullDisplayName,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: AppTextStyles.bodyMedium.copyWith(
+                                color: AppColors.primary,
+                              ),
+                            ),
                           ),
                         ),
-                        const Spacer(),
                         Container(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 12,

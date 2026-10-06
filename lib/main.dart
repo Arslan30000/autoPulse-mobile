@@ -5,6 +5,7 @@ import 'package:autopulse_ai/core/config/supabase_config.dart';
 import 'package:autopulse_ai/core/theme/app_theme.dart';
 import 'package:autopulse_ai/navigation/app_router.dart';
 import 'package:autopulse_ai/services/account_service.dart';
+import 'package:autopulse_ai/services/account_data_service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:autopulse_ai/services/obd/obd_controller.dart';
 import 'package:autopulse_ai/services/recording_sync_service.dart';
@@ -31,6 +32,7 @@ Future<void> main() async {
     }
   }
   SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+  AccountDataService.instance.start();
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,

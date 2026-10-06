@@ -3,6 +3,9 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:autopulse_ai/core/theme/app_colors.dart';
 import 'package:autopulse_ai/core/theme/app_text_styles.dart';
 import 'package:autopulse_ai/navigation/app_router.dart';
+import 'package:autopulse_ai/services/account_service.dart';
+import 'package:autopulse_ai/services/account_data_service.dart';
+import 'package:autopulse_ai/models/vehicle.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -15,9 +18,26 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    Future.delayed(const Duration(milliseconds: 2500), () {
+    Future.delayed(const Duration(milliseconds: 900), () async {
+      if (!mounted) return;
+      final data = AccountDataService.instance;
+      Vehicle? vehicle;
+      try {
+        vehicle = await data.restoreSelection(cloud: false);
+        if (vehicle == null && AccountService.instance.userId != null) {
+          vehicle = await data.restoreSelection();
+        }
+      } catch (_) {
+        // A failed cache read leaves sign-in and offline recovery available.
+      }
       if (mounted) {
-        Navigator.pushReplacementNamed(context, AppRouter.onboarding);
+        Navigator.pushReplacementNamed(
+          context,
+          vehicle != null ? AppRouter.main : AppRouter.login,
+        );
+      }
+      if (AccountService.instance.userId != null) {
+        await AccountDataService.instance.synchronize();
       }
     });
   }

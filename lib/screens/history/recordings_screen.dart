@@ -13,6 +13,7 @@ import 'package:autopulse_ai/services/account_service.dart';
 import 'package:autopulse_ai/services/recording_analysis.dart';
 import 'package:autopulse_ai/services/recording_sync_service.dart';
 import 'package:autopulse_ai/screens/auth/login_screen.dart';
+import 'package:autopulse_ai/services/account_data_service.dart';
 
 String _syncLabel(RecordingSyncState state) => switch (state) {
   RecordingSyncState.local => 'Saved on phone',
@@ -45,12 +46,14 @@ class _RecordingsScreenState extends State<RecordingsScreen> {
   void initState() {
     super.initState();
     widget.sync?.addListener(_syncChanged);
+    AccountDataService.instance.addListener(_accountChanged);
     unawaited(_load());
   }
 
   @override
   void dispose() {
     widget.sync?.removeListener(_syncChanged);
+    AccountDataService.instance.removeListener(_accountChanged);
     super.dispose();
   }
 
@@ -58,6 +61,10 @@ class _RecordingsScreenState extends State<RecordingsScreen> {
     if (!mounted) return;
     setState(() {});
     if (widget.sync?.busy == false) unawaited(_load());
+  }
+
+  void _accountChanged() {
+    if (mounted && !AccountDataService.instance.busy) unawaited(_load());
   }
 
   Future<void> _load({bool more = false}) async {
@@ -126,7 +133,7 @@ class _RecordingsScreenState extends State<RecordingsScreen> {
           padding: const EdgeInsets.all(16),
           children: [
             const Text(
-              'Recordings stay on this phone. Finished trips can be uploaded to your Supabase account.',
+              'Signed-in runs back up automatically when online. Offline runs stay on this phone until you choose to upload them. Synced runs are restored when you sign in.',
             ),
             const SizedBox(height: 12),
             if (sync == null)

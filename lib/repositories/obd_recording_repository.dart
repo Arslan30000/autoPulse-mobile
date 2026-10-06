@@ -278,6 +278,103 @@ class SqliteObdRecordingRepository implements RecordingStore {
     (SELECT COUNT(*) FROM samples r WHERE r.session_id = s.id
       AND r.id <= s.uploaded_sample_id) AS uploaded_sample_count FROM sessions s''';
 
+  /// Restore only complete uploads, atomically, without replacing local runs.
+  Future<void> importCloud(
+    Map<String, dynamic> session,
+    Vehicle vehicle,
+    List<Map<String, dynamic>> rows,
+    String owner,
+  ) async {
+    if (_owner() != owner ||
+        session['owner_id'] != owner ||
+        vehicle.ownerId != owner) {
+      throw StateError('Account changed during restore.');
+    }
+    if (session['uploaded_at'] == null ||
+        rows.length != session['sample_count'] ||
+        rows.any(
+          (r) => r['owner_id'] != owner || r['session_id'] != session['id'],
+        )) {
+      throw StateError('Cloud recording is incomplete.');
+    }
+    await (await database).transaction((tx) async {
+      if (_owner() != owner) {
+        throw StateError('Account changed during restore.');
+      }
+      final existing = await tx.query(
+        'sessions',
+        where: 'cloud_id = ?',
+        whereArgs: [session['id']],
+      );
+      if (existing.isNotEmpty) {
+        if (existing.single['owner_id'] != owner) {
+          throw StateError('Recording belongs to another account.');
+        }
+        return;
+      }
+      await tx.insert('local_vehicles', {
+        'id': vehicle.id,
+        'source_id': vehicle.id,
+        'owner_id': owner,
+      }, conflictAlgorithm: ConflictAlgorithm.ignore);
+      final localVehicle = await tx.query(
+        'local_vehicles',
+        where: 'id = ? AND owner_id = ?',
+        whereArgs: [vehicle.id, owner],
+      );
+      if (localVehicle.isEmpty) {
+        throw StateError('Vehicle identity belongs to another account.');
+      }
+      final id = await tx.insert('sessions', {
+        'cloud_id': session['id'],
+        'owner_id': owner,
+        'vehicle_id': vehicle.id,
+        'vehicle_name': session['vehicle_name'],
+        'vehicle_make': vehicle.make,
+        'vehicle_model': vehicle.model,
+        'vehicle_year': vehicle.year,
+        'vehicle_vin': vehicle.vin,
+        'adapter_name': session['adapter_name'],
+        'started_at': session['started_at'],
+        'ended_at': session['ended_at'],
+        'sync_state': 'synced',
+      });
+      var batch = tx.batch();
+      for (var i = 0; i < rows.length; i++) {
+        final r = rows[i];
+        batch.insert('samples', {
+          'session_id': id,
+          'pid': r['pid'],
+          'value': r['value'],
+          'unit': r['unit'],
+          'quality': r['quality'],
+          'requested_at': r['requested_at'],
+          'received_at': r['received_at'],
+          'latency_ms': r['latency_ms'],
+          'ecu_source': r['ecu_source'],
+        });
+        if ((i + 1) % 250 == 0) {
+          await batch.commit(noResult: true);
+          batch = tx.batch();
+        }
+      }
+      await batch.commit(noResult: true);
+      final last = await tx.rawQuery(
+        'SELECT MAX(id) AS last_id FROM samples WHERE session_id = ?',
+        [id],
+      );
+      await tx.update(
+        'sessions',
+        {'uploaded_sample_id': last.single['last_id'] ?? 0},
+        where: 'id = ?',
+        whereArgs: [id],
+      );
+      if (_owner() != owner) {
+        throw StateError('Account changed during restore.');
+      }
+    });
+  }
+
   ObdRecording _recording(Map<String, Object?> row) => ObdRecording(
     id: row['id'] as int,
     vehicleName: row['vehicle_name'] as String,

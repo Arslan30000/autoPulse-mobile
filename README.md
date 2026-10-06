@@ -107,3 +107,11 @@ flutter build apk --release
 ```
 
 The artifact is written to `build/app/outputs/flutter-apk/app-release.apk`.
+
+## Accounts and vehicle restoration
+
+Sign in or create an owner account, or continue offline. Settings supports profile
+editing, adding/selecting cars, viewing saved runs and syncing account data.
+Completed account runs back up when online and uploaded runs restore on sign-in.
+Existing local recordings are retained. See [account setup and storage behavior](docs/accounts-and-sync.md)
+for environment setup, migration deployment, offline behavior and update precautions.

@@ -43,7 +43,9 @@ jobs:
           -f supabase/tests/auth_fixture.sql
           -f supabase/migrations/20261003000000_owner_vehicle_ingestion.sql
           -f supabase/migrations/20261004000000_obd_recording_sync.sql
+          -f supabase/migrations/20261006000000_account_profiles.sql
           -f supabase/tests/recording_rls.sql
+          -f supabase/tests/profile_rls.sql
   flutter:
     name: Flutter checks and Android release
     runs-on: ubuntu-latest

@@ -4,6 +4,7 @@ import 'package:autopulse_ai/navigation/app_router.dart';
 import 'package:autopulse_ai/services/account_service.dart';
 import 'package:autopulse_ai/services/obd/obd_controller.dart';
 import 'package:autopulse_ai/models/vehicle.dart';
+import 'package:autopulse_ai/services/account_data_service.dart';
 
 class LoginScreen extends StatefulWidget {
   final bool returnToCaller;
@@ -15,6 +16,7 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final _form = GlobalKey<FormState>();
   final _email = TextEditingController();
+  final _name = TextEditingController();
   final _password = TextEditingController();
   final _account = AccountService.instance;
   bool _busy = false;
@@ -24,15 +26,39 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   void dispose() {
     _email.dispose();
+    _name.dispose();
     _password.dispose();
     super.dispose();
   }
 
-  void _continue() {
-    if (widget.returnToCaller) {
-      Navigator.pop(context);
-    } else {
-      Navigator.pushReplacementNamed(context, AppRouter.addVehicle);
+  Future<void> _continue() async {
+    setState(() => _busy = true);
+    try {
+      final vehicle = await AccountDataService.instance.restoreSelection();
+      if (!mounted) return;
+      if (_account.userId != null &&
+          vehicle == null &&
+          AccountDataService.instance.resolvedOwner != _account.userId) {
+        setState(
+          () => _message = 'Your account is signed in, but we could not load your cars. Retry when connected, or sign out to continue offline.',
+        );
+        return;
+      }
+      if (widget.returnToCaller && vehicle != null) {
+        Navigator.pop(context);
+      } else {
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          vehicle == null ? AppRouter.addVehicle : AppRouter.main,
+          (_) => false,
+        );
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() => _message = 'Unable to load saved data. Please retry.');
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
     }
   }
 
@@ -44,13 +70,17 @@ class _LoginScreenState extends State<LoginScreen> {
     });
     try {
       final signedIn = _register
-          ? await _account.signUp(_email.text.trim(), _password.text)
+          ? await _account.signUp(
+              _email.text.trim(),
+              _password.text,
+              displayName: _name.text,
+            )
           : await _account
                 .signIn(_email.text.trim(), _password.text)
                 .then((_) => true);
       if (!mounted) return;
       if (signedIn) {
-        _continue();
+        await _continue();
       } else {
         setState(() {
           _message =
@@ -90,7 +120,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Cloud account')),
+    appBar: AppBar(title: Text(_register ? 'Create account' : 'Sign in')),
     body: Center(
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
@@ -104,19 +134,19 @@ class _LoginScreenState extends State<LoginScreen> {
                 const Icon(Icons.cloud_outlined, size: 56),
                 const SizedBox(height: 16),
                 const Text(
-                  'Back up your OBD recordings',
+                  'Welcome to AutoPulseAI',
                   style: TextStyle(fontSize: 24),
                 ),
                 const SizedBox(height: 12),
                 const Text(
-                  'Bluetooth and local recording work without an account. Sign in to upload your recordings privately.',
+                  'Sign in to save and restore your cars and runs. You can also use Bluetooth and record on this phone offline.',
                 ),
                 const SizedBox(height: 24),
                 if (_account.client == null)
                   const Text(
                     'Cloud storage is not configured for this build. You can continue offline.',
-                  )
-                else if (_account.userId != null) ...[
+                  ),
+                if (_account.userId != null) ...[
                   Text('Signed in as ${_account.email ?? 'vehicle owner'}'),
                   const SizedBox(height: 16),
                   FilledButton(
@@ -128,6 +158,21 @@ class _LoginScreenState extends State<LoginScreen> {
                     child: const Text('Sign out'),
                   ),
                 ] else ...[
+                  if (_register) ...[
+                    TextFormField(
+                      controller: _name,
+                      enabled: !_busy,
+                      autofillHints: const [AutofillHints.name],
+                      decoration: const InputDecoration(labelText: 'Your name'),
+                      validator: (value) =>
+                          value == null ||
+                              value.trim().isEmpty ||
+                              value.trim().length > 100
+                          ? 'Enter your name (up to 100 characters).'
+                          : null,
+                    ),
+                    const SizedBox(height: 16),
+                  ],
                   TextFormField(
                     controller: _email,
                     keyboardType: TextInputType.emailAddress,
@@ -161,7 +206,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 24),
                   FilledButton(
-                    onPressed: _busy ? null : _submit,
+                    onPressed: _busy || _account.client == null
+                        ? null
+                        : _submit,
                     child: Text(_register ? 'Create account' : 'Sign in'),
                   ),
                   TextButton(
