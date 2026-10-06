@@ -2,16 +2,27 @@
 
 ## Running the Android app
 
-Use VS Code's **AutoPulseAI (Supabase)** launch configuration, or:
+Normal builds load the project's public Supabase connection from
+`assets/supabase.public.json`. No extra launch flags are required:
+
+```sh
+flutter run
+```
+
+To override it with another project's configuration, use VS Code's
+**AutoPulseAI (Supabase)** launch configuration, or:
 
 ```sh
 flutter run --dart-define-from-file=.env
 ```
 
-The root `.env` must contain `SUPABASE_URL` and `SUPABASE_ANON_KEY`
+For an override, the root `.env` must contain `SUPABASE_URL` and `SUPABASE_ANON_KEY`
 (or `SUPABASE_PUBLISHABLE_KEY`). Only a public client key belongs in this file.
 Environment values are compiled into the app: fully restart/rebuild after changing them.
 The **AutoPulseAI (offline)** VS Code configuration builds without cloud services.
+Its explicit flag is `--dart-define=AUTOPULSE_OFFLINE=true`. Only public client
+settings are bundled; never include a service-role key, database password or SMTP
+credentials. RLS continues to enforce account ownership.
 
 ## Account flow
 

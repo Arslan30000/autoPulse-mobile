@@ -1,3 +1,7 @@
+import 'dart:convert';
+
+import 'package:flutter/services.dart';
+
 class SupabaseConfig {
   final String url;
   final String publicKey;
@@ -12,6 +16,28 @@ class SupabaseConfig {
       );
 
   bool get isConfigured => url.isNotEmpty && publicKey.isNotEmpty;
+
+  /// Public client settings are safe to bundle; database access still uses RLS.
+  /// Explicit build definitions take precedence over the project's defaults.
+  static Future<SupabaseConfig> load({AssetBundle? bundle}) async {
+    if (const bool.fromEnvironment('AUTOPULSE_OFFLINE')) {
+      return const SupabaseConfig(url: '', publicKey: '');
+    }
+    const environment = SupabaseConfig.fromEnvironment();
+    if (environment.url.isNotEmpty || environment.publicKey.isNotEmpty) {
+      environment.validate();
+      return environment;
+    }
+    final values = jsonDecode(
+      await (bundle ?? rootBundle).loadString('assets/supabase.public.json'),
+    ) as Map<String, dynamic>;
+    final config = SupabaseConfig(
+      url: values['url'] as String,
+      publicKey: values['publicKey'] as String,
+    );
+    config.validate();
+    return config;
+  }
 
   void validate() {
     if (url.isEmpty && publicKey.isEmpty) return;

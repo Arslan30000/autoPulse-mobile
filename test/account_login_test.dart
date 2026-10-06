@@ -92,6 +92,7 @@ void main() {
       expect(find.widgetWithText(TextFormField, 'Email'), findsOneWidget);
       expect(find.widgetWithText(TextFormField, 'Password'), findsOneWidget);
       expect(find.text('Continue offline'), findsOneWidget);
+      await tester.ensureVisible(find.text('Create an account'));
       await tester.tap(find.text('Create an account'));
       await tester.pump();
       expect(find.widgetWithText(TextFormField, 'Your name'), findsOneWidget);

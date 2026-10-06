@@ -14,7 +14,7 @@ import 'package:autopulse_ai/repositories/cloud_recording_repository.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  const backend = SupabaseConfig.fromEnvironment();
+  final backend = await SupabaseConfig.load();
   backend.validate();
   if (backend.isConfigured) {
     await Supabase.initialize(

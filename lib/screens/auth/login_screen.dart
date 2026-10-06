@@ -144,7 +144,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 const SizedBox(height: 24),
                 if (_account.client == null)
                   const Text(
-                    'Cloud storage is not configured for this build. You can continue offline.',
+                    'This build was launched in offline mode. Sign in and signup are unavailable. Use the normal app build to connect, or continue offline.',
                   ),
                 if (_account.userId != null) ...[
                   Text('Signed in as ${_account.email ?? 'vehicle owner'}'),
