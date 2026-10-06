@@ -1,3 +1,4 @@
+import 'package:autopulse_ai/core/widgets/chart_labels.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -50,7 +51,7 @@ class MechanicHistoryScreen extends StatelessWidget {
             const SectionHeader(title: 'Health Score Trend'),
             const SizedBox(height: 12),
             Container(
-              height: 200,
+              height: 280,
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: AppColors.surfaceSecondary,
@@ -58,6 +59,10 @@ class MechanicHistoryScreen extends StatelessWidget {
                 border: Border.all(color: AppColors.border),
               ),
               child: LineChart(
+                transformationConfig: const FlTransformationConfig(
+                  scaleAxis: FlScaleAxis.horizontal,
+                  maxScale: 8,
+                ),
                 LineChartData(
                   gridData: FlGridData(
                     show: true,
@@ -68,41 +73,7 @@ class MechanicHistoryScreen extends StatelessWidget {
                       strokeWidth: 0.5,
                     ),
                   ),
-                  titlesData: FlTitlesData(
-                    leftTitles: const AxisTitles(
-                      sideTitles: SideTitles(showTitles: false),
-                    ),
-                    topTitles: const AxisTitles(
-                      sideTitles: SideTitles(showTitles: false),
-                    ),
-                    rightTitles: const AxisTitles(
-                      sideTitles: SideTitles(showTitles: false),
-                    ),
-                    bottomTitles: AxisTitles(
-                      sideTitles: SideTitles(
-                        showTitles: true,
-                        reservedSize: 28,
-                        getTitlesWidget: (value, _) {
-                          const labels = [
-                            'Aug 12',
-                            'Aug 17',
-                            'Aug 20',
-                            'Aug 24',
-                          ];
-                          final i = value.toInt();
-                          return i >= 0 && i < labels.length
-                              ? Padding(
-                                  padding: const EdgeInsets.only(top: 8),
-                                  child: Text(
-                                    labels[i],
-                                    style: AppTextStyles.labelSmall,
-                                  ),
-                                )
-                              : const SizedBox.shrink();
-                        },
-                      ),
-                    ),
-                  ),
+                  titlesData: demoChartTitles(health: true),
                   borderData: FlBorderData(show: false),
                   minY: 80,
                   maxY: 100,
@@ -139,7 +110,7 @@ class MechanicHistoryScreen extends StatelessWidget {
                       ),
                     ),
                   ],
-                  lineTouchData: const LineTouchData(enabled: false),
+                  lineTouchData: demoChartTouches(health: true),
                 ),
               ),
             ).animate().fadeIn(duration: 500.ms),
