@@ -1,3 +1,4 @@
+import 'package:autopulse_ai/core/widgets/chart_labels.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -27,7 +28,7 @@ class HealthHistoryScreen extends StatelessWidget {
 
             // Chart
             Container(
-              height: 220,
+              height: 280,
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: AppColors.surfaceSecondary,
@@ -35,6 +36,10 @@ class HealthHistoryScreen extends StatelessWidget {
                 border: Border.all(color: AppColors.border),
               ),
               child: LineChart(
+                transformationConfig: const FlTransformationConfig(
+                  scaleAxis: FlScaleAxis.horizontal,
+                  maxScale: 8,
+                ),
                 LineChartData(
                   gridData: FlGridData(
                     show: true,
@@ -47,42 +52,7 @@ class HealthHistoryScreen extends StatelessWidget {
                       );
                     },
                   ),
-                  titlesData: FlTitlesData(
-                    leftTitles: const AxisTitles(
-                      sideTitles: SideTitles(showTitles: false),
-                    ),
-                    topTitles: const AxisTitles(
-                      sideTitles: SideTitles(showTitles: false),
-                    ),
-                    rightTitles: const AxisTitles(
-                      sideTitles: SideTitles(showTitles: false),
-                    ),
-                    bottomTitles: AxisTitles(
-                      sideTitles: SideTitles(
-                        showTitles: true,
-                        getTitlesWidget: (value, meta) {
-                          const labels = [
-                            'Aug 12',
-                            'Aug 17',
-                            'Aug 20',
-                            'Aug 24',
-                          ];
-                          final idx = value.toInt();
-                          if (idx >= 0 && idx < labels.length) {
-                            return Padding(
-                              padding: const EdgeInsets.only(top: 8),
-                              child: Text(
-                                labels[idx],
-                                style: AppTextStyles.labelSmall,
-                              ),
-                            );
-                          }
-                          return const SizedBox.shrink();
-                        },
-                        reservedSize: 30,
-                      ),
-                    ),
-                  ),
+                  titlesData: demoChartTitles(health: true),
                   borderData: FlBorderData(show: false),
                   minY: 80,
                   maxY: 100,
@@ -122,7 +92,7 @@ class HealthHistoryScreen extends StatelessWidget {
                       ),
                     ),
                   ],
-                  lineTouchData: const LineTouchData(enabled: false),
+                  lineTouchData: demoChartTouches(health: true),
                 ),
               ),
             ).animate().fadeIn(duration: 500.ms),

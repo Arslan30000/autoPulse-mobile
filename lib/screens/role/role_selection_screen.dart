@@ -84,10 +84,7 @@ class RoleSelectionScreen extends StatelessWidget {
                     accentColor: AppColors.primary,
                     onTap: () {
                       RoleService().setRole(UserRole.carOwner);
-                      Navigator.pushReplacementNamed(
-                        context,
-                        AppRouter.addVehicle,
-                      );
+                      Navigator.pushReplacementNamed(context, AppRouter.login);
                     },
                   )
                   .animate()
@@ -103,10 +100,7 @@ class RoleSelectionScreen extends StatelessWidget {
                     accentColor: AppColors.warning,
                     onTap: () {
                       RoleService().setRole(UserRole.mechanic);
-                      Navigator.pushReplacementNamed(
-                        context,
-                        AppRouter.addVehicle,
-                      );
+                      Navigator.pushReplacementNamed(context, AppRouter.login);
                     },
                   )
                   .animate()

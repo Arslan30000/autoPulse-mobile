@@ -76,7 +76,7 @@ class HomeScreen extends StatelessWidget {
                               ),
                             ],
                           ),
-                          child: const ConnectionIndicator(isConnected: true),
+                          child: const ObdConnectionIndicator(),
                         ),
                       ],
                     )

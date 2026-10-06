@@ -1,4 +1,6 @@
 class Vehicle {
+  final String? id;
+  final String? ownerId;
   final String make;
   final String model;
   final int year;
@@ -6,6 +8,8 @@ class Vehicle {
   final bool isConnected;
 
   const Vehicle({
+    this.id,
+    this.ownerId,
     required this.make,
     required this.model,
     required this.year,
@@ -17,6 +21,8 @@ class Vehicle {
   String get fullDisplayName => '$make $model \u2022 $year';
 
   Vehicle copyWith({
+    String? id,
+    String? ownerId,
     String? make,
     String? model,
     int? year,
@@ -24,6 +30,8 @@ class Vehicle {
     bool? isConnected,
   }) {
     return Vehicle(
+      id: id ?? this.id,
+      ownerId: ownerId ?? this.ownerId,
       make: make ?? this.make,
       model: model ?? this.model,
       year: year ?? this.year,
