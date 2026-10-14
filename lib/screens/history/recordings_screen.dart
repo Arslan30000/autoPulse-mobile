@@ -32,7 +32,13 @@ String _displayTime(BuildContext context, DateTime timestamp) {
 class RecordingsScreen extends StatefulWidget {
   final RecordingStore store;
   final RecordingSyncService? sync;
-  const RecordingsScreen({super.key, required this.store, this.sync});
+  final Future<void> Function()? synchronizeAccount;
+  const RecordingsScreen({
+    super.key,
+    required this.store,
+    this.sync,
+    this.synchronizeAccount,
+  });
   @override
   State<RecordingsScreen> createState() => _RecordingsScreenState();
 }
@@ -41,13 +47,15 @@ class _RecordingsScreenState extends State<RecordingsScreen> {
   final List<ObdRecording> _recordings = [];
   bool _loading = false;
   bool _more = true;
+  bool _refreshingCloud = false;
+  bool _reloadRequested = false;
   String? _error;
   @override
   void initState() {
     super.initState();
     widget.sync?.addListener(_syncChanged);
     AccountDataService.instance.addListener(_accountChanged);
-    unawaited(_load());
+    unawaited(_refreshCloud());
   }
 
   @override
@@ -64,11 +72,38 @@ class _RecordingsScreenState extends State<RecordingsScreen> {
   }
 
   void _accountChanged() {
-    if (mounted && !AccountDataService.instance.busy) unawaited(_load());
+    if (!mounted) return;
+    setState(() {});
+    if (!AccountDataService.instance.busy) unawaited(_load());
+  }
+
+  Future<void> _refreshCloud() async {
+    if (_refreshingCloud) return;
+    setState(() => _refreshingCloud = true);
+    try {
+      await _load();
+      if (widget.synchronizeAccount != null) {
+        await widget.synchronizeAccount!();
+      } else if (AccountService.instance.userId != null) {
+        await AccountDataService.instance.synchronize();
+      }
+      if (mounted) await _load();
+    } catch (_) {
+      if (mounted) {
+        setState(
+          () => _error = 'Cloud restore failed. Saved phone data is safe; tap Refresh to retry.',
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _refreshingCloud = false);
+    }
   }
 
   Future<void> _load({bool more = false}) async {
-    if (_loading) return;
+    if (_loading) {
+      if (!more) _reloadRequested = true;
+      return;
+    }
     final owner = AccountService.instance.userId;
     setState(() {
       _loading = true;
@@ -92,7 +127,13 @@ class _RecordingsScreenState extends State<RecordingsScreen> {
         );
       }
     } finally {
-      if (mounted) setState(() => _loading = false);
+      if (mounted) {
+        setState(() => _loading = false);
+        if (_reloadRequested) {
+          _reloadRequested = false;
+          unawaited(_load());
+        }
+      }
     }
   }
 
@@ -122,13 +163,13 @@ class _RecordingsScreenState extends State<RecordingsScreen> {
           ),
           IconButton(
             tooltip: 'Refresh recordings',
-            onPressed: _loading ? null : () => _load(),
+            onPressed: _loading || _refreshingCloud ? null : _refreshCloud,
             icon: const Icon(Icons.refresh),
           ),
         ],
       ),
       body: RefreshIndicator(
-        onRefresh: () => _load(),
+        onRefresh: _refreshCloud,
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
@@ -136,6 +177,14 @@ class _RecordingsScreenState extends State<RecordingsScreen> {
               'Signed-in runs back up automatically when online. Offline runs stay on this phone until you choose to upload them. Synced runs are restored when you sign in.',
             ),
             const SizedBox(height: 12),
+            if (_refreshingCloud || AccountDataService.instance.busy)
+              const LinearProgressIndicator(),
+            if (AccountService.instance.userId != null &&
+                AccountDataService.instance.message != null)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                child: Text(AccountDataService.instance.message!),
+              ),
             if (sync == null)
               const Text(
                 'Cloud upload needs a configured app build. Your trips are saved on this phone.',
@@ -158,11 +207,15 @@ class _RecordingsScreenState extends State<RecordingsScreen> {
                 label: const Text('Retry queued uploads'),
               ),
             if (_error != null) Text(_error!),
-            if (!_loading && _recordings.isEmpty && _error == null)
+            if (!_loading &&
+                !_refreshingCloud &&
+                !AccountDataService.instance.busy &&
+                _recordings.isEmpty &&
+                _error == null)
               const Padding(
                 padding: EdgeInsets.all(24),
                 child: Text(
-                  'No recordings yet. Connect an adapter and record a session from Live.',
+                  'No recordings yet. Tap Refresh to restore uploaded runs, or record a session from Live.',
                 ),
               ),
             for (final recording in _recordings)

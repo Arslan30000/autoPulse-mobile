@@ -9,7 +9,7 @@ import 'fixtures.dart';
 // Database correctness is exercised separately with real SQLite. UI tests use
 // deterministic futures so widget animations do not race a native worker isolate.
 class ScreenRecordingStore implements RecordingStore {
-  final bool populated;
+  bool populated;
   final int rowCount;
   ScreenRecordingStore({this.populated = true, this.rowCount = 2});
   ObdRecording get saved => ObdRecording(
@@ -59,6 +59,78 @@ class ScreenRecordingStore implements RecordingStore {
 }
 
 void main() {
+  testWidgets(
+    'opening recordings restores cloud runs before showing an empty history',
+    (tester) async {
+      final store = ScreenRecordingStore(populated: false);
+      var restores = 0;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: RecordingsScreen(
+            store: store,
+            synchronizeAccount: () async {
+              restores++;
+              store.populated = true;
+            },
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(restores, 1);
+      expect(find.text('Synthetic Fixture'), findsOneWidget);
+      expect(find.textContaining('No recordings yet.'), findsNothing);
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox.shrink());
+    },
+  );
+
+  testWidgets(
+    'refresh downloads cloud history instead of only reloading SQLite',
+    (tester) async {
+      final store = ScreenRecordingStore(populated: false);
+      var restores = 0;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: RecordingsScreen(
+            store: store,
+            synchronizeAccount: () async {
+              restores++;
+              if (restores > 1) store.populated = true;
+            },
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.textContaining('No recordings yet.'), findsOneWidget);
+      await tester.tap(find.byTooltip('Refresh recordings'));
+      await tester.pumpAndSettle();
+      expect(restores, 2);
+      expect(find.text('Synthetic Fixture'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox.shrink());
+    },
+  );
+
+  testWidgets(
+    'cloud restore failure keeps local runs visible and exposes retry',
+    (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: RecordingsScreen(
+            store: ScreenRecordingStore(),
+            synchronizeAccount: () async =>
+                throw StateError('Network unavailable'),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Synthetic Fixture'), findsOneWidget);
+      expect(find.textContaining('Cloud restore failed.'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox.shrink());
+    },
+  );
+
   testWidgets(
     'recording history opens details without cloud or adapter access',
     (tester) async {

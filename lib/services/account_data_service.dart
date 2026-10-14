@@ -16,6 +16,8 @@ class AccountDataService extends ChangeNotifier with WidgetsBindingObserver {
   final vehicles = LocalVehicleRepository();
   bool busy = false;
   String? message;
+  String? syncError;
+  int restoredRuns = 0;
   String? resolvedOwner;
   Timer? _timer;
   StreamSubscription<AuthState>? _auth;
@@ -67,7 +69,7 @@ class AccountDataService extends ChangeNotifier with WidgetsBindingObserver {
     ObdController.instance.setVehicle(
       vehicle ?? const Vehicle(make: 'Vehicle', model: '', year: 2020),
     );
-    if (cloud && owner != null && canStoreRuns) unawaited(synchronize());
+    if (cloud && owner != null && canStoreRuns) await synchronize();
     return vehicle;
   }
 
@@ -124,6 +126,8 @@ class AccountDataService extends ChangeNotifier with WidgetsBindingObserver {
     final client = account.client;
     if (owner == null || client == null) return;
     busy = true;
+    syncError = null;
+    restoredRuns = 0;
     message = 'Syncing account...';
     notifyListeners();
     try {
@@ -198,25 +202,39 @@ class AccountDataService extends ChangeNotifier with WidgetsBindingObserver {
           _check(owner);
           for (final run in page) {
             if (existing.contains(run['id'])) continue;
-            final car = cars.firstWhere((v) => v.id == run['vehicle_id']);
-            final samples = <Map<String, dynamic>>[];
-            var cursor = 0;
-            while (true) {
-              final batch = await client
-                  .from('obd_recording_samples')
-                  .select()
-                  .eq('owner_id', owner)
-                  .eq('session_id', run['id'])
-                  .gt('sample_id', cursor)
-                  .order('sample_id')
-                  .limit(500)
-                  .timeout(const Duration(seconds: 15));
+            message = 'Restoring saved runs ($restoredRuns restored)...';
+            notifyListeners();
+            try {
+              final car = cars.firstWhere((v) => v.id == run['vehicle_id']);
+              final samples = <Map<String, dynamic>>[];
+              var cursor = 0;
+              while (true) {
+                final batch = await client
+                    .from('obd_recording_samples')
+                    .select()
+                    .eq('owner_id', owner)
+                    .eq('session_id', run['id'])
+                    .gt('sample_id', cursor)
+                    .order('sample_id')
+                    .limit(500)
+                    .timeout(const Duration(seconds: 15));
+                _check(owner);
+                samples.addAll(batch);
+                if (batch.length < 500) break;
+                cursor = (batch.last['sample_id'] as num).toInt();
+              }
+              await store.importCloud(run, car, samples, owner);
               _check(owner);
-              samples.addAll(batch);
-              if (batch.length < 500) break;
-              cursor = (batch.last['sample_id'] as num).toInt();
+              existing.add(run['id']);
+              restoredRuns++;
+            } catch (error, stack) {
+              _check(owner);
+              debugPrint(
+                'Recording restore failed (${run['id']}): $error\n$stack',
+              );
+              syncError =
+                  'A saved run could not be restored. ${_syncErrorMessage(error)}';
             }
-            await store.importCloud(run, car, samples, owner);
           }
           if (page.length < 50) break;
         }
@@ -235,15 +253,31 @@ class AccountDataService extends ChangeNotifier with WidgetsBindingObserver {
           limit: 1,
         )).isNotEmpty;
       }
-      message = waiting
-          ? 'Cars restored. Some runs are waiting for backup; keep the app open and retry when online.'
-          : 'Account synced. Cars and uploaded runs are available offline.';
-    } catch (_) {
-      message = 'Cloud sync unavailable. Saved phone data is safe; we will retry when connected.';
+      message =
+          syncError ??
+          (waiting
+              ? 'Cars restored. Some runs are waiting for backup; keep the app open and retry when online.'
+              : 'Account synced. $restoredRuns runs restored. Cars and uploaded runs are available offline.');
+    } catch (error, stack) {
+      debugPrint('Account sync failed: $error\n$stack');
+      syncError = _syncErrorMessage(error);
+      message = 'Cloud sync unavailable. $syncError Saved phone data is safe.';
     } finally {
       busy = false;
       notifyListeners();
     }
+  }
+
+  String _syncErrorMessage(Object error) {
+    if (error is PostgrestException) {
+      return 'Database error ${error.code ?? ''}: ${error.message}';
+    }
+    if (error is AuthException) return 'Sign in again to restore your runs.';
+    if (error is TimeoutException) {
+      return 'The connection timed out. Tap Refresh to retry.';
+    }
+    if (error is StateError) return error.message.toString();
+    return 'Check your internet connection and tap Refresh to retry.';
   }
 
   @override
