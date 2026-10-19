@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:autopulse_ai/core/theme/app_colors.dart';
+import 'package:autopulse_ai/core/theme/app_text_styles.dart';
+import 'package:autopulse_ai/core/widgets/brand_mark.dart';
+import 'package:autopulse_ai/screens/auth/password_recovery_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:autopulse_ai/navigation/app_router.dart';
 import 'package:autopulse_ai/services/account_service.dart';
@@ -18,7 +22,10 @@ class _LoginScreenState extends State<LoginScreen> {
   final _email = TextEditingController();
   final _name = TextEditingController();
   final _password = TextEditingController();
+  final _confirm = TextEditingController();
   final _account = AccountService.instance;
+  bool _hidePassword = true;
+  bool _hideConfirm = true;
   bool _busy = false;
   bool _register = false;
   String? _message;
@@ -28,6 +35,7 @@ class _LoginScreenState extends State<LoginScreen> {
     _email.dispose();
     _name.dispose();
     _password.dispose();
+    _confirm.dispose();
     super.dispose();
   }
 
@@ -118,129 +126,363 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  void _mode(bool register) {
+    if (_busy || register == _register) return;
+    _form.currentState?.reset();
+    setState(() {
+      _register = register;
+      _message = null;
+      _confirm.clear();
+    });
+  }
+
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: Text(_register ? 'Create account' : 'Sign in')),
-    body: Center(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
+    body: SafeArea(
+      child: Center(
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 460),
-          child: Form(
-            key: _form,
+          constraints: const BoxConstraints(maxWidth: 520),
+          child: SingleChildScrollView(
+            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const Icon(Icons.cloud_outlined, size: 56),
-                const SizedBox(height: 16),
-                const Text(
-                  'Welcome to AutoPulseAI',
-                  style: TextStyle(fontSize: 24),
-                ),
-                const SizedBox(height: 12),
-                const Text(
-                  'Sign in to save and restore your cars and runs. You can also use Bluetooth and record on this phone offline.',
-                ),
-                const SizedBox(height: 24),
-                if (_account.client == null)
-                  const Text(
-                    'This build was launched in offline mode. Sign in and signup are unavailable. Use the normal app build to connect, or continue offline.',
-                  ),
-                if (_account.userId != null) ...[
-                  Text('Signed in as ${_account.email ?? 'vehicle owner'}'),
-                  const SizedBox(height: 16),
-                  FilledButton(
-                    onPressed: _busy ? null : _continue,
-                    child: const Text('Continue'),
-                  ),
-                  TextButton(
-                    onPressed: _busy ? null : _signOut,
-                    child: const Text('Sign out'),
-                  ),
-                ] else ...[
-                  if (_register) ...[
-                    TextFormField(
-                      controller: _name,
-                      enabled: !_busy,
-                      autofillHints: const [AutofillHints.name],
-                      decoration: const InputDecoration(labelText: 'Your name'),
-                      validator: (value) =>
-                          value == null ||
-                              value.trim().isEmpty ||
-                              value.trim().length > 100
-                          ? 'Enter your name (up to 100 characters).'
-                          : null,
-                    ),
-                    const SizedBox(height: 16),
-                  ],
-                  TextFormField(
-                    controller: _email,
-                    keyboardType: TextInputType.emailAddress,
-                    autofillHints: const [AutofillHints.email],
-                    enabled: !_busy,
-                    decoration: const InputDecoration(labelText: 'Email'),
-                    validator: (value) =>
-                        value != null &&
-                            RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$')
-                                .hasMatch(value.trim())
-                        ? null
-                        : 'Enter a valid email.',
-                  ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _password,
-                    obscureText: true,
-                    enabled: !_busy,
-                    autofillHints: [
-                      _register
-                          ? AutofillHints.newPassword
-                          : AutofillHints.password,
-                    ],
-                    decoration: const InputDecoration(labelText: 'Password'),
-                    validator: (value) =>
-                        value == null ||
-                            value.isEmpty ||
-                            (_register && value.length < 8)
-                        ? 'Enter a password${_register ? ' of at least 8 characters' : ''}.'
-                        : null,
-                  ),
-                  const SizedBox(height: 24),
-                  FilledButton(
-                    onPressed: _busy || _account.client == null
-                        ? null
-                        : _submit,
-                    child: Text(_register ? 'Create account' : 'Sign in'),
-                  ),
-                  TextButton(
-                    onPressed: _busy
-                        ? null
-                        : () => setState(() {
-                            _register = !_register;
-                            _message = null;
-                          }),
-                    child: Text(
-                      _register
-                          ? 'Already registered? Sign in'
-                          : 'Create an account',
+                if (widget.returnToCaller)
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: IconButton(
+                      tooltip: 'Back',
+                      icon: const Icon(Icons.arrow_back_rounded),
+                      onPressed: _busy ? null : () => Navigator.pop(context),
                     ),
                   ),
-                ],
-                if (_message != null)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    child: Text(_message!),
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 36),
+                  child: Center(child: BrandMark(width: 192)),
+                ),
+                Container(
+                  padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
+                  decoration: const BoxDecoration(
+                    color: AppColors.tealSurface,
+                    borderRadius: BorderRadius.vertical(
+                      top: Radius.circular(36),
+                    ),
                   ),
-                if (_busy) const Center(child: CircularProgressIndicator()),
-                if (_account.userId == null)
-                  TextButton(
-                    onPressed: _busy ? null : _continue,
-                    child: const Text('Continue offline'),
+                  child: AutofillGroup(
+                    child: Form(
+                      key: _form,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Text(
+                            _register
+                                ? 'Your next chapter starts here.'
+                                : 'Welcome back.',
+                            style: AppTextStyles.headlineMedium.copyWith(
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Sign up to save your vehicles and recordings.',
+                            style: AppTextStyles.bodyMedium.copyWith(
+                              height: 1.5,
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                          if (_account.userId == null) ...[
+                            Container(
+                              padding: const EdgeInsets.all(5),
+                              decoration: BoxDecoration(
+                                color: AppColors.background.withValues(
+                                  alpha: .45,
+                                ),
+                                borderRadius: BorderRadius.circular(28),
+                              ),
+                              child: Row(
+                                children: [
+                                  _tab('Login', false),
+                                  _tab('Register', true),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 24),
+                            if (_register) ...[
+                              TextFormField(
+                                controller: _name,
+                                enabled: !_busy,
+                                textCapitalization: TextCapitalization.words,
+                                textInputAction: TextInputAction.next,
+                                autofillHints: const [AutofillHints.name],
+                                decoration: _decoration(
+                                  'Your name',
+                                  Icons.person_outline_rounded,
+                                ),
+                                validator: (value) =>
+                                    value == null ||
+                                        value.trim().isEmpty ||
+                                        value.trim().length > 100
+                                    ? 'Enter your name (up to 100 characters).'
+                                    : null,
+                              ),
+                              const SizedBox(height: 16),
+                            ],
+                            TextFormField(
+                              controller: _email,
+                              enabled: !_busy,
+                              keyboardType: TextInputType.emailAddress,
+                              textInputAction: TextInputAction.next,
+                              autocorrect: false,
+                              autofillHints: const [AutofillHints.email],
+                              decoration: _decoration(
+                                'Email',
+                                Icons.alternate_email_rounded,
+                              ),
+                              validator: (value) =>
+                                  value == null ||
+                                      !RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$')
+                                          .hasMatch(value.trim())
+                                  ? 'Enter a valid email address.'
+                                  : null,
+                            ),
+                            const SizedBox(height: 16),
+                            TextFormField(
+                              controller: _password,
+                              enabled: !_busy,
+                              obscureText: _hidePassword,
+                              autocorrect: false,
+                              enableSuggestions: false,
+                              textInputAction: _register
+                                  ? TextInputAction.next
+                                  : TextInputAction.done,
+                              onFieldSubmitted: (_) {
+                                if (!_register &&
+                                    !_busy &&
+                                    _account.client != null) {
+                                  _submit();
+                                }
+                              },
+                              autofillHints: [
+                                _register
+                                    ? AutofillHints.newPassword
+                                    : AutofillHints.password,
+                              ],
+                              decoration:
+                                  _decoration(
+                                    'Password',
+                                    Icons.lock_outline_rounded,
+                                  ).copyWith(
+                                    helperText: _register
+                                        ? 'Use at least 8 characters.'
+                                        : null,
+                                    suffixIcon: IconButton(
+                                      tooltip: _hidePassword
+                                          ? 'Show password'
+                                          : 'Hide password',
+                                      onPressed: () => setState(
+                                        () => _hidePassword = !_hidePassword,
+                                      ),
+                                      icon: Icon(
+                                        _hidePassword
+                                            ? Icons.visibility_outlined
+                                            : Icons.visibility_off_outlined,
+                                      ),
+                                    ),
+                                  ),
+                              validator: (value) =>
+                                  value == null ||
+                                      value.isEmpty ||
+                                      (_register && value.length < 8)
+                                  ? 'Enter a password${_register ? ' of at least 8 characters' : ''}.'
+                                  : null,
+                            ),
+                            if (_register) ...[
+                              const SizedBox(height: 16),
+                              TextFormField(
+                                controller: _confirm,
+                                enabled: !_busy,
+                                obscureText: _hideConfirm,
+                                autocorrect: false,
+                                enableSuggestions: false,
+                                textInputAction: TextInputAction.done,
+                                onFieldSubmitted: (_) {
+                                  if (!_busy && _account.client != null) {
+                                    _submit();
+                                  }
+                                },
+                                decoration:
+                                    _decoration(
+                                      'Confirm password',
+                                      Icons.lock_outline_rounded,
+                                    ).copyWith(
+                                      suffixIcon: IconButton(
+                                        tooltip: _hideConfirm
+                                            ? 'Show confirmation'
+                                            : 'Hide confirmation',
+                                        onPressed: () => setState(
+                                          () => _hideConfirm = !_hideConfirm,
+                                        ),
+                                        icon: Icon(
+                                          _hideConfirm
+                                              ? Icons.visibility_outlined
+                                              : Icons.visibility_off_outlined,
+                                        ),
+                                      ),
+                                    ),
+                                validator: (value) =>
+                                    value == null || value.isEmpty
+                                    ? 'Confirm your password.'
+                                    : value != _password.text
+                                    ? 'Passwords do not match.'
+                                    : null,
+                              ),
+                            ] else
+                              Align(
+                                alignment: Alignment.centerRight,
+                                child: TextButton(
+                                  onPressed: _busy || _account.client == null
+                                      ? null
+                                      : () async {
+                                          await Navigator.push(
+                                            context,
+                                            MaterialPageRoute<void>(
+                                              builder: (_) =>
+                                                  PasswordRecoveryScreen(
+                                                    email: _email.text.trim(),
+                                                  ),
+                                            ),
+                                          );
+                                          if (mounted) setState(() {});
+                                        },
+                                  style: TextButton.styleFrom(
+                                    foregroundColor: AppColors.textPrimary,
+                                  ),
+                                  child: const Text('Forgot password?'),
+                                ),
+                              ),
+                            const SizedBox(height: 24),
+                            if (_account.client == null) ...[
+                              const Text(
+                                'Account access is unavailable in this offline build. You can still use the app without an account.',
+                                style: TextStyle(
+                                  color: AppColors.textSecondary,
+                                  height: 1.5,
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                            ],
+                            FilledButton(
+                              onPressed: _busy || _account.client == null
+                                  ? null
+                                  : _submit,
+                              child: _busy
+                                  ? const SizedBox(
+                                      width: 22,
+                                      height: 22,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                      ),
+                                    )
+                                  : Text(
+                                      _register ? 'Create account' : 'Sign in',
+                                    ),
+                            ),
+                            const SizedBox(height: 8),
+                            TextButton(
+                              onPressed: _busy ? null : () => _mode(!_register),
+                              style: TextButton.styleFrom(
+                                foregroundColor: AppColors.textPrimary,
+                              ),
+                              child: Text(
+                                _register
+                                    ? 'Already registered? Sign in'
+                                    : 'Create an account',
+                              ),
+                            ),
+                          ] else ...[
+                            Text(
+                              'Signed in as ${_account.email ?? 'vehicle owner'}',
+                            ),
+                            const SizedBox(height: 20),
+                            FilledButton(
+                              onPressed: _busy ? null : _continue,
+                              child: const Text('Continue'),
+                            ),
+                            TextButton(
+                              onPressed: _busy ? null : _signOut,
+                              child: const Text('Sign out'),
+                            ),
+                          ],
+                          if (_message != null)
+                            Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              child: Semantics(
+                                liveRegion: true,
+                                child: Text(
+                                  _message!,
+                                  style: const TextStyle(height: 1.5),
+                                ),
+                              ),
+                            ),
+                          if (_account.userId == null) ...[
+                            const SizedBox(height: 8),
+                            const Divider(color: AppColors.borderLight),
+                            const SizedBox(height: 8),
+                            TextButton(
+                              onPressed: _busy ? null : _continue,
+                              style: TextButton.styleFrom(
+                                foregroundColor: AppColors.textSecondary,
+                              ),
+                              child: const Text('Continue without an account'),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
                   ),
+                ),
               ],
             ),
           ),
         ),
       ),
+    ),
+  );
+
+  Widget _tab(String label, bool register) => Expanded(
+    child: Semantics(
+      selected: _register == register,
+      child: TextButton(
+        onPressed: _busy ? null : () => _mode(register),
+        style: TextButton.styleFrom(
+          backgroundColor: _register == register
+              ? AppColors.background
+              : Colors.transparent,
+          foregroundColor: _register == register
+              ? AppColors.textPrimary
+              : AppColors.textSecondary,
+          minimumSize: const Size(48, 46),
+          textStyle: AppTextStyles.titleMedium.copyWith(
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        child: Text(label),
+      ),
+    ),
+  );
+
+  InputDecoration _decoration(String label, IconData icon) => InputDecoration(
+    labelText: label,
+    prefixIcon: Icon(icon, size: 20),
+    filled: true,
+    fillColor: AppColors.background.withValues(alpha: .35),
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(16),
+      borderSide: BorderSide.none,
+    ),
+    enabledBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(16),
+      borderSide: BorderSide.none,
     ),
   );
 }

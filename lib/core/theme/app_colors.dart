@@ -4,15 +4,16 @@ class AppColors {
   AppColors._();
 
   // Backgrounds
-  static const Color background = Color(0xFF0B0F14);
-  static const Color surface = Color(0xFF121821);
-  static const Color surfaceSecondary = Color(0xFF18212C);
-  static const Color surfaceTertiary = Color(0xFF1E2A3A);
+  static const Color background = Color(0xFF1A303C);
+  static const Color surface = Color(0xFF203C49);
+  static const Color surfaceSecondary = Color(0xFF274753);
+  static const Color surfaceTertiary = Color(0xFF315661);
+  static const Color tealSurface = Color(0xFF126576);
 
   // Accent
-  static const Color primary = Color(0xFF00D4FF);
-  static const Color primaryDim = Color(0xFF0098B8);
-  static const Color primaryGlow = Color(0x3300D4FF);
+  static const Color primary = Color(0xFF00ACC7);
+  static const Color primaryDim = Color(0xFF087F94);
+  static const Color primaryGlow = Color(0x2200ACC7);
 
   // Status
   static const Color success = Color(0xFF4CAF50);
@@ -23,29 +24,29 @@ class AppColors {
   static const Color dangerDim = Color(0xFFC62828);
 
   // Text
-  static const Color textPrimary = Color(0xFFFFFFFF);
-  static const Color textSecondary = Color(0xFF8E99A8);
-  static const Color textTertiary = Color(0xFF5A6577);
+  static const Color textPrimary = Color(0xFFF3F8FA);
+  static const Color textSecondary = Color(0xFFB9CED5);
+  static const Color textTertiary = Color(0xFF93B0BC);
 
   // Borders
-  static const Color border = Color(0xFF1E2A3A);
-  static const Color borderLight = Color(0xFF2A3544);
+  static const Color border = Color(0xFF31515E);
+  static const Color borderLight = Color(0xFF476975);
 
   // Gradients
   static const LinearGradient primaryGradient = LinearGradient(
-    colors: [Color(0xFF00D4FF), Color(0xFF0098B8)],
+    colors: [primary, primary],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
 
   static const LinearGradient surfaceGradient = LinearGradient(
-    colors: [Color(0xFF121821), Color(0xFF18212C)],
+    colors: [surface, background],
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
   );
 
   static const LinearGradient cardGradient = LinearGradient(
-    colors: [Color(0xFF18212C), Color(0xFF121821)],
+    colors: [surfaceSecondary, surface],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );

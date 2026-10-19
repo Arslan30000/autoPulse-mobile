@@ -6,6 +6,8 @@ import 'package:autopulse_ai/core/widgets/obd_telemetry_chart.dart';
 import 'package:autopulse_ai/core/theme/app_colors.dart';
 import 'package:autopulse_ai/core/widgets/obd_connection_panel.dart';
 import 'package:autopulse_ai/core/widgets/telemetry_card.dart';
+import 'package:autopulse_ai/core/widgets/telemetry_gauge.dart';
+import 'package:autopulse_ai/core/theme/app_text_styles.dart';
 import 'package:autopulse_ai/models/obd.dart';
 import 'package:autopulse_ai/services/obd/obd_controller.dart';
 
@@ -35,6 +37,14 @@ class LiveObdView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final obd = controller;
+    const gaugeParameters = [
+      ObdParameter.rpm,
+      ObdParameter.speed,
+      ObdParameter.coolant,
+    ];
+    final otherParameters = ObdParameter.values
+        .where((p) => !gaugeParameters.contains(p))
+        .toList();
     return ListenableBuilder(
       listenable: obd,
       builder: (context, _) => Scaffold(
@@ -61,12 +71,89 @@ class LiveObdView extends StatelessWidget {
                   style: Theme.of(context).textTheme.titleLarge,
                 ),
                 const SizedBox(height: 20),
-                ObdConnectionPanel(controller: obd),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: AppColors.border),
+                  ),
+                  child: ObdConnectionPanel(controller: obd),
+                ),
                 const Divider(height: 32),
                 if (obd.isReady)
                   Text(
                     'ECU ${obd.ecuSource}  |  ${obd.supported.length} supported parameters',
                   ),
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.fromLTRB(12, 20, 12, 18),
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(color: AppColors.border),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.only(left: 8, bottom: 24),
+                        child: Text(
+                          'At a glance',
+                          style: AppTextStyles.titleMedium,
+                        ),
+                      ),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          for (final p in gaugeParameters)
+                            Expanded(
+                              flex: p == ObdParameter.speed ? 5 : 4,
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 4,
+                                ),
+                                child: TelemetryGauge(
+                                  label: p == ObdParameter.rpm
+                                      ? 'Engine RPM'
+                                      : p == ObdParameter.speed
+                                      ? 'Speed'
+                                      : 'Coolant',
+                                  unit: p == ObdParameter.coolant
+                                      ? '°C'
+                                      : p.unit,
+                                  value: _valid(p)
+                                      ? obd.samples[p]!.value
+                                      : null,
+                                  quality: _quality(p),
+                                  minimum: p == ObdParameter.coolant ? -40 : 0,
+                                  maximum: p == ObdParameter.rpm
+                                      ? 8000
+                                      : p == ObdParameter.speed
+                                      ? 240
+                                      : 160,
+                                  divisions: p == ObdParameter.rpm
+                                      ? 8
+                                      : p == ObdParameter.speed
+                                      ? 6
+                                      : 5,
+                                  tickDivisor: p == ObdParameter.rpm ? 1000 : 1,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 28),
+                Text('More parameters', style: AppTextStyles.titleLarge),
+                const SizedBox(height: 6),
+                Text(
+                  'Readings reported by your vehicle’s ECU.',
+                  style: AppTextStyles.bodySmall,
+                ),
                 const SizedBox(height: 16),
                 LayoutBuilder(
                   builder: (context, constraints) {
@@ -78,7 +165,7 @@ class LiveObdView extends StatelessWidget {
                     return GridView.builder(
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
-                      itemCount: ObdParameter.values.length,
+                      itemCount: otherParameters.length,
                       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                         crossAxisCount: columns,
                         mainAxisExtent: 155,
@@ -86,29 +173,10 @@ class LiveObdView extends StatelessWidget {
                         mainAxisSpacing: 12,
                       ),
                       itemBuilder: (context, index) {
-                        final p = ObdParameter.values[index];
+                        final p = otherParameters[index];
                         final sample = obd.samples[p];
-                        final stale =
-                            sample != null &&
-                            DateTime.now().difference(sample.receivedAt) >
-                                const Duration(seconds: 6);
-                        final valid =
-                            obd.isReady &&
-                            sample?.status == ObdSampleStatus.valid &&
-                            !stale;
-                        final quality = !obd.isReady
-                            ? 'Disconnected'
-                            : !obd.supported.contains(p)
-                            ? 'Not supported'
-                            : sample == null
-                            ? 'Waiting'
-                            : stale
-                            ? 'Stale'
-                            : sample.status == ObdSampleStatus.valid
-                            ? '${sample.latencyMs} ms response'
-                            : sample.status == ObdSampleStatus.noData
-                            ? 'No data'
-                            : 'Invalid response';
+                        final valid = _valid(p);
+                        final quality = _quality(p);
                         return Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -204,4 +272,32 @@ class LiveObdView extends StatelessWidget {
     ObdParameter.maf || ObdParameter.map => Icons.air,
     _ => Icons.settings_input_component,
   };
+
+  bool _stale(ObdSample sample) =>
+      DateTime.now().difference(sample.receivedAt) > const Duration(seconds: 6);
+  bool _valid(ObdParameter p) {
+    final sample = controller.samples[p];
+    return controller.isReady &&
+        controller.supported.contains(p) &&
+        sample != null &&
+        sample.status == ObdSampleStatus.valid &&
+        sample.value != null &&
+        sample.value!.isFinite &&
+        !_stale(sample);
+  }
+
+  String _quality(ObdParameter p) {
+    final sample = controller.samples[p];
+    if (!controller.isReady) return 'Disconnected';
+    if (!controller.supported.contains(p)) return 'Not supported';
+    if (sample == null) return 'Waiting';
+    if (_stale(sample)) return 'Stale';
+    if (_valid(p)) return '${sample.latencyMs} ms response';
+    return switch (sample.status) {
+      ObdSampleStatus.unsupported => 'Not supported',
+      ObdSampleStatus.noData => 'No data',
+      ObdSampleStatus.timeout => 'Timed out',
+      _ => 'Invalid response',
+    };
+  }
 }

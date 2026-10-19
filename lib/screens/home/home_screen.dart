@@ -1,334 +1,389 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:autopulse_ai/core/theme/app_colors.dart';
 import 'package:autopulse_ai/core/theme/app_text_styles.dart';
-import 'package:autopulse_ai/core/widgets/health_score_widget.dart';
-import 'package:autopulse_ai/core/widgets/system_status_card.dart';
-import 'package:autopulse_ai/core/widgets/connection_indicator.dart';
-import 'package:autopulse_ai/core/widgets/section_header.dart';
-import 'package:autopulse_ai/core/widgets/quick_action_card.dart';
+import 'package:autopulse_ai/core/widgets/brand_mark.dart';
 import 'package:autopulse_ai/core/widgets/vehicle_illustration.dart';
-import 'package:autopulse_ai/core/widgets/alert_card.dart';
-import 'package:autopulse_ai/data/mock/mock_data.dart';
+import 'package:autopulse_ai/core/widgets/obd_connection_panel.dart';
 import 'package:autopulse_ai/navigation/app_router.dart';
-import 'package:autopulse_ai/models/health.dart';
+import 'package:autopulse_ai/services/account_service.dart';
 import 'package:autopulse_ai/services/obd/obd_controller.dart';
+import 'package:autopulse_ai/screens/vehicle/vehicles_screen.dart';
+import 'package:autopulse_ai/screens/history/recordings_screen.dart';
+import 'package:autopulse_ai/repositories/obd_recording_repository.dart';
+import 'package:autopulse_ai/services/recording_sync_service.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              AppColors.background,
-              AppColors.surfaceSecondary,
-              AppColors.background,
-            ],
-          ),
+  void _connect(BuildContext context) => showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    builder: (_) => SafeArea(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(24, 4, 24, 28),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Connect your vehicle', style: AppTextStyles.headlineMedium),
+            const SizedBox(height: 8),
+            Text(
+              'Pair your ELM327 in Android Bluetooth settings first.',
+              style: AppTextStyles.bodyMedium,
+            ),
+            const SizedBox(height: 24),
+            ObdConnectionPanel(controller: ObdController.instance),
+          ],
         ),
-        child: SafeArea(
+      ),
+    ),
+  );
+
+  void _history(BuildContext context) {
+    final store = ObdController.instance.repository;
+    if (store is! RecordingStore) return;
+    Navigator.push(
+      context,
+      MaterialPageRoute<void>(
+        builder: (_) =>
+            RecordingsScreen(store: store, sync: RecordingSyncService.instance),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    body: SafeArea(
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 900),
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Greeting
-                Text(
-                  'Good Morning 👋',
-                  style: AppTextStyles.headlineMedium,
-                ).animate().fadeIn(duration: 500.ms).slideX(begin: -0.1),
-                const SizedBox(height: 4),
                 Row(
-                      children: [
-                        Expanded(
-                          child: ListenableBuilder(
-                            listenable: ObdController.instance,
-                            builder: (_, _) => Text(
-                              ObdController.instance.vehicle.fullDisplayName,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: AppTextStyles.bodyMedium.copyWith(
+                  children: [
+                    const BrandMark(width: 92),
+                    const Spacer(),
+                    ListenableBuilder(
+                      listenable: ObdController.instance,
+                      builder: (_, _) => TextButton.icon(
+                        style: TextButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          foregroundColor: AppColors.background,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 12,
+                          ),
+                        ),
+                        onPressed: () => _connect(context),
+                        icon: Icon(
+                          ObdController.instance.isReady
+                              ? Icons.bluetooth_connected
+                              : Icons.bluetooth,
+                          size: 17,
+                        ),
+                        label: Text(
+                          ObdController.instance.isReady
+                              ? 'Connected'
+                              : 'Connect Bluetooth',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 30),
+                Text(_greeting(), style: AppTextStyles.bodyMedium),
+                const SizedBox(height: 6),
+                Text(
+                  'Your drive, understood.',
+                  style: AppTextStyles.headlineLarge.copyWith(
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -.8,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Container(
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    borderRadius: BorderRadius.circular(28),
+                    border: Border.all(color: AppColors.border),
+                  ),
+                  child: Column(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 18, 10, 0),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: ListenableBuilder(
+                                listenable: ObdController.instance,
+                                builder: (_, _) => Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'MY VEHICLE',
+                                      style: AppTextStyles.labelSmall.copyWith(
+                                        letterSpacing: 1.8,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 6),
+                                    Text(
+                                      ObdController
+                                          .instance
+                                          .vehicle
+                                          .fullDisplayName,
+                                      style: AppTextStyles.titleLarge,
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            IconButton(
+                              tooltip: 'Change vehicle',
+                              onPressed: () => Navigator.push(
+                                context,
+                                MaterialPageRoute<void>(
+                                  builder: (_) => const VehiclesScreen(),
+                                ),
+                              ),
+                              icon: const Icon(
+                                Icons.swap_horiz_rounded,
                                 color: AppColors.primary,
                               ),
                             ),
-                          ),
+                          ],
                         ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 6,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppColors.surfaceTertiary.withValues(
-                              alpha: 0.5,
-                            ),
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                              color: AppColors.primary.withValues(alpha: 0.3),
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: AppColors.primary.withValues(alpha: 0.1),
-                                blurRadius: 8,
-                                spreadRadius: 1,
+                      ),
+                      const VehicleIllustration(height: 235),
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 0, 12, 14),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: ListenableBuilder(
+                                listenable: ObdController.instance,
+                                builder: (_, _) => Row(
+                                  children: [
+                                    Icon(
+                                      Icons.circle,
+                                      size: 7,
+                                      color: ObdController.instance.isReady
+                                          ? AppColors.success
+                                          : AppColors.textTertiary,
+                                    ),
+                                    const SizedBox(width: 7),
+                                    Flexible(
+                                      child: Text(
+                                        ObdController.instance.isReady
+                                            ? 'Receiving vehicle data'
+                                            : 'Ready when you are',
+                                        style: AppTextStyles.bodySmall,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
-                            ],
-                          ),
-                          child: const ObdConnectionIndicator(),
-                        ),
-                      ],
-                    )
-                    .animate()
-                    .fadeIn(duration: 500.ms, delay: 100.ms)
-                    .slideX(begin: 0.1),
-
-                const SizedBox(height: 24),
-
-                // Vehicle Health
-                SectionHeader(
-                  title: 'Vehicle Health',
-                  actionText: 'Details',
-                  onAction: () =>
-                      Navigator.pushNamed(context, AppRouter.vehicleHealth),
-                ).animate().fadeIn(duration: 400.ms, delay: 200.ms),
-                const SizedBox(height: 16),
-                Center(
-                      child: Container(
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppColors.primary.withValues(alpha: 0.15),
-                              blurRadius: 40,
-                              spreadRadius: 5,
+                            ),
+                            TextButton.icon(
+                              onPressed: () => Navigator.push(
+                                context,
+                                MaterialPageRoute<void>(
+                                  builder: (_) => const VehiclePreviewScreen(),
+                                ),
+                              ),
+                              icon: const Icon(
+                                Icons.view_in_ar_rounded,
+                                size: 16,
+                              ),
+                              label: const Text(
+                                'Explore 3D',
+                                style: TextStyle(fontSize: 12),
+                              ),
                             ),
                           ],
                         ),
-                        child: HealthScoreWidget(
-                          score: MockData.vehicleHealth.score,
-                          status: MockData.vehicleHealth.status,
-                        ),
                       ),
-                    )
-                    .animate()
-                    .fadeIn(duration: 600.ms, delay: 300.ms)
-                    .scale(
-                      begin: const Offset(0.8, 0.8),
-                      end: const Offset(1.0, 1.0),
-                      duration: 600.ms,
-                      curve: Curves.easeOutBack,
-                    ),
-
-                const SizedBox(height: 24),
-
-                // Vehicle Illustration
-                Center(
-                      child: Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          Container(
-                            width: 250,
-                            height: 100,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.rectangle,
-                              borderRadius: BorderRadius.circular(50),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: AppColors.primary.withValues(
-                                    alpha: 0.1,
-                                  ),
-                                  blurRadius: 50,
-                                  spreadRadius: 10,
-                                ),
-                              ],
-                            ),
-                          ),
-                          VehicleIllustration(
-                            systems: MockData.vehicleHealth.systems,
-                            height: 180,
-                          ),
-                        ],
-                      ),
-                    )
-                    .animate()
-                    .fadeIn(duration: 500.ms, delay: 400.ms)
-                    .slideY(begin: 0.2),
-
-                const SizedBox(height: 24),
-
-                // Systems
-                SectionHeader(title: 'Systems')
-                    .animate()
-                    .fadeIn(duration: 400.ms, delay: 500.ms),
-                const SizedBox(height: 12),
-                GridView.count(
-                  crossAxisCount: 2,
-                  mainAxisSpacing: 12,
-                  crossAxisSpacing: 12,
-                  childAspectRatio: 2.4,
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  children: MockData.vehicleHealth.systems.map((system) {
-                    return Container(
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: system.status != SystemStatus.normal
-                            ? [
-                                BoxShadow(
-                                  color: AppColors.warning.withValues(
-                                    alpha: 0.15,
-                                  ),
-                                  blurRadius: 12,
-                                  spreadRadius: 1,
-                                ),
-                              ]
-                            : null,
-                      ),
-                      child: SystemStatusCard(
-                        systemHealth: system,
-                        onTap: system.status != SystemStatus.normal
-                            ? () => Navigator.pushNamed(
-                                context,
-                                AppRouter.diagnosticDetail,
-                                arguments: MockData.anomalies.first,
-                              )
-                            : null,
-                      ),
-                    );
-                  }).toList(),
-                ).animate().fadeIn(duration: 400.ms, delay: 600.ms),
-
-                const SizedBox(height: 24),
-
-                // Recent Alert
-                Container(
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: AppColors.warning.withValues(alpha: 0.5),
-                          width: 1.5,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppColors.warning.withValues(alpha: 0.1),
-                            blurRadius: 20,
-                            spreadRadius: 2,
-                          ),
-                        ],
-                      ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(16),
-                        child: BackdropFilter(
-                          filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
-                          child: AlertCard(
-                            message: 'Air intake behavior shows a minor deviation from the vehicle\'s normal pattern.',
-                            onViewDetails: () => Navigator.pushNamed(
-                              context,
-                              AppRouter.diagnosticDetail,
-                              arguments: MockData.anomalies.first,
-                            ),
-                          ),
-                        ),
-                      ),
-                    )
-                    .animate()
-                    .fadeIn(duration: 400.ms, delay: 700.ms)
-                    .shimmer(
-                      duration: 2.seconds,
-                      color: AppColors.warning.withValues(alpha: 0.2),
-                    ),
-
-                const SizedBox(height: 12),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.access_time_rounded,
-                      size: 14,
-                      color: AppColors.primary,
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      'Last Scan • Today • 12:28 PM',
-                      style: AppTextStyles.labelSmall.copyWith(
-                        color: AppColors.primary,
-                      ),
-                    ),
-                  ],
-                ).animate().fadeIn(duration: 400.ms, delay: 750.ms),
-
-                const SizedBox(height: 24),
-
-                // Quick Actions
-                SectionHeader(title: 'Quick Actions')
-                    .animate()
-                    .fadeIn(duration: 400.ms, delay: 800.ms),
-                const SizedBox(height: 12),
-                GridView.count(
-                  crossAxisCount: 3,
-                  mainAxisSpacing: 12,
-                  crossAxisSpacing: 12,
-                  childAspectRatio: 0.9,
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  children: [
-                    QuickActionCard(
-                      label: 'Live Monitor',
-                      icon: Icons.speed_rounded,
-                      onTap: () => Navigator.pushNamed(context, AppRouter.live),
-                    ),
-                    QuickActionCard(
-                      label: 'Diagnostics',
-                      icon: Icons.build_rounded,
-                      onTap: () => Navigator.pushNamed(
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 28),
+                Text('Your vehicle toolkit', style: AppTextStyles.titleLarge),
+                const SizedBox(height: 6),
+                Text(
+                  'Everything you need for a clearer picture.',
+                  style: AppTextStyles.bodyMedium,
+                ),
+                const SizedBox(height: 18),
+                LayoutBuilder(
+                  builder: (context, constraints) => GridView.count(
+                    crossAxisCount: constraints.maxWidth >= 650 ? 3 : 2,
+                    mainAxisSpacing: 12,
+                    crossAxisSpacing: 12,
+                    mainAxisExtent: 120,
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    children: [
+                      _action(
                         context,
-                        AppRouter.diagnosticDetail,
-                        arguments: MockData.anomalies.first,
+                        'Live Monitor',
+                        'See real-time readings',
+                        Icons.speed_rounded,
+                        () => Navigator.pushNamed(context, AppRouter.live),
                       ),
-                      color: AppColors.warning,
-                    ),
-                    QuickActionCard(
-                      label: 'AI Assistant',
-                      icon: Icons.auto_awesome_rounded,
-                      onTap: () =>
-                          Navigator.pushNamed(context, AppRouter.aiAssistant),
-                    ),
-                    QuickActionCard(
-                      label: 'Health',
-                      icon: Icons.favorite_rounded,
-                      onTap: () =>
-                          Navigator.pushNamed(context, AppRouter.vehicleHealth),
-                    ),
-                    QuickActionCard(
-                      label: 'History',
-                      icon: Icons.timeline_rounded,
-                      onTap: () =>
-                          Navigator.pushNamed(context, AppRouter.healthHistory),
-                    ),
-                    QuickActionCard(
-                      label: 'Report',
-                      icon: Icons.assessment_rounded,
-                      onTap: () =>
-                          Navigator.pushNamed(context, AppRouter.driveReport),
-                    ),
-                  ],
-                ).animate().fadeIn(duration: 400.ms, delay: 900.ms),
-
-                const SizedBox(height: 24),
+                      _action(
+                        context,
+                        'Diagnostics',
+                        'Understand fault codes',
+                        Icons.build_outlined,
+                        () =>
+                            Navigator.pushNamed(context, AppRouter.diagnostics),
+                      ),
+                      _action(
+                        context,
+                        'AI assistant',
+                        'Ask about your vehicle',
+                        Icons.auto_awesome_rounded,
+                        () =>
+                            Navigator.pushNamed(context, AppRouter.aiAssistant),
+                        featured: true,
+                      ),
+                      _action(
+                        context,
+                        'Vehicle health',
+                        'See the bigger picture',
+                        Icons.favorite_border_rounded,
+                        () => Navigator.pushNamed(
+                          context,
+                          AppRouter.vehicleHealth,
+                        ),
+                      ),
+                      _action(
+                        context,
+                        'History',
+                        'Revisit saved drives',
+                        Icons.history_rounded,
+                        () => _history(context),
+                      ),
+                      _action(
+                        context,
+                        'Drive report',
+                        'Review your journey',
+                        Icons.assessment_outlined,
+                        () =>
+                            Navigator.pushNamed(context, AppRouter.driveReport),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Container(
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withValues(alpha: .08),
+                    borderRadius: BorderRadius.circular(18),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.tips_and_updates_outlined,
+                        color: AppColors.primary,
+                        size: 24,
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Text(
+                          'Connect your adapter to see live readings and record your next drive.',
+                          style: AppTextStyles.bodySmall.copyWith(height: 1.5),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ],
             ),
           ),
         ),
       ),
-    );
+    ),
+  );
+
+  String _greeting() {
+    final hour = DateTime.now().hour;
+    final greeting = hour < 12
+        ? 'Good morning'
+        : hour < 17
+        ? 'Good afternoon'
+        : 'Good evening';
+    final name = AccountService.instance.displayName.trim();
+    return name.isEmpty ? greeting : '$greeting, ${name.split(' ').first}';
   }
+
+  Widget _action(
+    BuildContext context,
+    String title,
+    String subtitle,
+    IconData icon,
+    VoidCallback onTap, {
+    bool featured = false,
+  }) => Material(
+    color: featured ? AppColors.tealSurface : AppColors.surface,
+    borderRadius: BorderRadius.circular(20),
+    child: InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: featured
+                ? AppColors.primary.withValues(alpha: .5)
+                : AppColors.border,
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  icon,
+                  size: 23,
+                  color: featured ? AppColors.textPrimary : AppColors.primary,
+                ),
+                const Spacer(),
+                const Icon(
+                  Icons.arrow_outward_rounded,
+                  size: 15,
+                  color: AppColors.textSecondary,
+                ),
+              ],
+            ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: AppTextStyles.titleSmall),
+                const SizedBox(height: 4),
+                Text(
+                  subtitle,
+                  style: AppTextStyles.bodySmall.copyWith(fontSize: 11),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
 }

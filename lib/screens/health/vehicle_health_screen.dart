@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:autopulse_ai/core/widgets/sample_data_notice.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:autopulse_ai/core/theme/app_colors.dart';
 import 'package:autopulse_ai/core/theme/app_text_styles.dart';
@@ -36,90 +37,42 @@ class _VehicleHealthScreenState extends State<VehicleHealthScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Health Overview Header
+              const SampleDataNotice(),
               Container(
-                width: double.infinity,
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      AppColors.primary.withValues(alpha: 0.15),
-                      AppColors.primary.withValues(alpha: 0.02),
-                    ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.primary.withValues(alpha: 0.1),
-                      blurRadius: 20,
-                      spreadRadius: -5,
-                      offset: const Offset(0, 8),
-                    ),
-                  ],
+                  color: AppColors.surface,
                   borderRadius: BorderRadius.circular(24),
-                  border: Border.all(
-                    color: AppColors.primary.withValues(alpha: 0.3),
-                    width: 1.5,
-                  ),
+                  border: Border.all(color: AppColors.border),
                 ),
                 child: Column(
                   children: [
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: AppColors.primary.withValues(alpha: 0.1),
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppColors.primary.withValues(alpha: 0.2),
-                            blurRadius: 12,
-                            spreadRadius: 2,
-                          ),
-                        ],
-                      ),
-                      child: Icon(
-                        Icons.monitor_heart_rounded,
-                        color: AppColors.primary,
-                        size: 40,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
                     Text(
-                      'System Diagnostics',
-                      style: AppTextStyles.titleMedium.copyWith(
-                        color: AppColors.primary,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 1.2,
-                      ),
+                      'A closer look at your vehicle',
+                      style: AppTextStyles.titleLarge,
+                      textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'All systems monitored in real-time',
-                      style: AppTextStyles.bodySmall.copyWith(
-                        color: Colors.white70,
-                      ),
+                      'Understand each system, one reading at a time.',
+                      style: AppTextStyles.bodySmall,
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 28),
+                    HealthScoreWidget(
+                      score: MockData.vehicleHealth.score,
+                      status: MockData.vehicleHealth.status,
+                      size: 150,
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      'Vehicle health score',
+                      style: AppTextStyles.bodyMedium,
                     ),
                   ],
                 ),
-              ).animate().fadeIn(duration: 600.ms).slideY(begin: -0.2, end: 0),
-
-              const SizedBox(height: 32),
-
-              // Health score
-              Center(
-                    child: HealthScoreWidget(
-                      score: MockData.vehicleHealth.score,
-                      status: MockData.vehicleHealth.status,
-                      size: 140,
-                    ),
-                  )
-                  .animate()
-                  .fadeIn(duration: 600.ms, delay: 200.ms)
-                  .scale(begin: const Offset(0.9, 0.9)),
-
-              const SizedBox(height: 32),
-
+              ),
+              const SizedBox(height: 28),
               SectionHeader(title: 'Vehicle Systems')
                   .animate()
                   .fadeIn(duration: 400.ms, delay: 300.ms),

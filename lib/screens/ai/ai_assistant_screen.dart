@@ -1,6 +1,7 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:autopulse_ai/core/widgets/sample_data_notice.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:autopulse_ai/core/theme/app_colors.dart';
 import 'package:autopulse_ai/core/theme/app_text_styles.dart';
@@ -103,6 +104,7 @@ class _AIAssistantScreenState extends State<AIAssistantScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
+      appBar: AppBar(title: const Text('AI assistant')),
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
@@ -114,6 +116,10 @@ class _AIAssistantScreenState extends State<AIAssistantScreen> {
         child: SafeArea(
           child: Column(
             children: [
+              const Padding(
+                padding: EdgeInsets.fromLTRB(20, 4, 20, 0),
+                child: SampleDataNotice(),
+              ),
               // Header
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),

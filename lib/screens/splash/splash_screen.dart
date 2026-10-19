@@ -6,6 +6,8 @@ import 'package:autopulse_ai/navigation/app_router.dart';
 import 'package:autopulse_ai/services/account_service.dart';
 import 'package:autopulse_ai/services/account_data_service.dart';
 import 'package:autopulse_ai/models/vehicle.dart';
+import 'package:autopulse_ai/services/onboarding_service.dart';
+import 'package:autopulse_ai/core/widgets/brand_mark.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -22,7 +24,9 @@ class _SplashScreenState extends State<SplashScreen> {
       if (!mounted) return;
       final data = AccountDataService.instance;
       Vehicle? vehicle;
+      var onboarded = false;
       try {
+        onboarded = await OnboardingService.isComplete();
         vehicle = await data.restoreSelection(cloud: false);
         if (vehicle == null && AccountService.instance.userId != null) {
           vehicle = await data.restoreSelection();
@@ -30,10 +34,22 @@ class _SplashScreenState extends State<SplashScreen> {
       } catch (_) {
         // A failed cache read leaves sign-in and offline recovery available.
       }
+      if (!onboarded &&
+          (vehicle != null || AccountService.instance.userId != null)) {
+        try {
+          await OnboardingService.complete();
+        } catch (_) {
+          // An existing installation can still open if preferences are unavailable.
+        }
+      }
       if (mounted) {
         Navigator.pushReplacementNamed(
           context,
-          vehicle != null ? AppRouter.main : AppRouter.login,
+          vehicle != null
+              ? AppRouter.main
+              : onboarded || AccountService.instance.userId != null
+              ? AppRouter.login
+              : AppRouter.onboarding,
         );
       }
       if (AccountService.instance.userId != null) {
@@ -62,11 +78,7 @@ class _SplashScreenState extends State<SplashScreen> {
                       ),
                     ],
                   ),
-                  child: const Icon(
-                    Icons.sensors_rounded,
-                    color: AppColors.primary,
-                    size: 64,
-                  ),
+                  child: const BrandMark(width: 200),
                 )
                 .animate()
                 .fadeIn(duration: 600.ms, delay: 200.ms)
@@ -77,13 +89,6 @@ class _SplashScreenState extends State<SplashScreen> {
                   delay: 200.ms,
                 ),
             const SizedBox(height: 24),
-            Text(
-              'AutoPulseAI',
-              style: AppTextStyles.headlineLarge.copyWith(
-                color: AppColors.primary,
-                letterSpacing: 1.5,
-              ),
-            ).animate().fadeIn(duration: 600.ms, delay: 500.ms),
             const SizedBox(height: 8),
             Text(
               'Understand Your Vehicle.',

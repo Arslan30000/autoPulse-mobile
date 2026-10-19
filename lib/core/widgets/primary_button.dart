@@ -23,13 +23,13 @@ class PrimaryButton extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: onPressed != null ? AppColors.primaryGradient : null,
         color: onPressed == null ? AppColors.surfaceTertiary : null,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
       ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
           onTap: isLoading ? null : onPressed,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(16),
           child: Center(
             child: isLoading
                 ? const SizedBox(
@@ -52,7 +52,7 @@ class PrimaryButton extends StatelessWidget {
                         style: const TextStyle(
                           color: AppColors.background,
                           fontSize: 16,
-                          fontWeight: FontWeight.w600,
+                          fontWeight: FontWeight.w800,
                         ),
                       ),
                     ],

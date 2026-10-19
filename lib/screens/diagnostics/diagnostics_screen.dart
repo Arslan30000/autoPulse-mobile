@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:autopulse_ai/core/widgets/sample_data_notice.dart';
+import 'package:autopulse_ai/services/obd/obd_controller.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:autopulse_ai/core/theme/app_colors.dart';
 import 'package:autopulse_ai/core/theme/app_text_styles.dart';
@@ -14,19 +16,17 @@ class DiagnosticsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
+      appBar: AppBar(title: const Text('Diagnostics')),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'Diagnostics',
-                style: AppTextStyles.headlineMedium,
-              ).animate().fadeIn(duration: 500.ms),
+              const SampleDataNotice(),
               const SizedBox(height: 4),
               Text(
-                MockData.vehicle.fullDisplayName,
+                ObdController.instance.vehicle.fullDisplayName,
                 style: AppTextStyles.bodyMedium,
               ).animate().fadeIn(duration: 500.ms, delay: 100.ms),
 

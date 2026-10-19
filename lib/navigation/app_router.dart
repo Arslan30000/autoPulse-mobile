@@ -7,6 +7,7 @@ import 'package:autopulse_ai/screens/vehicle/add_vehicle_screen.dart';
 import 'package:autopulse_ai/screens/live/live_monitor_screen.dart';
 import 'package:autopulse_ai/screens/health/vehicle_health_screen.dart';
 import 'package:autopulse_ai/screens/diagnostics/diagnostic_detail_screen.dart';
+import 'package:autopulse_ai/screens/diagnostics/diagnostics_screen.dart';
 import 'package:autopulse_ai/screens/ai/ai_assistant_screen.dart';
 import 'package:autopulse_ai/screens/history/health_history_screen.dart';
 import 'package:autopulse_ai/screens/reports/drive_report_screen.dart';
@@ -29,6 +30,7 @@ class AppRouter {
   static const String live = '/live';
   static const String vehicleHealth = '/vehicle-health';
   static const String diagnosticDetail = '/diagnostic-detail';
+  static const String diagnostics = '/diagnostics';
   static const String aiAssistant = '/ai-assistant';
   static const String healthHistory = '/health-history';
   static const String driveReport = '/drive-report';
@@ -63,6 +65,8 @@ class AppRouter {
         return MaterialPageRoute(
           builder: (_) => DiagnosticDetailScreen(anomaly: anomaly),
         );
+      case diagnostics:
+        return MaterialPageRoute(builder: (_) => const DiagnosticsScreen());
       case aiAssistant:
         return MaterialPageRoute(builder: (_) => const AIAssistantScreen());
       case healthHistory:

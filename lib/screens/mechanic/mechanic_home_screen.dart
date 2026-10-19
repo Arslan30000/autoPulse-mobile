@@ -7,6 +7,7 @@ import 'package:autopulse_ai/core/widgets/section_header.dart';
 import 'package:autopulse_ai/core/widgets/telemetry_card.dart';
 import 'package:autopulse_ai/data/mock/mock_data.dart';
 import 'package:autopulse_ai/navigation/app_router.dart';
+import 'package:autopulse_ai/core/widgets/sample_data_notice.dart';
 
 class MechanicHomeScreen extends StatelessWidget {
   const MechanicHomeScreen({super.key});
@@ -21,6 +22,7 @@ class MechanicHomeScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              const SampleDataNotice(),
               // Premium Header
               Container(
                     padding: const EdgeInsets.all(20),
@@ -87,12 +89,6 @@ class MechanicHomeScreen extends StatelessWidget {
               // Summary cards row
               Row(
                     children: [
-                      _buildSummaryCard(
-                        '87',
-                        'Health\nScore',
-                        AppColors.success,
-                      ),
-                      const SizedBox(width: 10),
                       _buildSummaryCard('1', 'Active\nDTCs', AppColors.warning),
                       const SizedBox(width: 10),
                       _buildSummaryCard(
