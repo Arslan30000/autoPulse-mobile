@@ -47,18 +47,6 @@ class _VehicleHealthScreenState extends State<VehicleHealthScreen> {
                 ),
                 child: Column(
                   children: [
-                    Text(
-                      'A closer look at your vehicle',
-                      style: AppTextStyles.titleLarge,
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Understand each system, one reading at a time.',
-                      style: AppTextStyles.bodySmall,
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 28),
                     HealthScoreWidget(
                       score: MockData.vehicleHealth.score,
                       status: MockData.vehicleHealth.status,

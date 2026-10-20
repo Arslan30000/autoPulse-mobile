@@ -3,7 +3,7 @@ import 'package:autopulse_ai/core/theme/app_colors.dart';
 import 'package:autopulse_ai/core/theme/app_text_styles.dart';
 import 'package:autopulse_ai/core/widgets/brand_mark.dart';
 import 'package:autopulse_ai/core/widgets/vehicle_illustration.dart';
-import 'package:autopulse_ai/core/widgets/obd_connection_panel.dart';
+import 'package:autopulse_ai/core/widgets/connection_sheet.dart';
 import 'package:autopulse_ai/navigation/app_router.dart';
 import 'package:autopulse_ai/services/account_service.dart';
 import 'package:autopulse_ai/services/obd/obd_controller.dart';
@@ -14,30 +14,6 @@ import 'package:autopulse_ai/services/recording_sync_service.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
-
-  void _connect(BuildContext context) => showModalBottomSheet<void>(
-    context: context,
-    isScrollControlled: true,
-    builder: (_) => SafeArea(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(24, 4, 24, 28),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Connect your vehicle', style: AppTextStyles.headlineMedium),
-            const SizedBox(height: 8),
-            Text(
-              'Pair your ELM327 in Android Bluetooth settings first.',
-              style: AppTextStyles.bodyMedium,
-            ),
-            const SizedBox(height: 24),
-            ObdConnectionPanel(controller: ObdController.instance),
-          ],
-        ),
-      ),
-    ),
-  );
 
   void _history(BuildContext context) {
     final store = ObdController.instance.repository;
@@ -70,14 +46,16 @@ class HomeScreen extends StatelessWidget {
                       listenable: ObdController.instance,
                       builder: (_, _) => TextButton.icon(
                         style: TextButton.styleFrom(
-                          backgroundColor: AppColors.primary,
-                          foregroundColor: AppColors.background,
+                          backgroundColor: AppColors.primary.withValues(
+                            alpha: .12,
+                          ),
+                          foregroundColor: AppColors.primary,
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 14,
-                            vertical: 12,
+                            horizontal: 12,
+                            vertical: 8,
                           ),
                         ),
-                        onPressed: () => _connect(context),
+                        onPressed: () => showConnectionSheet(context),
                         icon: Icon(
                           ObdController.instance.isReady
                               ? Icons.bluetooth_connected
@@ -87,7 +65,7 @@ class HomeScreen extends StatelessWidget {
                         label: Text(
                           ObdController.instance.isReady
                               ? 'Connected'
-                              : 'Connect Bluetooth',
+                              : 'Connect',
                           style: const TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w700,
@@ -97,20 +75,22 @@ class HomeScreen extends StatelessWidget {
                     ),
                   ],
                 ),
-                const SizedBox(height: 30),
-                Text(_greeting(), style: AppTextStyles.bodyMedium),
-                const SizedBox(height: 6),
+                const SizedBox(height: 24),
                 Text(
-                  'Your drive, understood.',
+                  _greeting(),
                   style: AppTextStyles.headlineLarge.copyWith(
                     fontWeight: FontWeight.w800,
                     letterSpacing: -.8,
                   ),
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 20),
                 Container(
                   decoration: BoxDecoration(
-                    color: AppColors.surface,
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF203E4A), Color(0xFF101F2A)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
                     borderRadius: BorderRadius.circular(28),
                     border: Border.all(color: AppColors.border),
                   ),
@@ -162,7 +142,7 @@ class HomeScreen extends StatelessWidget {
                           ],
                         ),
                       ),
-                      const VehicleIllustration(height: 235),
+                      const VehicleIllustration(height: 280),
                       Padding(
                         padding: const EdgeInsets.fromLTRB(20, 0, 12, 14),
                         child: Row(
@@ -184,7 +164,7 @@ class HomeScreen extends StatelessWidget {
                                       child: Text(
                                         ObdController.instance.isReady
                                             ? 'Receiving vehicle data'
-                                            : 'Ready when you are',
+                                            : 'Disconnected',
                                         style: AppTextStyles.bodySmall,
                                       ),
                                     ),
@@ -215,13 +195,8 @@ class HomeScreen extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 28),
-                Text('Your vehicle toolkit', style: AppTextStyles.titleLarge),
-                const SizedBox(height: 6),
-                Text(
-                  'Everything you need for a clearer picture.',
-                  style: AppTextStyles.bodyMedium,
-                ),
-                const SizedBox(height: 18),
+                Text('Tools', style: AppTextStyles.titleLarge),
+                const SizedBox(height: 16),
                 LayoutBuilder(
                   builder: (context, constraints) => GridView.count(
                     crossAxisCount: constraints.maxWidth >= 650 ? 3 : 2,
@@ -258,7 +233,7 @@ class HomeScreen extends StatelessWidget {
                       _action(
                         context,
                         'Vehicle health',
-                        'See the bigger picture',
+                        'Score and systems',
                         Icons.favorite_border_rounded,
                         () => Navigator.pushNamed(
                           context,
@@ -279,30 +254,6 @@ class HomeScreen extends StatelessWidget {
                         Icons.assessment_outlined,
                         () =>
                             Navigator.pushNamed(context, AppRouter.driveReport),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 20),
-                Container(
-                  padding: const EdgeInsets.all(18),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary.withValues(alpha: .08),
-                    borderRadius: BorderRadius.circular(18),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(
-                        Icons.tips_and_updates_outlined,
-                        color: AppColors.primary,
-                        size: 24,
-                      ),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: Text(
-                          'Connect your adapter to see live readings and record your next drive.',
-                          style: AppTextStyles.bodySmall.copyWith(height: 1.5),
-                        ),
                       ),
                     ],
                   ),

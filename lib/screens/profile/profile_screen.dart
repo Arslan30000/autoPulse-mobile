@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:autopulse_ai/core/widgets/connection_sheet.dart';
 import 'package:autopulse_ai/services/account_service.dart';
 import 'package:autopulse_ai/services/account_data_service.dart';
 import 'package:autopulse_ai/services/obd/obd_controller.dart';
@@ -148,8 +149,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ListTile(
             leading: const Icon(Icons.bluetooth),
             title: const Text('OBD-II connection'),
-            subtitle: Text(obd.isReady ? 'Connected' : 'Connect from Live'),
-            onTap: () => Navigator.pushNamed(context, AppRouter.live),
+            subtitle: Text(
+              obd.isReady ? 'Connected' : 'Manage Bluetooth adapter',
+            ),
+            onTap: () => showConnectionSheet(context),
           ),
           ListTile(
             leading: const Icon(Icons.history),

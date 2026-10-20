@@ -45,50 +45,104 @@ class AppRouter {
   static Route<dynamic> generateRoute(RouteSettings settings) {
     switch (settings.name) {
       case login:
-        return MaterialPageRoute(builder: (_) => const LoginScreen());
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => const LoginScreen(),
+        );
       case splash:
-        return MaterialPageRoute(builder: (_) => const SplashScreen());
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => const SplashScreen(),
+        );
       case onboarding:
-        return MaterialPageRoute(builder: (_) => const OnboardingScreen());
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => const OnboardingScreen(),
+        );
       case roleSelection:
-        return MaterialPageRoute(builder: (_) => const RoleSelectionScreen());
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => const RoleSelectionScreen(),
+        );
       case addVehicle:
-        return MaterialPageRoute(builder: (_) => const AddVehicleScreen());
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => const AddVehicleScreen(),
+        );
       case main:
-        return MaterialPageRoute(builder: (_) => const BottomNavShell());
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => const BottomNavShell(),
+        );
       case live:
-        return MaterialPageRoute(builder: (_) => const LiveMonitorScreen());
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => const LiveMonitorScreen(),
+        );
       case vehicleHealth:
-        return MaterialPageRoute(builder: (_) => const VehicleHealthScreen());
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => const VehicleHealthScreen(),
+        );
       case diagnosticDetail:
         final anomaly = settings.arguments as Anomaly;
         return MaterialPageRoute(
+          settings: settings,
           builder: (_) => DiagnosticDetailScreen(anomaly: anomaly),
         );
       case diagnostics:
-        return MaterialPageRoute(builder: (_) => const DiagnosticsScreen());
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => const DiagnosticsScreen(),
+        );
       case aiAssistant:
-        return MaterialPageRoute(builder: (_) => const AIAssistantScreen());
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => const AIAssistantScreen(),
+        );
       case healthHistory:
-        return MaterialPageRoute(builder: (_) => const HealthHistoryScreen());
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => const HealthHistoryScreen(),
+        );
       case driveReport:
-        return MaterialPageRoute(builder: (_) => const DriveReportScreen());
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => const DriveReportScreen(),
+        );
       case mechanicTelemetry:
         return MaterialPageRoute(
+          settings: settings,
           builder: (_) => const MechanicTelemetryScreen(),
         );
       case mechanicAnomaly:
-        return MaterialPageRoute(builder: (_) => const MechanicAnomalyScreen());
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => const MechanicAnomalyScreen(),
+        );
       case mechanicDtc:
-        return MaterialPageRoute(builder: (_) => const MechanicDtcScreen());
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => const MechanicDtcScreen(),
+        );
       case mechanicAI:
-        return MaterialPageRoute(builder: (_) => const MechanicAIScreen());
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => const MechanicAIScreen(),
+        );
       case mechanicReport:
-        return MaterialPageRoute(builder: (_) => const MechanicReportScreen());
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => const MechanicReportScreen(),
+        );
       case mechanicHistory:
-        return MaterialPageRoute(builder: (_) => const MechanicHistoryScreen());
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => const MechanicHistoryScreen(),
+        );
       default:
         return MaterialPageRoute(
+          settings: settings,
           builder: (_) => Scaffold(
             body: Center(child: Text('No route defined for ${settings.name}')),
           ),

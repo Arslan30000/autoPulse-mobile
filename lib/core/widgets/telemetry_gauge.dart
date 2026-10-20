@@ -13,6 +13,7 @@ class TelemetryGauge extends StatelessWidget {
   final String quality;
   final int divisions;
   final double tickDivisor;
+  final Color accentColor;
   const TelemetryGauge({
     super.key,
     required this.label,
@@ -23,6 +24,7 @@ class TelemetryGauge extends StatelessWidget {
     this.minimum = 0,
     this.divisions = 6,
     this.tickDivisor = 1,
+    this.accentColor = AppColors.primary,
   });
 
   @override
@@ -34,7 +36,7 @@ class TelemetryGauge extends StatelessWidget {
         children: [
           Text(
             label,
-            style: AppTextStyles.bodySmall,
+            style: AppTextStyles.titleSmall.copyWith(letterSpacing: .3),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 10),
@@ -55,6 +57,7 @@ class TelemetryGauge extends StatelessWidget {
                     maximum: maximum,
                     divisions: divisions,
                     tickDivisor: tickDivisor,
+                    accentColor: accentColor,
                   ),
                   child: Center(
                     child: Padding(
@@ -66,7 +69,7 @@ class TelemetryGauge extends StatelessWidget {
                             child: Text(
                               value?.round().toString() ?? '--',
                               style: AppTextStyles.telemetryValue.copyWith(
-                                fontSize: (diameter * .2).clamp(18, 34),
+                                fontSize: (diameter * .23).clamp(24, 64),
                                 height: 1.1,
                               ),
                             ),
@@ -74,7 +77,7 @@ class TelemetryGauge extends StatelessWidget {
                           Text(
                             unit,
                             style: AppTextStyles.bodySmall.copyWith(
-                              fontSize: 10,
+                              fontSize: (diameter * .055).clamp(10, 14),
                             ),
                           ),
                         ],
@@ -87,7 +90,10 @@ class TelemetryGauge extends StatelessWidget {
           ),
           Text(
             quality,
-            style: AppTextStyles.bodySmall.copyWith(fontSize: 10),
+            style: AppTextStyles.bodySmall.copyWith(
+              fontSize: 11,
+              color: value == null ? AppColors.textTertiary : accentColor,
+            ),
             textAlign: TextAlign.center,
             maxLines: 2,
           ),
@@ -101,17 +107,19 @@ class _GaugePainter extends CustomPainter {
   final double? fraction;
   final double minimum, maximum, tickDivisor;
   final int divisions;
+  final Color accentColor;
   _GaugePainter({
     required this.fraction,
     required this.minimum,
     required this.maximum,
     required this.divisions,
     required this.tickDivisor,
+    required this.accentColor,
   });
   @override
   void paint(Canvas canvas, Size size) {
     final center = size.center(Offset.zero);
-    final radius = size.width * .47;
+    final radius = size.width * .46;
     const start = math.pi * .75;
     const sweep = math.pi * 1.5;
     Offset point(double a, double r) =>
@@ -120,8 +128,8 @@ class _GaugePainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round;
     line
-      ..color = AppColors.borderLight
-      ..strokeWidth = 1;
+      ..color = AppColors.border
+      ..strokeWidth = size.width * .025;
     canvas.drawArc(
       Rect.fromCircle(center: center, radius: radius),
       start,
@@ -131,8 +139,8 @@ class _GaugePainter extends CustomPainter {
     );
     if (fraction != null) {
       line
-        ..color = AppColors.primary
-        ..strokeWidth = 2.5;
+        ..color = accentColor
+        ..strokeWidth = size.width * .025;
       canvas.drawArc(
         Rect.fromCircle(center: center, radius: radius),
         start,
@@ -146,11 +154,11 @@ class _GaugePainter extends CustomPainter {
       final angle = start + sweep * i / ticks;
       final major = i % 5 == 0;
       line
-        ..color = major ? AppColors.primary : AppColors.textTertiary
-        ..strokeWidth = major ? 1.3 : .7;
+        ..color = major ? AppColors.textSecondary : AppColors.borderLight
+        ..strokeWidth = major ? 1.8 : 1;
       canvas.drawLine(
-        point(angle, radius - 4),
-        point(angle, radius - (major ? 11 : 7)),
+        point(angle, radius - size.width * .045),
+        point(angle, radius - size.width * (major ? .095 : .07)),
         line,
       );
       if (major && size.width >= 90) {
@@ -163,7 +171,7 @@ class _GaugePainter extends CustomPainter {
             text: label,
             style: TextStyle(
               fontFamily: 'Inter',
-              fontSize: (size.width * .062).clamp(7, 10),
+              fontSize: (size.width * .052).clamp(8, 13),
               color: AppColors.textSecondary,
             ),
           ),
@@ -171,7 +179,8 @@ class _GaugePainter extends CustomPainter {
         )..layout();
         text.paint(
           canvas,
-          point(angle, radius - 20) - Offset(text.width / 2, text.height / 2),
+          point(angle, radius - size.width * .16) -
+              Offset(text.width / 2, text.height / 2),
         );
       }
     }
@@ -179,7 +188,7 @@ class _GaugePainter extends CustomPainter {
       final angle = start + sweep * fraction!;
       line
         ..color = AppColors.textPrimary
-        ..strokeWidth = 2;
+        ..strokeWidth = size.width * .012;
       canvas.drawLine(
         point(angle + math.pi, radius * .13),
         point(angle, radius * .62),
@@ -188,9 +197,8 @@ class _GaugePainter extends CustomPainter {
     }
     canvas.drawCircle(
       center,
-      3,
-      Paint()
-        ..color = fraction == null ? AppColors.borderLight : AppColors.primary,
+      size.width * .023,
+      Paint()..color = fraction == null ? AppColors.borderLight : accentColor,
     );
   }
 
@@ -200,5 +208,6 @@ class _GaugePainter extends CustomPainter {
       old.minimum != minimum ||
       old.maximum != maximum ||
       old.divisions != divisions ||
-      old.tickDivisor != tickDivisor;
+      old.tickDivisor != tickDivisor ||
+      old.accentColor != accentColor;
 }

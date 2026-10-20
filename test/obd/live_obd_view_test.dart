@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:autopulse_ai/core/widgets/live_obd_view.dart';
 import 'package:autopulse_ai/core/widgets/telemetry_gauge.dart';
+import 'package:autopulse_ai/core/widgets/obd_connection_panel.dart';
 import 'package:autopulse_ai/models/obd.dart';
 import 'package:autopulse_ai/services/obd/obd_controller.dart';
 
@@ -31,6 +32,12 @@ void main() {
       expect(find.text('--'), findsWidgets);
       expect(find.text('Disconnected'), findsWidgets);
       expect(find.text('780'), findsNothing);
+      expect(find.byType(ObdConnectionPanel), findsNothing);
+      expect(find.text('At a glance'), findsNothing);
+      final speed = find.byWidgetPredicate(
+        (w) => w is TelemetryGauge && w.label == 'Speed',
+      );
+      expect(tester.getSize(speed).width, greaterThanOrEqualTo(240));
       expect(tester.takeException(), isNull);
       await tester.drag(
         find.byType(SingleChildScrollView),
@@ -114,7 +121,9 @@ void main() {
       await transport.close();
     },
   );
-  testWidgets('web preview explains Bluetooth is unavailable', (tester) async {
+  testWidgets('unsupported transport keeps live free of connection controls', (
+    tester,
+  ) async {
     GoogleFonts.config.allowRuntimeFetching = false;
     final transport = FakeBluetoothTransport()..isSupported = false;
     final controller = ObdController(
@@ -127,7 +136,17 @@ void main() {
         home: LiveObdView(title: 'Live monitor', controller: controller),
       ),
     );
-    expect(find.textContaining('Android'), findsWidgets);
+    expect(find.byType(ObdConnectionPanel), findsNothing);
+    expect(find.text('Connect adapter'), findsNothing);
+    expect(find.text('OFFLINE'), findsOneWidget);
+    expect(
+      tester
+          .widget<FilledButton>(
+            find.widgetWithText(FilledButton, 'Record drive'),
+          )
+          .onPressed,
+      isNull,
+    );
     expect(tester.takeException(), isNull);
     await tester.pumpWidget(const SizedBox.shrink());
     await controller.disconnect();

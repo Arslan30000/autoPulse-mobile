@@ -143,7 +143,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           _step(
                             '3',
                             'Pair using Bluetooth',
-                            'Pair the adapter in Android Bluetooth settings, then connect from Live Monitor.',
+                            'Pair the adapter in Android Bluetooth settings, then tap Connect on Home.',
                           ),
                         ],
                       ),

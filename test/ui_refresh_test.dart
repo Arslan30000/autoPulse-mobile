@@ -96,6 +96,10 @@ void main() {
     if (!const bool.fromEnvironment('UPDATE_UI_PREVIEWS')) return;
     await tester.runAsync(() async {
       await precacheImage(
+        const AssetImage('assets/models/car/car-poster.png'),
+        boundaryKey.currentContext!,
+      );
+      await precacheImage(
         const AssetImage('assets/images/adapter-setup.png'),
         boundaryKey.currentContext!,
       );
