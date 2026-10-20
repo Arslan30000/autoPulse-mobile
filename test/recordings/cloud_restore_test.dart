@@ -92,4 +92,28 @@ void main() {
     );
     expect(await store.listRecordings(owner), isEmpty);
   });
+  test(
+    'out-of-order cloud payload is imported in sample acquisition order',
+    () async {
+      final earlier = samples().single;
+      final later = {
+        ...earlier,
+        'sample_id': 124,
+        'value': 1400.0,
+        'requested_at': '2026-01-01T00:00:01Z',
+        'received_at': '2026-01-01T00:00:01.100Z',
+      };
+      await store.importCloud(
+        {...session(), 'sample_count': 2},
+        car,
+        [later, earlier],
+        owner!,
+      );
+      final recording = (await store.listRecordings(owner)).single;
+      expect(
+        (await store.samples(recording.id)).map((row) => row.sample.value),
+        [1200, 1400],
+      );
+    },
+  );
 }

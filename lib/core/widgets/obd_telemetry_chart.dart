@@ -37,6 +37,19 @@ class _ObdTelemetryChartState extends State<ObdTelemetryChart> {
   DateTime? _pausedOrigin;
 
   @override
+  void didUpdateWidget(covariant ObdTelemetryChart oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.parameter != widget.parameter ||
+        oldWidget.timeOrigin != widget.timeOrigin ||
+        oldWidget.live != widget.live ||
+        (oldWidget.samples.isNotEmpty && widget.samples.isEmpty)) {
+      _pausedSamples = null;
+      _pausedOrigin = null;
+      _transform.value = Matrix4.identity();
+    }
+  }
+
+  @override
   void dispose() {
     _transform.dispose();
     super.dispose();

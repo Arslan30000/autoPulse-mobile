@@ -197,20 +197,22 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
                           ),
                         ),
                         const SizedBox(width: 16),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              '${_makeController.text} ${_modelController.text}',
-                              style: AppTextStyles.titleMedium,
-                            ),
-                            Text(
-                              _yearController.text,
-                              style: AppTextStyles.bodySmall.copyWith(
-                                color: AppColors.textSecondary,
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '${_makeController.text} ${_modelController.text}',
+                                style: AppTextStyles.titleMedium,
                               ),
-                            ),
-                          ],
+                              Text(
+                                _yearController.text,
+                                style: AppTextStyles.bodySmall.copyWith(
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ],
                     ),

@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:autopulse_ai/models/vehicle.dart';
 import 'package:autopulse_ai/repositories/local_vehicle_repository.dart';
 import 'package:autopulse_ai/repositories/obd_recording_repository.dart';
+import 'package:autopulse_ai/repositories/cloud_recording_repository.dart';
 import 'package:autopulse_ai/services/account_service.dart';
 import 'package:autopulse_ai/services/obd/obd_controller.dart';
 import 'package:autopulse_ai/services/recording_sync_service.dart';
@@ -206,23 +207,9 @@ class AccountDataService extends ChangeNotifier with WidgetsBindingObserver {
             notifyListeners();
             try {
               final car = cars.firstWhere((v) => v.id == run['vehicle_id']);
-              final samples = <Map<String, dynamic>>[];
-              var cursor = 0;
-              while (true) {
-                final batch = await client
-                    .from('obd_recording_samples')
-                    .select()
-                    .eq('owner_id', owner)
-                    .eq('session_id', run['id'])
-                    .gt('sample_id', cursor)
-                    .order('sample_id')
-                    .limit(500)
-                    .timeout(const Duration(seconds: 15));
-                _check(owner);
-                samples.addAll(batch);
-                if (batch.length < 500) break;
-                cursor = (batch.last['sample_id'] as num).toInt();
-              }
+              final samples = await SupabaseRecordingRepository(client)
+                  .downloadSamples(run['id'] as String, owner);
+              _check(owner);
               await store.importCloud(run, car, samples, owner);
               _check(owner);
               existing.add(run['id']);

@@ -27,9 +27,11 @@ class TelemetryGauge extends StatelessWidget {
     this.accentColor = AppColors.primary,
   });
 
+  bool get _hasReading => value != null && value!.isFinite;
+
   @override
   Widget build(BuildContext context) => Semantics(
-    label: '$label: ${value == null ? quality : '${value!.round()} $unit'}.',
+    label: '$label: ${_hasReading ? '${value!.round()} $unit' : quality}.',
     child: ExcludeSemantics(
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -45,7 +47,7 @@ class TelemetryGauge extends StatelessWidget {
             child: LayoutBuilder(
               builder: (_, constraints) {
                 final diameter = constraints.maxWidth;
-                final hasReading = value != null && value!.isFinite;
+                final hasReading = _hasReading;
                 final fraction = hasReading
                     ? ((value! - minimum) / (maximum - minimum)).clamp(0.0, 1.0)
                     : 0.0;
@@ -73,7 +75,7 @@ class TelemetryGauge extends StatelessWidget {
                         children: [
                           FittedBox(
                             child: Text(
-                              value?.round().toString() ?? '--',
+                              hasReading ? value!.round().toString() : '--',
                               style: AppTextStyles.telemetryValue.copyWith(
                                 fontSize: (diameter * .23).clamp(24, 64),
                                 height: 1.1,
@@ -98,7 +100,7 @@ class TelemetryGauge extends StatelessWidget {
             quality,
             style: AppTextStyles.bodySmall.copyWith(
               fontSize: 11,
-              color: value == null ? AppColors.textTertiary : accentColor,
+              color: _hasReading ? accentColor : AppColors.textTertiary,
             ),
             textAlign: TextAlign.center,
             maxLines: 2,

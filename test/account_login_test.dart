@@ -37,6 +37,8 @@ void main() {
     bool hasCar = true,
     bool confirmation = false,
     List<http.Request>? requests,
+    bool rejectLogin = false,
+    bool failCars = false,
   }) {
     final client = SupabaseClient(
       'https://fixture.supabase.co',
@@ -54,12 +56,31 @@ void main() {
               : sessionResponse();
         } else if (request.url.path.endsWith('/token') ||
             request.url.path.endsWith('/verify')) {
+          if (rejectLogin) {
+            return http.Response(
+              jsonEncode({
+                'code': 'invalid_credentials',
+                'msg': 'Invalid login credentials',
+              }),
+              400,
+              headers: {'content-type': 'application/json'},
+              request: request,
+            );
+          }
           response = sessionResponse();
         } else if (request.url.path.endsWith('/user')) {
           response = sessionResponse()['user']!;
         } else if (request.url.path.endsWith('/recover')) {
           response = <String, dynamic>{};
         } else if (request.url.path.endsWith('/vehicles')) {
+          if (failCars) {
+            return http.Response(
+              jsonEncode({'code': '42501', 'message': 'permission denied'}),
+              403,
+              headers: {'content-type': 'application/json'},
+              request: request,
+            );
+          }
           response = hasCar
               ? [
                   {
@@ -263,4 +284,85 @@ void main() {
     );
     expect(find.text('Home destination'), findsNothing);
   }, variant: TargetPlatformVariant.only(TargetPlatform.windows));
+
+  testWidgets('invalid credentials show the backend error and allow retry', (
+    tester,
+  ) async {
+    final requests = <http.Request>[];
+    await tester.runAsync(
+      () async => backend(rejectLogin: true, requests: requests),
+    );
+    await tester.pumpWidget(app());
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'Email'),
+      'fixture@example.test',
+    );
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'Password'),
+      'wrong-password',
+    );
+    await tester.ensureVisible(find.widgetWithText(FilledButton, 'Sign in'));
+    await tester.tap(find.widgetWithText(FilledButton, 'Sign in'));
+    await tester.pumpAndSettle();
+    expect(find.text('Invalid login credentials'), findsOneWidget);
+    expect(AccountService.instance.userId, isNull);
+    expect(find.text('Home destination'), findsNothing);
+    expect(
+      tester
+          .widget<FilledButton>(find.widgetWithText(FilledButton, 'Sign in'))
+          .onPressed,
+      isNotNull,
+    );
+    expect(requests, hasLength(1));
+  }, variant: TargetPlatformVariant.only(TargetPlatform.windows));
+
+  testWidgets('invalid email and missing password never call authentication', (
+    tester,
+  ) async {
+    final requests = <http.Request>[];
+    await tester.runAsync(() async => backend(requests: requests));
+    await tester.pumpWidget(app());
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'Email'),
+      'invalid-email',
+    );
+    await tester.ensureVisible(find.widgetWithText(FilledButton, 'Sign in'));
+    await tester.tap(find.widgetWithText(FilledButton, 'Sign in'));
+    await tester.pumpAndSettle();
+    expect(find.text('Enter a valid email address.'), findsOneWidget);
+    expect(find.text('Enter a password.'), findsOneWidget);
+    expect(requests, isEmpty);
+  }, variant: TargetPlatformVariant.only(TargetPlatform.windows));
+
+  testWidgets(
+    'failed car restore keeps the signed-in owner on retry instead of losing their cars',
+    (tester) async {
+      await tester.runAsync(() async => backend(failCars: true));
+      await tester.pumpWidget(app());
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'Email'),
+        'fixture@example.test',
+      );
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'Password'),
+        'fixture',
+      );
+      await tester.ensureVisible(find.widgetWithText(FilledButton, 'Sign in'));
+      await tester.tap(find.widgetWithText(FilledButton, 'Sign in'));
+      await tester.pumpAndSettle();
+      expect(AccountService.instance.userId, testOwner);
+      expect(
+        find.textContaining('we could not load your cars'),
+        findsOneWidget,
+      );
+      expect(find.text('Add car destination'), findsNothing);
+      expect(find.text('Continue'), findsOneWidget);
+      await tester.ensureVisible(find.text('Sign out'));
+      await tester.tap(find.text('Sign out'));
+      await tester.pumpAndSettle();
+      expect(AccountService.instance.userId, isNull);
+      expect(find.text('Continue without an account'), findsOneWidget);
+    },
+    variant: TargetPlatformVariant.only(TargetPlatform.windows),
+  );
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:autopulse_ai/core/widgets/sample_data_notice.dart';
+import 'package:autopulse_ai/core/widgets/report_actions.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:autopulse_ai/core/theme/app_colors.dart';
 import 'package:autopulse_ai/core/theme/app_text_styles.dart';
@@ -143,23 +144,21 @@ class DriveReportScreen extends StatelessWidget {
             const SizedBox(height: 24),
 
             // Buttons
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () {},
-                    child: const Text('Detailed Report'),
-                  ),
+            ReportActions(
+              title: 'AutoPulseAI drive report',
+              content: [
+                'SAMPLE DATA — preview, not a live vehicle assessment.',
+                MockData.vehicle.fullDisplayName,
+                'Date: ${report.date.toIso8601String()}',
+                'Distance: ${report.distance} km',
+                'Average speed: ${report.avgSpeed.toStringAsFixed(0)} km/h',
+                'Health score: ${report.healthScore}/100',
+                'Anomalies: ${report.anomalyCount}; DTCs: ${report.dtcCount}',
+                report.summary,
+                ...report.systemStatuses.entries.map(
+                  (entry) => '${entry.key}: ${entry.value}',
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: () {},
-                    icon: const Icon(Icons.share_rounded, size: 18),
-                    label: const Text('Share Report'),
-                  ),
-                ),
-              ],
+              ].join('\n\n'),
             ).animate().fadeIn(duration: 400.ms, delay: 500.ms),
 
             const SizedBox(height: 24),

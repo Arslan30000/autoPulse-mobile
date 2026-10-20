@@ -297,6 +297,11 @@ class SqliteObdRecordingRepository implements RecordingStore {
         )) {
       throw StateError('Cloud recording is incomplete.');
     }
+    // Local sample IDs determine graph/export order. Preserve acquisition order
+    // even when a downloaded payload arrives in a different order.
+    final orderedRows = List<Map<String, dynamic>>.of(
+      rows,
+    )..sort((a, b) => (a['sample_id'] as num).compareTo(b['sample_id'] as num));
     await (await database).transaction((tx) async {
       if (_owner() != owner) {
         throw StateError('Account changed during restore.');
@@ -340,8 +345,8 @@ class SqliteObdRecordingRepository implements RecordingStore {
         'sync_state': 'synced',
       });
       var batch = tx.batch();
-      for (var i = 0; i < rows.length; i++) {
-        final r = rows[i];
+      for (var i = 0; i < orderedRows.length; i++) {
+        final r = orderedRows[i];
         batch.insert('samples', {
           'session_id': id,
           'pid': r['pid'],
