@@ -6,8 +6,14 @@ import 'package:autopulse_ai/models/health.dart';
 class SystemStatusCard extends StatelessWidget {
   final SystemHealth systemHealth;
   final VoidCallback? onTap;
+  final bool selected;
 
-  const SystemStatusCard({super.key, required this.systemHealth, this.onTap});
+  const SystemStatusCard({
+    super.key,
+    required this.systemHealth,
+    this.onTap,
+    this.selected = false,
+  });
 
   Color get _statusColor {
     switch (systemHealth.status) {
@@ -56,66 +62,73 @@ class SystemStatusCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.border),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 3,
-              height: 28,
-              decoration: BoxDecoration(
-                color: _statusColor,
-                borderRadius: BorderRadius.circular(2),
+    final accent = systemHealth.status == SystemStatus.normal
+        ? AppColors.primary
+        : _statusColor;
+    return Semantics(
+      selected: selected,
+      child: Material(
+        color: selected ? AppColors.surfaceSecondary : AppColors.surface,
+        borderRadius: BorderRadius.circular(22),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          child: Container(
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(22),
+              border: Border.all(
+                color: selected ? accent : accent.withValues(alpha: .12),
               ),
             ),
-            const SizedBox(width: 8),
-            Icon(_systemIcon, color: AppColors.textSecondary, size: 18),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    systemHealth.name,
-                    style: AppTextStyles.titleSmall.copyWith(fontSize: 13),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  Row(
-                    children: [
-                      Icon(_statusIcon, color: _statusColor, size: 12),
-                      const SizedBox(width: 3),
-                      Flexible(
-                        child: Text(
-                          systemHealth.statusLabel,
-                          style: AppTextStyles.bodySmall.copyWith(
-                            color: _statusColor,
-                            fontSize: 11,
-                          ),
-                          overflow: TextOverflow.ellipsis,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: accent.withValues(alpha: .10),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: Icon(_systemIcon, color: accent, size: 25),
+                    ),
+                    if (onTap != null)
+                      Icon(
+                        selected
+                            ? Icons.expand_less_rounded
+                            : Icons.chevron_right_rounded,
+                        color: AppColors.textTertiary,
+                        size: 20,
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 18),
+                Text(
+                  systemHealth.name,
+                  style: AppTextStyles.titleSmall.copyWith(fontSize: 14),
+                ),
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    Icon(_statusIcon, color: _statusColor, size: 13),
+                    const SizedBox(width: 5),
+                    Flexible(
+                      child: Text(
+                        systemHealth.statusLabel,
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: AppColors.textSecondary,
+                          fontSize: 12,
                         ),
                       ),
-                    ],
-                  ),
-                ],
-              ),
+                    ),
+                  ],
+                ),
+              ],
             ),
-            if (onTap != null)
-              Icon(
-                Icons.chevron_right_rounded,
-                color: AppColors.textTertiary,
-                size: 18,
-              ),
-          ],
+          ),
         ),
       ),
     );

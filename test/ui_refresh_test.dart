@@ -12,6 +12,7 @@ import 'package:autopulse_ai/core/theme/app_theme.dart';
 import 'package:autopulse_ai/core/widgets/health_score_widget.dart';
 import 'package:autopulse_ai/core/widgets/live_obd_view.dart';
 import 'package:autopulse_ai/core/widgets/telemetry_gauge.dart';
+import 'package:autopulse_ai/core/widgets/system_status_card.dart';
 import 'package:autopulse_ai/core/widgets/vehicle_illustration.dart';
 import 'package:autopulse_ai/main.dart';
 import 'package:autopulse_ai/models/vehicle.dart';
@@ -235,12 +236,31 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('health keeps its own score', (tester) async {
-    phone(tester, 390);
-    await tester.pumpWidget(app(const VehicleHealthScreen()));
-    await tester.pumpAndSettle();
-    expect(find.byType(HealthScoreWidget), findsOneWidget);
-    await capture(tester, 'health-390');
-    expect(tester.takeException(), isNull);
-  });
+  for (final width in [320.0, 390.0, 1920.0]) {
+    testWidgets('health centers its score and tiles at $width', (tester) async {
+      phone(tester, width);
+      await tester.pumpWidget(app(const VehicleHealthScreen()));
+      await tester.pumpAndSettle();
+      expect(find.byType(HealthScoreWidget), findsOneWidget);
+      expect(
+        tester.getCenter(find.byType(HealthScoreWidget)).dx,
+        closeTo(width / 2, 1),
+      );
+      final cards = find.byType(SystemStatusCard);
+      expect(cards, findsNWidgets(6));
+      expect(
+        tester.getTopLeft(cards.at(0)).dy,
+        tester.getTopLeft(cards.at(1)).dy,
+      );
+      await capture(tester, 'health-${width.round()}');
+      await tester.ensureVisible(find.text('Engine'));
+      await tester.tap(find.text('Engine'));
+      await tester.pumpAndSettle();
+      expect(
+        find.textContaining('Engine is operating normally'),
+        findsOneWidget,
+      );
+      expect(tester.takeException(), isNull);
+    });
+  }
 }

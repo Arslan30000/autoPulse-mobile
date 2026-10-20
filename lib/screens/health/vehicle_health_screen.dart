@@ -34,74 +34,96 @@ class _VehicleHealthScreenState extends State<VehicleHealthScreen> {
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SampleDataNotice(),
-              Container(
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(24),
-                  border: Border.all(color: AppColors.border),
-                ),
-                child: Column(
-                  children: [
-                    HealthScoreWidget(
-                      score: MockData.vehicleHealth.score,
-                      status: MockData.vehicleHealth.status,
-                      size: 150,
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 1000),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SampleDataNotice(),
+                  Center(
+                    child: Container(
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(
+                        color: AppColors.surface,
+                        borderRadius: BorderRadius.circular(24),
+                        border: Border.all(color: AppColors.border),
+                      ),
+                      child: Column(
+                        children: [
+                          HealthScoreWidget(
+                            score: MockData.vehicleHealth.score,
+                            status: MockData.vehicleHealth.status,
+                            size: 150,
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            'Vehicle health score',
+                            style: AppTextStyles.bodyMedium,
+                          ),
+                        ],
+                      ),
                     ),
-                    const SizedBox(height: 12),
-                    Text(
-                      'Vehicle health score',
-                      style: AppTextStyles.bodyMedium,
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 28),
-              SectionHeader(title: 'Vehicle Systems')
-                  .animate()
-                  .fadeIn(duration: 400.ms, delay: 300.ms),
-              const SizedBox(height: 16),
+                  ),
+                  const SizedBox(height: 28),
+                  SectionHeader(title: 'Vehicle Systems')
+                      .animate()
+                      .fadeIn(duration: 400.ms, delay: 300.ms),
+                  const SizedBox(height: 16),
 
-              // System cards
-              ...MockData.vehicleHealth.systems.map((system) {
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: SystemStatusCard(
-                    systemHealth: system,
-                    onTap: () {
-                      setState(() {
-                        _selectedSystem = _selectedSystem == system
-                            ? null
-                            : system;
-                      });
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      final columns = constraints.maxWidth >= 760 ? 3 : 2;
+                      final width =
+                          (constraints.maxWidth - 14 * (columns - 1)) / columns;
+                      return Wrap(
+                        spacing: 14,
+                        runSpacing: 14,
+                        children: MockData.vehicleHealth.systems.map((system) {
+                          return SizedBox(
+                            width: width,
+                            child: SystemStatusCard(
+                              systemHealth: system,
+                              selected: _selectedSystem == system,
+                              onTap: () {
+                                setState(() {
+                                  _selectedSystem = _selectedSystem == system
+                                      ? null
+                                      : system;
+                                });
+                              },
+                            ),
+                          );
+                        }).toList(),
+                      );
                     },
                   ),
-                );
-              }),
 
-              const SizedBox(height: 20),
+                  const SizedBox(height: 20),
 
-              // Selected system detail
-              AnimatedSwitcher(
-                duration: const Duration(milliseconds: 400),
-                transitionBuilder: (Widget child, Animation<double> animation) {
-                  return SizeTransition(
-                    sizeFactor: animation,
-                    alignment: Alignment(-1.0, -1.0),
-                    child: FadeTransition(opacity: animation, child: child),
-                  );
-                },
-                child: _selectedSystem != null
-                    ? _buildSystemDetail(_selectedSystem!)
-                    : const SizedBox.shrink(),
+                  // Selected system detail
+                  AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 400),
+                    transitionBuilder:
+                        (Widget child, Animation<double> animation) {
+                          return SizeTransition(
+                            sizeFactor: animation,
+                            alignment: Alignment(-1.0, -1.0),
+                            child: FadeTransition(
+                              opacity: animation,
+                              child: child,
+                            ),
+                          );
+                        },
+                    child: _selectedSystem != null
+                        ? _buildSystemDetail(_selectedSystem!)
+                        : const SizedBox.shrink(),
+                  ),
+
+                  const SizedBox(height: 32),
+                ],
               ),
-
-              const SizedBox(height: 32),
-            ],
+            ),
           ),
         ),
       ),

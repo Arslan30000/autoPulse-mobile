@@ -45,19 +45,25 @@ class TelemetryGauge extends StatelessWidget {
             child: LayoutBuilder(
               builder: (_, constraints) {
                 final diameter = constraints.maxWidth;
-                return CustomPaint(
-                  painter: _GaugePainter(
-                    fraction: value == null
-                        ? null
-                        : ((value! - minimum) / (maximum - minimum)).clamp(
-                            0,
-                            1,
-                          ),
-                    minimum: minimum,
-                    maximum: maximum,
-                    divisions: divisions,
-                    tickDivisor: tickDivisor,
-                    accentColor: accentColor,
+                final hasReading = value != null && value!.isFinite;
+                final fraction = hasReading
+                    ? ((value! - minimum) / (maximum - minimum)).clamp(0.0, 1.0)
+                    : 0.0;
+                return TweenAnimationBuilder<double>(
+                  tween: Tween<double>(begin: 0, end: fraction),
+                  duration: const Duration(milliseconds: 350),
+                  curve: Curves.easeOutCubic,
+                  builder: (_, animatedFraction, child) => CustomPaint(
+                    painter: _GaugePainter(
+                      fraction: animatedFraction,
+                      hasReading: hasReading,
+                      minimum: minimum,
+                      maximum: maximum,
+                      divisions: divisions,
+                      tickDivisor: tickDivisor,
+                      accentColor: accentColor,
+                    ),
+                    child: child,
                   ),
                   child: Center(
                     child: Padding(
@@ -104,12 +110,14 @@ class TelemetryGauge extends StatelessWidget {
 }
 
 class _GaugePainter extends CustomPainter {
-  final double? fraction;
+  final double fraction;
+  final bool hasReading;
   final double minimum, maximum, tickDivisor;
   final int divisions;
   final Color accentColor;
   _GaugePainter({
     required this.fraction,
+    required this.hasReading,
     required this.minimum,
     required this.maximum,
     required this.divisions,
@@ -137,14 +145,14 @@ class _GaugePainter extends CustomPainter {
       false,
       line,
     );
-    if (fraction != null) {
+    if (hasReading) {
       line
         ..color = accentColor
         ..strokeWidth = size.width * .025;
       canvas.drawArc(
         Rect.fromCircle(center: center, radius: radius),
         start,
-        sweep * fraction!,
+        sweep * fraction,
         false,
         line,
       );
@@ -184,27 +192,37 @@ class _GaugePainter extends CustomPainter {
         );
       }
     }
-    if (fraction != null) {
-      final angle = start + sweep * fraction!;
-      line
-        ..color = AppColors.textPrimary
-        ..strokeWidth = size.width * .012;
-      canvas.drawLine(
-        point(angle + math.pi, radius * .13),
-        point(angle, radius * .62),
-        line,
-      );
-    }
+    // Keep a parked needle visible when disconnected; only valid samples move it.
+    final angle = start + sweep * fraction;
+    final needleColor = hasReading ? accentColor : AppColors.textTertiary;
+    final needle = Path()
+      ..moveTo(point(angle, radius * .58).dx, point(angle, radius * .58).dy)
+      ..lineTo(
+        point(angle + math.pi / 2, size.width * .012).dx,
+        point(angle + math.pi / 2, size.width * .012).dy,
+      )
+      ..lineTo(
+        point(angle + math.pi, radius * .14).dx,
+        point(angle + math.pi, radius * .14).dy,
+      )
+      ..lineTo(
+        point(angle - math.pi / 2, size.width * .012).dx,
+        point(angle - math.pi / 2, size.width * .012).dy,
+      )
+      ..close();
+    canvas.drawPath(needle, Paint()..color = needleColor);
+    canvas.drawCircle(center, size.width * .028, Paint()..color = needleColor);
     canvas.drawCircle(
       center,
-      size.width * .023,
-      Paint()..color = fraction == null ? AppColors.borderLight : accentColor,
+      size.width * .011,
+      Paint()..color = AppColors.background,
     );
   }
 
   @override
   bool shouldRepaint(covariant _GaugePainter old) =>
       old.fraction != fraction ||
+      old.hasReading != hasReading ||
       old.minimum != minimum ||
       old.maximum != maximum ||
       old.divisions != divisions ||
