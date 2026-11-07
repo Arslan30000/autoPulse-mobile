@@ -171,7 +171,16 @@ void main() {
     expect(restored.syncState, RecordingSyncState.synced);
   });
   test('restore rejects wrong owners, duplicate IDs and invalid values before publishing a trip', () async {
-    await expectLater(
+    Future<void> expectRestoreStateError(Future<void> restore) async {
+      try {
+        await restore;
+      } on StateError {
+        return;
+      }
+      fail('Expected cloud restore to reject invalid samples.');
+    }
+
+    await expectRestoreStateError(
       store.importCloudPages(
         session(1),
         car,
@@ -180,9 +189,8 @@ void main() {
         ]),
         owner!,
       ),
-      throwsStateError,
     );
-    await expectLater(
+    await expectRestoreStateError(
       store.importCloudPages(
         session(1),
         car,
@@ -191,16 +199,14 @@ void main() {
         ]),
         owner!,
       ),
-      throwsStateError,
     );
-    await expectLater(
+    await expectRestoreStateError(
       store.importCloudPages(
         session(1),
         car,
         Stream.value([row(0), row(0)]),
         owner!,
       ),
-      throwsStateError,
     );
     expect(await store.listRecordings(owner), isEmpty);
   });
@@ -243,3 +249,4 @@ void main() {
     },
   );
 }
+

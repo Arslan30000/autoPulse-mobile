@@ -82,8 +82,9 @@ class AutoPulseApp extends StatelessWidget {
       title: 'AutoPulse_ai',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.darkTheme,
-      initialRoute: AppRouter.splash,
+      initialRoute: '/',
       onGenerateRoute: AppRouter.generateRoute,
     );
   }
 }
+

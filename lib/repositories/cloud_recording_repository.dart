@@ -50,7 +50,7 @@ class SupabaseRecordingRepository implements CloudRecordingRepository {
             .eq('session_id', sessionId)
             .eq('owner_id', owner)
             .gt('last_sample_id', cursor)
-            .order('first_sample_id')
+            .order('first_sample_id', ascending: true)
             .limit(1)
             .timeout(const Duration(seconds: 25));
         _check(owner);
@@ -100,7 +100,7 @@ class SupabaseRecordingRepository implements CloudRecordingRepository {
           .eq('owner_id', owner)
           .eq('session_id', sessionId)
           .gt('sample_id', cursor)
-          .order('sample_id')
+          .order('sample_id', ascending: true)
           .limit(500)
           .timeout(const Duration(seconds: 25));
       _check(owner);
@@ -317,3 +317,4 @@ class SupabaseRecordingRepository implements CloudRecordingRepository {
         .timeout(const Duration(seconds: 25));
   }
 }
+

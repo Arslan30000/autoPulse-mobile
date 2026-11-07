@@ -185,6 +185,23 @@ class SqliteObdRecordingRepository implements RecordingStore {
     return rows.single['cursor'] as int? ?? 0;
   }
 
+  /// Start an explicit restore retry at zero. This clears only hidden staging;
+  /// published phone recordings and all cloud data remain untouched.
+  Future<void> restartRestore(
+    Map<String, dynamic> session,
+    String owner,
+  ) async {
+    if (_owner() != owner || session['owner_id'] != owner) {
+      throw StateError('Cloud recording is unavailable.');
+    }
+    await (await database).delete(
+      'restore_jobs',
+      where: 'cloud_id = ? AND owner_id = ?',
+      whereArgs: [session['id'], owner],
+    );
+    await restoreCursor(session, owner);
+  }
+
   /// Durable staging checkpoints survive a download interruption. Partial trips
   /// stay hidden; only a verified complete trip is promoted to visible history.
   Future<void> importCloudPages(
@@ -260,7 +277,9 @@ class SqliteObdRecordingRepository implements RecordingStore {
         ),
       );
       if (count != session['sample_count']) {
-        throw StateError('Cloud recording is incomplete.');
+        throw StateError(
+          'Cloud restore received $count of ${session['sample_count']} samples.',
+        );
       }
       final existing = await tx.query(
         'sessions',
@@ -808,3 +827,4 @@ class SqliteObdRecordingRepository implements RecordingStore {
     _database = null;
   }
 }
+

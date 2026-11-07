@@ -229,12 +229,12 @@ class AccountDataService extends ChangeNotifier with WidgetsBindingObserver {
             notifyListeners();
             try {
               final car = cars.firstWhere((v) => v.id == run['vehicle_id']);
-              final cursor = await store.restoreCursor(run, owner);
+              await store.restartRestore(run, owner);
               final samples = SupabaseRecordingRepository(
                 client,
                 accountOwner: () => account.userId,
                 compressed: true,
-              ).samplePages(run, owner, afterId: cursor);
+              ).samplePages(run, owner);
               await store.importCloudPages(run, car, samples, owner);
               _check(owner);
               existing.add(run['id']);
@@ -306,3 +306,4 @@ class AccountDataService extends ChangeNotifier with WidgetsBindingObserver {
     super.dispose();
   }
 }
+
