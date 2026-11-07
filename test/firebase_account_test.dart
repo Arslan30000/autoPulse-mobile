@@ -19,6 +19,7 @@ class _User extends Fake implements firebase.User {
   String get email => 'fixture@example.test';
   @override
   bool emailVerified = false;
+  bool verifyOnReload = false;
   @override
   String? displayName;
   int verificationEmails = 0;
@@ -33,7 +34,10 @@ class _User extends Fake implements firebase.User {
   }
 
   @override
-  Future<void> reload() async {}
+  Future<void> reload() async {
+    if (verifyOnReload) emailVerified = true;
+  }
+
   @override
   Future<void> updateDisplayName(String? name) async {
     displayName = name;
@@ -89,6 +93,48 @@ class _Auth extends Fake implements firebase.FirebaseAuth {
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   setUp(() => SharedPreferences.setMockInitialValues({}));
+  test(
+    'startup refreshes verified identity and recovers its existing owner',
+    () async {
+      final auth = _Auth();
+      auth.currentUser = auth.user;
+      auth.user.verifyOnReload = true;
+      final account = AccountService();
+      var resolutions = 0;
+      final cloud = SupabaseClient(
+        'https://fixture.supabase.co',
+        'public',
+        accessToken: () async => 'synthetic',
+        httpClient: MockClient((request) async {
+          resolutions++;
+          return http.Response(
+            jsonEncode(testOwner),
+            200,
+            request: request,
+            headers: {'content-type': 'application/json'},
+          );
+        }),
+      );
+      final legacy = SupabaseClient('https://fixture.supabase.co', 'public');
+      addTearDown(() async {
+        account.configure(null);
+        await auth.events.close();
+        await cloud.dispose();
+        await legacy.dispose();
+      });
+      await account.configureFirebase(auth, cloud, legacy);
+      expect(account.userId, isNull);
+      await account.restoreVerifiedSession();
+      expect(account.userId, testOwner);
+      expect(resolutions, 1);
+      expect(
+        (await SharedPreferences.getInstance()).getString(
+          'account.firebase.firebase-fixture',
+        ),
+        testOwner,
+      );
+    },
+  );
   test('signup sends verification and never exposes cloud ownership before verification', () async {
     final auth = _Auth();
     final account = AccountService();

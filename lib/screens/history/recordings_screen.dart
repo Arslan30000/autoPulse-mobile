@@ -179,6 +179,13 @@ class _RecordingsScreenState extends State<RecordingsScreen> {
             const SizedBox(height: 12),
             if (_refreshingCloud || AccountDataService.instance.busy)
               const LinearProgressIndicator(),
+            if (AccountService.instance.userId == null)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 12),
+                child: Text(
+                  'Sign in with your verified account to restore its uploaded runs. Phone-only recordings appear here without signing in.',
+                ),
+              ),
             if (AccountService.instance.userId != null &&
                 AccountDataService.instance.message != null)
               Padding(

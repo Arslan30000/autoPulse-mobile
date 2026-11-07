@@ -67,6 +67,26 @@ class AccountService {
     });
   }
 
+  /// Firebase can reopen with an older cached verification flag. Refresh it
+  /// once before choosing the startup route, then recover the existing owner
+  /// mapping from Supabase when this installation has no local cache yet.
+  Future<void> restoreVerifiedSession() async {
+    final auth = _firebase;
+    if (auth == null || auth.currentUser == null) return;
+    try {
+      if (auth.currentUser?.emailVerified != true) {
+        await auth.currentUser!.reload().timeout(const Duration(seconds: 8));
+      }
+      if (auth.currentUser?.emailVerified == true && _accountId == null) {
+        await _resolve().timeout(const Duration(seconds: 15));
+      }
+    } on AuthException {
+      // An old unlinked account still needs its previous password in sign-in.
+    } catch (_) {
+      // The existing SQLite cache and offline navigation remain available.
+    }
+  }
+
   Future<void> _resolve({String? previousPassword}) async {
     final auth = _firebase!;
     final user = auth.currentUser;

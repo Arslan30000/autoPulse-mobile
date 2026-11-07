@@ -207,11 +207,13 @@ class SqliteObdRecordingRepository implements RecordingStore {
         final batch = tx.batch();
         for (final row in rows) {
           final id = row['sample_id'] as int;
-          if (id <= cursor ||
-              row['session_id'] != session['id'] ||
-              row['owner_id'] != owner) {
+          if (row['session_id'] != session['id'] || row['owner_id'] != owner) {
             throw StateError('Invalid restored sample identity.');
           }
+          // A resumed download can replay a page after its previous response
+          // was lost. Its rows are already in durable staging; only advance
+          // from new sample IDs. The final exact-count check still guards gaps.
+          if (id <= cursor) continue;
           final value = (row['value'] as num?)?.toDouble();
           final quality = ObdSampleStatus.values.byName(
             row['quality'] as String,
@@ -618,10 +620,13 @@ class SqliteObdRecordingRepository implements RecordingStore {
     int limit = 50,
   }) async {
     _limit(limit);
+    final arguments = owner == null
+        ? <Object?>[beforeId, beforeId, limit]
+        : <Object?>[owner, beforeId, beforeId, limit];
     final rows = await (await database).rawQuery(
       '$_select WHERE ${owner == null ? 's.owner_id IS NULL' : '(s.owner_id IS NULL OR s.owner_id = ?)'} '
       'AND (? = 0 OR s.id < ?) ORDER BY s.id DESC LIMIT ?',
-      [?owner, beforeId, beforeId, limit],
+      arguments,
     );
     return rows.map(_recording).toList();
   }
