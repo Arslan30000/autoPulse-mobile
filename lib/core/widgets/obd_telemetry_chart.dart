@@ -19,12 +19,14 @@ class ObdTelemetryChart extends StatefulWidget {
   final ObdParameter parameter;
   final DateTime? timeOrigin;
   final bool live;
+  final double height;
   const ObdTelemetryChart({
     super.key,
     required this.samples,
     required this.parameter,
     this.timeOrigin,
     this.live = false,
+    this.height = 270,
   });
 
   @override
@@ -183,7 +185,7 @@ class _ObdTelemetryChartState extends State<ObdTelemetryChart> {
           )
         else
           SizedBox(
-            height: 270,
+            height: widget.height,
             child: LineChart(
               duration: Duration.zero,
               transformationConfig: FlTransformationConfig(
