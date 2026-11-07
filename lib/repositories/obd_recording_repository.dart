@@ -222,10 +222,14 @@ class SqliteObdRecordingRepository implements RecordingStore {
       if (rows.length > 1000) throw StateError('Restore page is too large.');
       await db.transaction((tx) async {
         final batch = tx.batch();
+        final pageIds = <int>{};
         for (final row in rows) {
           final id = row['sample_id'] as int;
           if (row['session_id'] != session['id'] || row['owner_id'] != owner) {
             throw StateError('Invalid restored sample identity.');
+          }
+          if (!pageIds.add(id)) {
+            throw StateError('Duplicate restored sample identity.');
           }
           // A resumed download can replay a page after its previous response
           // was lost. Its rows are already in durable staging; only advance
