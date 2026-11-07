@@ -189,6 +189,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
               subtitle: const Text('Your saved phone data is kept.'),
               onTap: _busy ? null : _signOut,
             ),
+            if (_data.cloudReservedBytes != null)
+              ListTile(
+                leading: Icon(
+                  _data.cloudNearlyFull
+                      ? Icons.cloud_off_outlined
+                      : Icons.cloud_outlined,
+                ),
+                title: Text(
+                  _data.cloudNearlyFull
+                      ? 'Cloud storage is nearly full'
+                      : 'Free cloud storage',
+                ),
+                subtitle: Text(
+                  'Your compressed recordings: ${((_data.accountCloudBytes ?? 0) / 1000000).toStringAsFixed(1)} MB. Project recording budget: ${(_data.cloudReservedBytes! / 1000000).toStringAsFixed(1)} / ${(_data.cloudBudgetBytes / 1000000).toStringAsFixed(0)} MB. Offline recording and CSV export remain available.',
+                ),
+              ),
           ],
           ListTile(
             leading: const Icon(Icons.shield_outlined),

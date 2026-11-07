@@ -41,12 +41,13 @@ class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
       final client = AccountService.instance.client;
       if (client == null) throw StateError('Account access is unavailable.');
       if (!_sent) {
-        await client.auth.resetPasswordForEmail(_email.text.trim());
+        await AccountService.instance.sendPasswordReset(_email.text.trim());
         if (mounted) {
           setState(() {
             _sent = true;
-            _message =
-                'Check your email for a recovery code. Keep this screen open.';
+            _message = AccountService.instance.usesFirebase
+                ? 'If this email is registered, a password reset link has been sent. Open it in your browser, then return to sign in.'
+                : 'Check your email for a recovery code. Keep this screen open.';
           });
         }
       } else {
@@ -108,8 +109,10 @@ class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  _sent
+                  _sent && !AccountService.instance.usesFirebase
                       ? 'Enter the recovery code from your email and choose a new password.'
+                      : AccountService.instance.usesFirebase
+                      ? 'We will email you a secure link to reset your password.'
                       : 'Enter your account email to request a recovery code.',
                   style: AppTextStyles.bodyMedium.copyWith(height: 1.5),
                 ),
@@ -126,7 +129,7 @@ class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
                       ? null
                       : 'Enter a valid email address.',
                 ),
-                if (_sent) ...[
+                if (_sent && !AccountService.instance.usesFirebase) ...[
                   const SizedBox(height: 16),
                   TextFormField(
                     controller: _token,
@@ -195,14 +198,24 @@ class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
                   ),
                 const SizedBox(height: 24),
                 FilledButton(
-                  onPressed: _busy ? null : _submit,
+                  onPressed: _busy
+                      ? null
+                      : _sent && AccountService.instance.usesFirebase
+                      ? () => Navigator.pop(context)
+                      : _submit,
                   child: _busy
                       ? const SizedBox(
                           width: 22,
                           height: 22,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
-                      : Text(_sent ? 'Update password' : 'Send recovery code'),
+                      : Text(
+                          AccountService.instance.usesFirebase
+                              ? (_sent ? 'Back to sign in' : 'Send reset link')
+                              : (_sent
+                                    ? 'Update password'
+                                    : 'Send recovery code'),
+                        ),
                 ),
               ],
             ),

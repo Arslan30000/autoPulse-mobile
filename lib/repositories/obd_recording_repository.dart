@@ -102,7 +102,7 @@ class SqliteObdRecordingRepository implements RecordingStore {
         databasePath ??
             path.join(await selected.getDatabasesPath(), 'obd_recordings.db'),
         options: OpenDatabaseOptions(
-          version: 2,
+          version: 3,
           onConfigure: (db) => db.execute('PRAGMA foreign_keys = ON'),
           onCreate: (db, _) async {
             await db.execute('''CREATE TABLE sessions (
@@ -119,9 +119,11 @@ class SqliteObdRecordingRepository implements RecordingStore {
               'CREATE INDEX samples_session_time ON samples(session_id, received_at)',
             );
             await _upgrade(db);
+            await _createRestoreStaging(db);
           },
           onUpgrade: (db, oldVersion, _) async {
             if (oldVersion < 2) await _upgrade(db);
+            if (oldVersion < 3) await _createRestoreStaging(db);
           },
         ),
       );
@@ -129,6 +131,207 @@ class SqliteObdRecordingRepository implements RecordingStore {
       _database = null;
       rethrow;
     }
+  }
+
+  static Future<void> _createRestoreStaging(Database db) async {
+    await db.execute(
+      '''CREATE TABLE restore_jobs (
+      cloud_id TEXT PRIMARY KEY, owner_id TEXT NOT NULL, expected_count INTEGER NOT NULL)''',
+    );
+    await db.execute('''CREATE TABLE restore_samples (
+      cloud_id TEXT NOT NULL REFERENCES restore_jobs(cloud_id) ON DELETE CASCADE,
+      sample_id INTEGER NOT NULL, pid INTEGER NOT NULL, value REAL,
+      unit TEXT NOT NULL, quality TEXT NOT NULL, requested_at TEXT NOT NULL,
+      received_at TEXT NOT NULL, latency_ms INTEGER NOT NULL, ecu_source TEXT,
+      PRIMARY KEY(cloud_id,sample_id))''');
+  }
+
+  /// Called once at process startup, before recording or sync begins. A process
+  /// kill cannot run finish(); close its durable prefix at the last saved time.
+  Future<void> recoverInterruptedRecordings() async {
+    await (await database).rawUpdate('''UPDATE sessions SET ended_at =
+      max(started_at,coalesce((SELECT max(received_at) FROM samples
+        WHERE samples.session_id = sessions.id),started_at)),
+      sync_state = CASE WHEN owner_id IS NULL THEN 'local' ELSE 'pending' END
+      WHERE ended_at IS NULL''');
+  }
+
+  Future<int> restoreCursor(Map<String, dynamic> session, String owner) async {
+    if (_owner() != owner ||
+        session['owner_id'] != owner ||
+        session['uploaded_at'] == null) {
+      throw StateError('Cloud recording is unavailable.');
+    }
+    final db = await database;
+    final existing = await db.query(
+      'restore_jobs',
+      where: 'cloud_id = ?',
+      whereArgs: [session['id']],
+    );
+    if (existing.isNotEmpty &&
+        (existing.single['owner_id'] != owner ||
+            existing.single['expected_count'] != session['sample_count'])) {
+      throw StateError('Cloud recording changed during restore.');
+    }
+    await db.insert('restore_jobs', {
+      'cloud_id': session['id'],
+      'owner_id': owner,
+      'expected_count': session['sample_count'],
+    }, conflictAlgorithm: ConflictAlgorithm.ignore);
+    final rows = await db.rawQuery(
+      'SELECT MAX(sample_id) AS cursor FROM restore_samples WHERE cloud_id = ?',
+      [session['id']],
+    );
+    return rows.single['cursor'] as int? ?? 0;
+  }
+
+  /// Durable staging checkpoints survive a download interruption. Partial trips
+  /// stay hidden; only a verified complete trip is promoted to visible history.
+  Future<void> importCloudPages(
+    Map<String, dynamic> session,
+    Vehicle vehicle,
+    Stream<List<Map<String, dynamic>>> pages,
+    String owner,
+  ) async {
+    var cursor = await restoreCursor(session, owner);
+    if (vehicle.ownerId != owner) {
+      throw StateError('Vehicle ownership differs.');
+    }
+    final db = await database;
+    await for (final rows in pages) {
+      if (_owner() != owner) {
+        throw StateError('Account changed during restore.');
+      }
+      if (rows.length > 1000) throw StateError('Restore page is too large.');
+      await db.transaction((tx) async {
+        final batch = tx.batch();
+        for (final row in rows) {
+          final id = row['sample_id'] as int;
+          if (id <= cursor ||
+              row['session_id'] != session['id'] ||
+              row['owner_id'] != owner) {
+            throw StateError('Invalid restored sample identity.');
+          }
+          final value = (row['value'] as num?)?.toDouble();
+          final quality = ObdSampleStatus.values.byName(
+            row['quality'] as String,
+          );
+          if ((quality == ObdSampleStatus.valid
+                  ? value == null || !value.isFinite
+                  : value != null) ||
+              (row['latency_ms'] as num) < 0 ||
+              !ObdParameter.values.any((p) => p.pid == row['pid']) ||
+              (row['unit'] as String).length > 40 ||
+              ((row['ecu_source'] as String?)?.length ?? 0) > 100) {
+            throw StateError('Invalid restored measurement.');
+          }
+          DateTime.parse(row['requested_at'] as String);
+          DateTime.parse(row['received_at'] as String);
+          batch.insert('restore_samples', {
+            'cloud_id': session['id'],
+            'sample_id': id,
+            'pid': row['pid'],
+            'value': value,
+            'unit': row['unit'],
+            'quality': quality.name,
+            'requested_at': row['requested_at'],
+            'received_at': row['received_at'],
+            'latency_ms': row['latency_ms'],
+            'ecu_source': row['ecu_source'],
+          });
+          cursor = id;
+        }
+        await batch.commit(noResult: true);
+        if (_owner() != owner) {
+          throw StateError('Account changed during restore.');
+        }
+      });
+    }
+    await db.transaction((tx) async {
+      if (_owner() != owner) {
+        throw StateError('Account changed during restore.');
+      }
+      final count = Sqflite.firstIntValue(
+        await tx.rawQuery(
+          'SELECT COUNT(*) FROM restore_samples WHERE cloud_id = ?',
+          [session['id']],
+        ),
+      );
+      if (count != session['sample_count']) {
+        throw StateError('Cloud recording is incomplete.');
+      }
+      final existing = await tx.query(
+        'sessions',
+        where: 'cloud_id = ?',
+        whereArgs: [session['id']],
+      );
+      if (existing.isNotEmpty) {
+        if (existing.single['owner_id'] != owner) {
+          throw StateError('Recording belongs to another account.');
+        }
+        await tx.delete(
+          'restore_jobs',
+          where: 'cloud_id = ?',
+          whereArgs: [session['id']],
+        );
+        return;
+      }
+      await tx.insert('local_vehicles', {
+        'id': vehicle.id,
+        'source_id': vehicle.id,
+        'owner_id': owner,
+      }, conflictAlgorithm: ConflictAlgorithm.ignore);
+      final car = await tx.query(
+        'local_vehicles',
+        where: 'id = ? AND owner_id = ?',
+        whereArgs: [vehicle.id, owner],
+      );
+      if (car.isEmpty) {
+        throw StateError('Vehicle identity belongs to another account.');
+      }
+      final id = await tx.insert('sessions', {
+        'cloud_id': session['id'],
+        'owner_id': owner,
+        'vehicle_id': vehicle.id,
+        'vehicle_name': session['vehicle_name'],
+        'vehicle_make': vehicle.make,
+        'vehicle_model': vehicle.model,
+        'vehicle_year': vehicle.year,
+        'vehicle_vin': vehicle.vin,
+        'adapter_name': session['adapter_name'],
+        'started_at': session['started_at'],
+        'ended_at': session['ended_at'],
+        'sync_state': 'synced',
+      });
+      await tx.rawInsert(
+        '''INSERT INTO samples(session_id,pid,value,unit,quality,requested_at,received_at,latency_ms,ecu_source)
+        SELECT ?,pid,value,unit,quality,requested_at,received_at,latency_ms,ecu_source
+        FROM restore_samples WHERE cloud_id = ? ORDER BY sample_id''',
+        [id, session['id']],
+      );
+      final last =
+          Sqflite.firstIntValue(
+            await tx.rawQuery(
+              'SELECT MAX(id) FROM samples WHERE session_id = ?',
+              [id],
+            ),
+          ) ??
+          0;
+      await tx.update(
+        'sessions',
+        {'uploaded_sample_id': last},
+        where: 'id = ?',
+        whereArgs: [id],
+      );
+      await tx.delete(
+        'restore_jobs',
+        where: 'cloud_id = ?',
+        whereArgs: [session['id']],
+      );
+      if (_owner() != owner) {
+        throw StateError('Account changed during restore.');
+      }
+    });
   }
 
   static Future<void> _upgrade(Database db) async {
@@ -545,6 +748,24 @@ class SqliteObdRecordingRepository implements RecordingStore {
     return recording(id);
   }
 
+  /// Only already-owned active sessions can be backed up incrementally. Offline
+  /// sessions keep their existing explicit ownership confirmation after stopping.
+  Future<ObdRecording> claimForBackup(int id, String owner) async {
+    final run = await recording(id);
+    if (run.endedAt != null) return claimCompleted(id, owner);
+    if (_owner() != owner || run.ownerId != owner) {
+      throw StateError('Recording belongs to another account.');
+    }
+    final count = await (await database).update(
+      'sessions',
+      {'sync_state': 'pending', 'sync_error': null},
+      where: 'id = ? AND owner_id = ? AND ended_at IS NULL',
+      whereArgs: [id, owner],
+    );
+    if (count != 1) return claimCompleted(id, owner);
+    return recording(id);
+  }
+
   @override
   Future<void> setSyncState(
     int id,
@@ -555,7 +776,8 @@ class SqliteObdRecordingRepository implements RecordingStore {
     final count = await (await database).update(
       'sessions',
       {'sync_state': state.name, 'sync_error': error},
-      where: 'id = ? AND owner_id = ? AND ended_at IS NOT NULL',
+      where:
+          'id = ? AND owner_id = ? ${state == RecordingSyncState.synced ? 'AND ended_at IS NOT NULL' : ''}',
       whereArgs: [id, owner],
     );
     if (count != 1) throw StateError('Recording ownership changed.');

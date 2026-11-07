@@ -23,6 +23,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _name = TextEditingController();
   final _password = TextEditingController();
   final _confirm = TextEditingController();
+  final _previousPassword = TextEditingController();
   final _account = AccountService.instance;
   bool _hidePassword = true;
   bool _hideConfirm = true;
@@ -36,7 +37,43 @@ class _LoginScreenState extends State<LoginScreen> {
     _name.dispose();
     _password.dispose();
     _confirm.dispose();
+    _previousPassword.dispose();
     super.dispose();
+  }
+
+  Future<void> _verification({bool resend = false}) async {
+    setState(() {
+      _busy = true;
+      _message = null;
+    });
+    try {
+      if (resend) {
+        await _account.resendVerification();
+        if (mounted) {
+          setState(
+            () => _message =
+                'Verification email sent. Check your inbox and spam folder.',
+          );
+        }
+      } else {
+        await _account.refreshVerification(
+          previousPassword: _previousPassword.text,
+        );
+        if (mounted) await _continue();
+      }
+    } on AuthException catch (error) {
+      if (mounted) setState(() => _message = error.message);
+    } on PostgrestException catch (error) {
+      if (mounted) setState(() => _message = error.message);
+    } catch (_) {
+      if (mounted) {
+        setState(
+          () => _message = 'Unable to check your account. Check your internet connection and retry.',
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
   }
 
   Future<void> _continue() async {
@@ -190,7 +227,42 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                           ),
                           const SizedBox(height: 24),
-                          if (_account.userId == null) ...[
+                          if (_account.hasPendingIdentity) ...[
+                            Text(
+                              'Verify ${_account.email ?? 'your email'}',
+                              style: AppTextStyles.titleMedium,
+                            ),
+                            const SizedBox(height: 12),
+                            const Text(
+                              'Open the verification link in your email, then return here. Existing users: enter your previous AutoPulseAI password to keep your cars and runs.',
+                            ),
+                            const SizedBox(height: 16),
+                            TextField(
+                              controller: _previousPassword,
+                              enabled: !_busy,
+                              obscureText: true,
+                              decoration: const InputDecoration(
+                                labelText: 'Previous account password (existing users only)',
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            FilledButton(
+                              onPressed: _busy ? null : () => _verification(),
+                              child: const Text(
+                                'I verified my email — continue',
+                              ),
+                            ),
+                            TextButton(
+                              onPressed: _busy
+                                  ? null
+                                  : () => _verification(resend: true),
+                              child: const Text('Resend verification email'),
+                            ),
+                            TextButton(
+                              onPressed: _busy ? null : _signOut,
+                              child: const Text('Use another account'),
+                            ),
+                          ] else if (_account.userId == null) ...[
                             Container(
                               padding: const EdgeInsets.all(5),
                               decoration: BoxDecoration(
@@ -429,7 +501,14 @@ class _LoginScreenState extends State<LoginScreen> {
                             const Divider(color: AppColors.borderLight),
                             const SizedBox(height: 8),
                             TextButton(
-                              onPressed: _busy ? null : _continue,
+                              onPressed: _busy
+                                  ? null
+                                  : () async {
+                                      if (_account.hasPendingIdentity) {
+                                        await _account.signOut();
+                                      }
+                                      if (mounted) await _continue();
+                                    },
                               style: TextButton.styleFrom(
                                 foregroundColor: AppColors.textSecondary,
                               ),
