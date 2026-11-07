@@ -701,7 +701,7 @@ class _RecordingGraphScreenState extends State<RecordingGraphScreen> {
               parameter: _parameter,
               samples: _samples.map((row) => row.sample).toList(),
               timeOrigin: widget.recording.startedAt,
-              height: (constraints.maxHeight * .58).clamp(300, 480),
+              height: (constraints.maxHeight * .58).clamp(300, 480).toDouble(),
             ),
             const SizedBox(height: 8),
             const Text(
