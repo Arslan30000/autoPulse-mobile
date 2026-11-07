@@ -65,7 +65,10 @@ void main() {
       await store.importCloudPages(
         session(),
         car,
-        Stream.value([row, row]),
+        Stream.fromIterable([
+          [row],
+          [row],
+        ]),
         owner!,
       );
       final recording = (await store.listRecordings(owner)).single;
