@@ -143,7 +143,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Recording details'), findsOneWidget);
       expect(find.byTooltip('Export CSV'), findsOneWidget);
-      expect(find.textContaining('2/2 valid samples'), findsOneWidget);
+      expect(find.textContaining('2/2 valid ·'), findsOneWidget);
       expect(tester.takeException(), isNull);
       await tester.pumpWidget(const SizedBox.shrink());
     },
@@ -202,7 +202,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    expect(find.textContaining('661/661 valid samples'), findsOneWidget);
+    expect(find.textContaining('661/661 valid ·'), findsOneWidget);
     expect(find.text('Explore telemetry graphs'), findsOneWidget);
     expect(find.textContaining('Latest 600 readings.'), findsNothing);
     await tester.tap(find.text('Explore telemetry graphs'));
