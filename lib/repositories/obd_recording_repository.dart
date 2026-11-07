@@ -827,4 +827,3 @@ class SqliteObdRecordingRepository implements RecordingStore {
     _database = null;
   }
 }
-

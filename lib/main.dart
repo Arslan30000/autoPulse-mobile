@@ -87,4 +87,3 @@ class AutoPulseApp extends StatelessWidget {
     );
   }
 }
-

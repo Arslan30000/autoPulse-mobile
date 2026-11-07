@@ -306,4 +306,3 @@ class AccountDataService extends ChangeNotifier with WidgetsBindingObserver {
     super.dispose();
   }
 }
-

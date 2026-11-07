@@ -317,4 +317,3 @@ class SupabaseRecordingRepository implements CloudRecordingRepository {
         .timeout(const Duration(seconds: 25));
   }
 }
-
