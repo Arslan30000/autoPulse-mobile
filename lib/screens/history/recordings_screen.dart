@@ -380,7 +380,6 @@ class _RecordingDetailsScreenState extends State<RecordingDetailsScreen> {
   @override
   Widget build(BuildContext context) {
     final quality = _quality;
-    final metric = quality?[_parameter];
     return Scaffold(
       appBar: AppBar(
         title: const Text('Recording details'),
@@ -436,32 +435,6 @@ class _RecordingDetailsScreenState extends State<RecordingDetailsScreen> {
           if (_error != null) Text(_error!),
           if (quality == null && _error == null)
             const Center(child: CircularProgressIndicator()),
-          if (metric == null && quality != null)
-            const Text(
-              'No samples recorded for this PID. This does not establish whether the vehicle supports it.',
-            ),
-          if (metric != null) ...[
-            Text(
-              '${metric.valid}/${metric.total} valid samples \u00b7 mean latency ${metric.meanLatencyMs.toStringAsFixed(0)} ms',
-            ),
-            Text(
-              'Observed rate: ${metric.observedHz?.toStringAsFixed(2) ?? 'unavailable'} Hz \u00b7 longest gap ${(metric.longestGap.inMilliseconds / 1000).toStringAsFixed(2)} s',
-            ),
-            if (metric.clockDiscontinuities > 0)
-              const Text(
-                'Phone clock moved backwards; the update rate cannot be calculated reliably.',
-              ),
-            Wrap(
-              spacing: 12,
-              children: ObdSampleStatus.values
-                  .map(
-                    (s) => Chip(
-                      label: Text('${s.name}: ${metric.counts[s] ?? 0}'),
-                    ),
-                  )
-                  .toList(),
-            ),
-          ],
           Card(
             child: ListTile(
               leading: const Icon(Icons.show_chart),
