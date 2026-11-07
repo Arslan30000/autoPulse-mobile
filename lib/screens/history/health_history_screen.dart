@@ -1,5 +1,6 @@
 import 'package:autopulse_ai/core/widgets/chart_labels.dart';
 import 'package:flutter/material.dart';
+import 'package:autopulse_ai/core/widgets/sample_data_notice.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:autopulse_ai/core/theme/app_colors.dart';
@@ -23,6 +24,7 @@ class HealthHistoryScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            const SampleDataNotice(),
             const SectionHeader(title: 'Health Trend'),
             const SizedBox(height: 12),
 

@@ -20,6 +20,39 @@ class BottomNavShell extends StatefulWidget {
 
 class _BottomNavShellState extends State<BottomNavShell> {
   int _currentIndex = 0;
+  final Set<int> _visited = {0};
+  LocalHistoryEntry? _tabHistory;
+  bool _disposing = false;
+
+  void _selectTab(int index) {
+    if (index == _currentIndex) return;
+    if (index == 0) {
+      _tabHistory?.remove();
+      return;
+    }
+    // Tabs share a route. Give that route a local back destination so both
+    // Android back and the app bar return to Home before leaving the app.
+    if (_tabHistory == null) {
+      _tabHistory = LocalHistoryEntry(
+        onRemove: () {
+          _tabHistory = null;
+          if (!_disposing && mounted) setState(() => _currentIndex = 0);
+        },
+      );
+      ModalRoute.of(context)!.addLocalHistoryEntry(_tabHistory!);
+    }
+    setState(() {
+      _visited.add(index);
+      _currentIndex = index;
+    });
+  }
+
+  @override
+  void dispose() {
+    _disposing = true;
+    _tabHistory?.remove();
+    super.dispose();
+  }
 
   List<Widget> get _screens {
     if (RoleService().isCarOwner) {
@@ -89,22 +122,30 @@ class _BottomNavShellState extends State<BottomNavShell> {
   Widget build(BuildContext context) {
     final screens = _screens;
     return Scaffold(
-      body: IndexedStack(index: _currentIndex, children: screens),
+      body: IndexedStack(
+        index: _currentIndex,
+        children: [
+          for (var i = 0; i < screens.length; i++)
+            _visited.contains(i)
+                ? TickerMode(enabled: i == _currentIndex, child: screens[i])
+                : const SizedBox.shrink(),
+        ],
+      ),
       bottomNavigationBar: Container(
         decoration: const BoxDecoration(
           border: Border(top: BorderSide(color: AppColors.border, width: 1)),
         ),
-        child: BottomNavigationBar(
-          currentIndex: _currentIndex,
-          onTap: (index) => setState(() => _currentIndex = index),
+        child: NavigationBar(
+          selectedIndex: _currentIndex,
+          onDestinationSelected: _selectTab,
           backgroundColor: AppColors.surface,
-          selectedItemColor: AppColors.primary,
-          unselectedItemColor: AppColors.textTertiary,
-          type: BottomNavigationBarType.fixed,
+          indicatorColor: AppColors.primary.withValues(alpha: .18),
+          height: 72,
           elevation: 0,
-          selectedFontSize: 12,
-          unselectedFontSize: 12,
-          items: _navItems,
+          destinations: [
+            for (final item in _navItems)
+              NavigationDestination(icon: item.icon, label: item.label ?? ''),
+          ],
         ),
       ),
     );

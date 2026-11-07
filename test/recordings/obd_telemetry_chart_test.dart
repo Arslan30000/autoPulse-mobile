@@ -149,4 +149,20 @@ void main() {
       expect(tester.takeException(), isNull);
     },
   );
+
+  testWidgets(
+    'a new connection clears a paused graph from the previous drive',
+    (tester) async {
+      await tester.pumpWidget(
+        screen([fixtureSample(0), fixtureSample(1)], live: true),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Pause graph'));
+      await tester.pumpAndSettle();
+      await tester.pumpWidget(screen([], live: true));
+      await tester.pumpAndSettle();
+      expect(find.byType(LineChart), findsNothing);
+      expect(find.text('Pause graph'), findsOneWidget);
+    },
+  );
 }

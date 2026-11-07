@@ -13,12 +13,12 @@ class RoleSelectionScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
-        child: Padding(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Spacer(flex: 1),
+              const SizedBox(height: 16),
               // Logo
               Center(
                     child: Container(
@@ -74,7 +74,7 @@ class RoleSelectionScreen extends StatelessWidget {
                   .animate()
                   .fadeIn(duration: 500.ms, delay: 200.ms)
                   .slideY(begin: 0.1),
-              const Spacer(flex: 1),
+              const SizedBox(height: 32),
 
               // Car Owner Card
               _RoleCard(
@@ -106,7 +106,7 @@ class RoleSelectionScreen extends StatelessWidget {
                   .animate()
                   .fadeIn(duration: 500.ms, delay: 450.ms)
                   .slideY(begin: 0.1, duration: 500.ms),
-              const Spacer(flex: 2),
+              const SizedBox(height: 32),
             ],
           ),
         ),

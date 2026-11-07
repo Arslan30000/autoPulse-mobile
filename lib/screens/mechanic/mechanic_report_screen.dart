@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:autopulse_ai/core/widgets/report_actions.dart';
+import 'package:autopulse_ai/core/widgets/sample_data_notice.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:autopulse_ai/core/theme/app_colors.dart';
 import 'package:autopulse_ai/core/theme/app_text_styles.dart';
@@ -18,6 +20,7 @@ class MechanicReportScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            const SampleDataNotice(),
             // Report header
             Container(
               width: double.infinity,
@@ -248,24 +251,18 @@ class MechanicReportScreen extends StatelessWidget {
             const SizedBox(height: 24),
 
             // Buttons
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () {},
-                    icon: const Icon(Icons.picture_as_pdf_rounded, size: 18),
-                    label: const Text('Generate Report'),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: () {},
-                    icon: const Icon(Icons.share_rounded, size: 18),
-                    label: const Text('Share Report'),
-                  ),
-                ),
-              ],
+            ReportActions(
+              title: 'AutoPulseAI diagnostic report',
+              previewLabel: 'Generate Report',
+              content:
+                  'SAMPLE DATA — preview, not a live vehicle assessment.\n\n'
+                  '${MockData.vehicle.fullDisplayName}\nDate: 25 Aug 2026\n\n'
+                  'Health: 87/100; DTCs: 1; Anomalies: 1; Critical: 0\n\n'
+                  'Airflow Deviation (Moderate)\nMAF: 0.21 g/s; sample baseline: 2.5–4.0 g/s\n'
+                  'Sample DTC: P0101 Active\nEngine load: 12%; coolant: 69 °C\n'
+                  'Anomaly confidence: 82%\n\n'
+                  'This example report does not replace a vehicle inspection. '
+                  'Use Saved runs for actual recorded PID measurements and CSV export.',
             ).animate().fadeIn(duration: 400.ms, delay: 500.ms),
 
             const SizedBox(height: 24),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:autopulse_ai/core/widgets/sample_data_notice.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:autopulse_ai/core/theme/app_colors.dart';
 import 'package:autopulse_ai/core/theme/app_text_styles.dart';
@@ -33,134 +34,96 @@ class _VehicleHealthScreenState extends State<VehicleHealthScreen> {
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Health Overview Header
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      AppColors.primary.withValues(alpha: 0.15),
-                      AppColors.primary.withValues(alpha: 0.02),
-                    ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.primary.withValues(alpha: 0.1),
-                      blurRadius: 20,
-                      spreadRadius: -5,
-                      offset: const Offset(0, 8),
-                    ),
-                  ],
-                  borderRadius: BorderRadius.circular(24),
-                  border: Border.all(
-                    color: AppColors.primary.withValues(alpha: 0.3),
-                    width: 1.5,
-                  ),
-                ),
-                child: Column(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(12),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 1000),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SampleDataNotice(),
+                  Center(
+                    child: Container(
+                      padding: const EdgeInsets.all(24),
                       decoration: BoxDecoration(
-                        color: AppColors.primary.withValues(alpha: 0.1),
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppColors.primary.withValues(alpha: 0.2),
-                            blurRadius: 12,
-                            spreadRadius: 2,
+                        color: AppColors.surface,
+                        borderRadius: BorderRadius.circular(24),
+                        border: Border.all(color: AppColors.border),
+                      ),
+                      child: Column(
+                        children: [
+                          HealthScoreWidget(
+                            score: MockData.vehicleHealth.score,
+                            status: MockData.vehicleHealth.status,
+                            size: 150,
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            'Vehicle health score',
+                            style: AppTextStyles.bodyMedium,
                           ),
                         ],
                       ),
-                      child: Icon(
-                        Icons.monitor_heart_rounded,
-                        color: AppColors.primary,
-                        size: 40,
-                      ),
                     ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'System Diagnostics',
-                      style: AppTextStyles.titleMedium.copyWith(
-                        color: AppColors.primary,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 1.2,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'All systems monitored in real-time',
-                      style: AppTextStyles.bodySmall.copyWith(
-                        color: Colors.white70,
-                      ),
-                    ),
-                  ],
-                ),
-              ).animate().fadeIn(duration: 600.ms).slideY(begin: -0.2, end: 0),
+                  ),
+                  const SizedBox(height: 28),
+                  SectionHeader(title: 'Vehicle Systems')
+                      .animate()
+                      .fadeIn(duration: 400.ms, delay: 300.ms),
+                  const SizedBox(height: 16),
 
-              const SizedBox(height: 32),
-
-              // Health score
-              Center(
-                    child: HealthScoreWidget(
-                      score: MockData.vehicleHealth.score,
-                      status: MockData.vehicleHealth.status,
-                      size: 140,
-                    ),
-                  )
-                  .animate()
-                  .fadeIn(duration: 600.ms, delay: 200.ms)
-                  .scale(begin: const Offset(0.9, 0.9)),
-
-              const SizedBox(height: 32),
-
-              SectionHeader(title: 'Vehicle Systems')
-                  .animate()
-                  .fadeIn(duration: 400.ms, delay: 300.ms),
-              const SizedBox(height: 16),
-
-              // System cards
-              ...MockData.vehicleHealth.systems.map((system) {
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: SystemStatusCard(
-                    systemHealth: system,
-                    onTap: () {
-                      setState(() {
-                        _selectedSystem = _selectedSystem == system
-                            ? null
-                            : system;
-                      });
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      final columns = constraints.maxWidth >= 760 ? 3 : 2;
+                      final width =
+                          (constraints.maxWidth - 14 * (columns - 1)) / columns;
+                      return Wrap(
+                        spacing: 14,
+                        runSpacing: 14,
+                        children: MockData.vehicleHealth.systems.map((system) {
+                          return SizedBox(
+                            width: width,
+                            child: SystemStatusCard(
+                              systemHealth: system,
+                              selected: _selectedSystem == system,
+                              onTap: () {
+                                setState(() {
+                                  _selectedSystem = _selectedSystem == system
+                                      ? null
+                                      : system;
+                                });
+                              },
+                            ),
+                          );
+                        }).toList(),
+                      );
                     },
                   ),
-                );
-              }),
 
-              const SizedBox(height: 20),
+                  const SizedBox(height: 20),
 
-              // Selected system detail
-              AnimatedSwitcher(
-                duration: const Duration(milliseconds: 400),
-                transitionBuilder: (Widget child, Animation<double> animation) {
-                  return SizeTransition(
-                    sizeFactor: animation,
-                    alignment: Alignment(-1.0, -1.0),
-                    child: FadeTransition(opacity: animation, child: child),
-                  );
-                },
-                child: _selectedSystem != null
-                    ? _buildSystemDetail(_selectedSystem!)
-                    : const SizedBox.shrink(),
+                  // Selected system detail
+                  AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 400),
+                    transitionBuilder:
+                        (Widget child, Animation<double> animation) {
+                          return SizeTransition(
+                            sizeFactor: animation,
+                            alignment: Alignment(-1.0, -1.0),
+                            child: FadeTransition(
+                              opacity: animation,
+                              child: child,
+                            ),
+                          );
+                        },
+                    child: _selectedSystem != null
+                        ? _buildSystemDetail(_selectedSystem!)
+                        : const SizedBox.shrink(),
+                  ),
+
+                  const SizedBox(height: 32),
+                ],
               ),
-
-              const SizedBox(height: 32),
-            ],
+            ),
           ),
         ),
       ),

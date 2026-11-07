@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:autopulse_ai/core/theme/app_colors.dart';
 
 class AppTheme {
@@ -11,6 +10,12 @@ class AppTheme {
       useMaterial3: true,
       brightness: Brightness.dark,
       scaffoldBackgroundColor: AppColors.background,
+      fontFamily: 'Inter',
+      textTheme: ThemeData.dark().textTheme.apply(
+        fontFamily: 'Inter',
+        bodyColor: AppColors.textPrimary,
+        displayColor: AppColors.textPrimary,
+      ),
       colorScheme: const ColorScheme.dark(
         surface: AppColors.surface,
         primary: AppColors.primary,
@@ -25,7 +30,8 @@ class AppTheme {
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: false,
-        titleTextStyle: GoogleFonts.inter(
+        titleTextStyle: const TextStyle(
+          fontFamily: 'Inter',
           fontSize: 20,
           fontWeight: FontWeight.w600,
           color: AppColors.textPrimary,
@@ -46,6 +52,38 @@ class AppTheme {
           side: const BorderSide(color: AppColors.border, width: 1),
         ),
         margin: EdgeInsets.zero,
+      ),
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          backgroundColor: AppColors.primary,
+          foregroundColor: AppColors.background,
+          minimumSize: const Size(48, 52),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+          textStyle: const TextStyle(
+            fontFamily: 'Inter',
+            fontSize: 16,
+            fontWeight: FontWeight.w800,
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+        ),
+      ),
+      bottomSheetTheme: const BottomSheetThemeData(
+        backgroundColor: AppColors.surface,
+        showDragHandle: true,
+      ),
+      listTileTheme: const ListTileThemeData(
+        iconColor: AppColors.primary,
+        contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 6),
+      ),
+      progressIndicatorTheme: const ProgressIndicatorThemeData(
+        color: AppColors.primary,
+      ),
+      snackBarTheme: const SnackBarThemeData(
+        backgroundColor: AppColors.surfaceTertiary,
+        contentTextStyle: TextStyle(color: AppColors.textPrimary),
+        behavior: SnackBarBehavior.floating,
       ),
       bottomNavigationBarTheme: const BottomNavigationBarThemeData(
         backgroundColor: AppColors.surface,
@@ -74,7 +112,8 @@ class AppTheme {
           horizontal: 16,
           vertical: 14,
         ),
-        hintStyle: GoogleFonts.inter(
+        hintStyle: const TextStyle(
+          fontFamily: 'Inter',
           color: AppColors.textTertiary,
           fontSize: 14,
         ),
@@ -88,7 +127,8 @@ class AppTheme {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
-          textStyle: GoogleFonts.inter(
+          textStyle: const TextStyle(
+            fontFamily: 'Inter',
             fontSize: 16,
             fontWeight: FontWeight.w600,
           ),
@@ -102,7 +142,8 @@ class AppTheme {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
-          textStyle: GoogleFonts.inter(
+          textStyle: const TextStyle(
+            fontFamily: 'Inter',
             fontSize: 16,
             fontWeight: FontWeight.w600,
           ),
@@ -111,7 +152,8 @@ class AppTheme {
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: AppColors.primary,
-          textStyle: GoogleFonts.inter(
+          textStyle: const TextStyle(
+            fontFamily: 'Inter',
             fontSize: 14,
             fontWeight: FontWeight.w500,
           ),
@@ -124,7 +166,8 @@ class AppTheme {
       ),
       chipTheme: ChipThemeData(
         backgroundColor: AppColors.surfaceSecondary,
-        labelStyle: GoogleFonts.inter(
+        labelStyle: const TextStyle(
+          fontFamily: 'Inter',
           fontSize: 12,
           fontWeight: FontWeight.w500,
           color: AppColors.textSecondary,

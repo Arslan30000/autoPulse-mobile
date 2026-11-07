@@ -19,12 +19,14 @@ class ObdTelemetryChart extends StatefulWidget {
   final ObdParameter parameter;
   final DateTime? timeOrigin;
   final bool live;
+  final double height;
   const ObdTelemetryChart({
     super.key,
     required this.samples,
     required this.parameter,
     this.timeOrigin,
     this.live = false,
+    this.height = 270,
   });
 
   @override
@@ -35,6 +37,19 @@ class _ObdTelemetryChartState extends State<ObdTelemetryChart> {
   final _transform = TransformationController();
   List<ObdSample>? _pausedSamples;
   DateTime? _pausedOrigin;
+
+  @override
+  void didUpdateWidget(covariant ObdTelemetryChart oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.parameter != widget.parameter ||
+        oldWidget.timeOrigin != widget.timeOrigin ||
+        oldWidget.live != widget.live ||
+        (oldWidget.samples.isNotEmpty && widget.samples.isEmpty)) {
+      _pausedSamples = null;
+      _pausedOrigin = null;
+      _transform.value = Matrix4.identity();
+    }
+  }
 
   @override
   void dispose() {
@@ -170,7 +185,7 @@ class _ObdTelemetryChartState extends State<ObdTelemetryChart> {
           )
         else
           SizedBox(
-            height: 270,
+            height: widget.height,
             child: LineChart(
               duration: Duration.zero,
               transformationConfig: FlTransformationConfig(

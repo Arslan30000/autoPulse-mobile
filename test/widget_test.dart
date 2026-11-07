@@ -16,8 +16,8 @@ void main() {
 
     final app = tester.widget<MaterialApp>(find.byType(MaterialApp));
     expect(app.title, 'AutoPulse_ai');
-    expect(find.text('Welcome to AutoPulseAI'), findsOneWidget);
-    expect(find.text('Continue offline'), findsOneWidget);
+    expect(find.text('Welcome to'), findsOneWidget);
+    expect(find.text('Continue'), findsOneWidget);
     expect(tester.takeException(), isNull);
 
     await tester.pumpWidget(const SizedBox.shrink());

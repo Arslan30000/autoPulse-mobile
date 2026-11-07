@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:autopulse_ai/core/widgets/connection_sheet.dart';
 import 'package:autopulse_ai/services/account_service.dart';
 import 'package:autopulse_ai/services/account_data_service.dart';
 import 'package:autopulse_ai/services/obd/obd_controller.dart';
@@ -148,8 +149,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ListTile(
             leading: const Icon(Icons.bluetooth),
             title: const Text('OBD-II connection'),
-            subtitle: Text(obd.isReady ? 'Connected' : 'Connect from Live'),
-            onTap: () => Navigator.pushNamed(context, AppRouter.live),
+            subtitle: Text(
+              obd.isReady ? 'Connected' : 'Manage Bluetooth adapter',
+            ),
+            onTap: () => showConnectionSheet(context),
           ),
           ListTile(
             leading: const Icon(Icons.history),
@@ -186,6 +189,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
               subtitle: const Text('Your saved phone data is kept.'),
               onTap: _busy ? null : _signOut,
             ),
+            if (_data.cloudReservedBytes != null)
+              ListTile(
+                leading: Icon(
+                  _data.cloudNearlyFull
+                      ? Icons.cloud_off_outlined
+                      : Icons.cloud_outlined,
+                ),
+                title: Text(
+                  _data.cloudNearlyFull
+                      ? 'Cloud storage is nearly full'
+                      : 'Free cloud storage',
+                ),
+                subtitle: Text(
+                  'Your compressed recordings: ${((_data.accountCloudBytes ?? 0) / 1000000).toStringAsFixed(1)} MB. Project recording budget: ${(_data.cloudReservedBytes! / 1000000).toStringAsFixed(1)} / ${(_data.cloudBudgetBytes / 1000000).toStringAsFixed(0)} MB. Offline recording and CSV export remain available.',
+                ),
+              ),
           ],
           ListTile(
             leading: const Icon(Icons.shield_outlined),

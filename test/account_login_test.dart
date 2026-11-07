@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -16,6 +17,7 @@ import 'recordings/supabase_recording_repository_test.dart'
 
 void main() {
   setUp(() {
+    GoogleFonts.config.allowRuntimeFetching = false;
     SharedPreferences.setMockInitialValues({});
     AccountService.instance.configure(null);
     AccountDataService.instance.resolvedOwner = null;
@@ -35,6 +37,8 @@ void main() {
     bool hasCar = true,
     bool confirmation = false,
     List<http.Request>? requests,
+    bool rejectLogin = false,
+    bool failCars = false,
   }) {
     final client = SupabaseClient(
       'https://fixture.supabase.co',
@@ -50,9 +54,33 @@ void main() {
           response = confirmation
               ? sessionResponse()['user']!
               : sessionResponse();
-        } else if (request.url.path.endsWith('/token')) {
+        } else if (request.url.path.endsWith('/token') ||
+            request.url.path.endsWith('/verify')) {
+          if (rejectLogin) {
+            return http.Response(
+              jsonEncode({
+                'code': 'invalid_credentials',
+                'msg': 'Invalid login credentials',
+              }),
+              400,
+              headers: {'content-type': 'application/json'},
+              request: request,
+            );
+          }
           response = sessionResponse();
+        } else if (request.url.path.endsWith('/user')) {
+          response = sessionResponse()['user']!;
+        } else if (request.url.path.endsWith('/recover')) {
+          response = <String, dynamic>{};
         } else if (request.url.path.endsWith('/vehicles')) {
+          if (failCars) {
+            return http.Response(
+              jsonEncode({'code': '42501', 'message': 'permission denied'}),
+              403,
+              headers: {'content-type': 'application/json'},
+              request: request,
+            );
+          }
           response = hasCar
               ? [
                   {
@@ -91,13 +119,13 @@ void main() {
       await tester.pumpWidget(app());
       expect(find.widgetWithText(TextFormField, 'Email'), findsOneWidget);
       expect(find.widgetWithText(TextFormField, 'Password'), findsOneWidget);
-      expect(find.text('Continue offline'), findsOneWidget);
+      expect(find.text('Continue without an account'), findsOneWidget);
       await tester.ensureVisible(find.text('Create an account'));
       await tester.tap(find.text('Create an account'));
       await tester.pump();
       expect(find.widgetWithText(TextFormField, 'Your name'), findsOneWidget);
-      await tester.ensureVisible(find.text('Continue offline'));
-      await tester.tap(find.text('Continue offline'));
+      await tester.ensureVisible(find.text('Continue without an account'));
+      await tester.tap(find.text('Continue without an account'));
       await tester.pumpAndSettle();
       expect(find.text('Add car destination'), findsOneWidget);
     },
@@ -117,6 +145,9 @@ void main() {
           find.widgetWithText(TextFormField, 'Password'),
           'fixture',
         );
+        await tester.ensureVisible(
+          find.widgetWithText(FilledButton, 'Sign in'),
+        );
         await tester.tap(find.widgetWithText(FilledButton, 'Sign in'));
         await tester.pumpAndSettle();
         expect(
@@ -128,6 +159,88 @@ void main() {
       variant: TargetPlatformVariant.only(TargetPlatform.windows),
     );
   }
+  testWidgets('signup rejects mismatched passwords before contacting backend', (
+    tester,
+  ) async {
+    final requests = <http.Request>[];
+    await tester.runAsync(() async => backend(requests: requests));
+    await tester.pumpWidget(app());
+    await tester.tap(find.text('Register'));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'Your name'),
+      'Synthetic owner',
+    );
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'Email'),
+      'fixture@example.test',
+    );
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'Password'),
+      'fixture-password',
+    );
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'Confirm password'),
+      'different-password',
+    );
+    await tester.ensureVisible(
+      find.widgetWithText(FilledButton, 'Create account'),
+    );
+    await tester.tap(find.widgetWithText(FilledButton, 'Create account'));
+    await tester.pumpAndSettle();
+    expect(find.text('Passwords do not match.'), findsOneWidget);
+    expect(requests, isEmpty);
+    expect(AccountService.instance.userId, isNull);
+  }, variant: TargetPlatformVariant.only(TargetPlatform.windows));
+
+  testWidgets(
+    'password recovery verifies emailed token before updating password',
+    (tester) async {
+      final requests = <http.Request>[];
+      await tester.runAsync(() async => backend(requests: requests));
+      await tester.pumpWidget(app());
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'Email'),
+        'fixture@example.test',
+      );
+      await tester.ensureVisible(find.text('Forgot password?'));
+      await tester.tap(find.text('Forgot password?'));
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.text('Send recovery code'));
+      await tester.tap(find.text('Send recovery code'));
+      await tester.pumpAndSettle();
+      expect(requests.single.url.path, endsWith('/recover'));
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'Recovery code'),
+        '123456',
+      );
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'New password'),
+        'replacement-password',
+      );
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'Confirm password'),
+        'replacement-password',
+      );
+      await tester.ensureVisible(find.text('Update password'));
+      await tester.tap(find.text('Update password'));
+      await tester.pumpAndSettle();
+      expect(requests.map((r) => r.url.path.split('/').last), [
+        'recover',
+        'verify',
+        'user',
+      ]);
+      expect(jsonDecode(requests[1].body)['type'], 'recovery');
+      expect(jsonDecode(requests[2].body)['password'], 'replacement-password');
+      expect(find.text('Continue'), findsOneWidget);
+      expect(
+        find.text('Password updated. Continue to your account.'),
+        findsOneWidget,
+      );
+    },
+    variant: TargetPlatformVariant.only(TargetPlatform.windows),
+  );
+
   testWidgets('signup sends display name and waits for email confirmation', (
     tester,
   ) async {
@@ -136,6 +249,7 @@ void main() {
       () async => backend(confirmation: true, requests: requests),
     );
     await tester.pumpWidget(app());
+    await tester.ensureVisible(find.text('Create an account'));
     await tester.tap(find.text('Create an account'));
     await tester.pump();
     await tester.enterText(
@@ -148,6 +262,10 @@ void main() {
     );
     await tester.enterText(
       find.widgetWithText(TextFormField, 'Password'),
+      'fixture-password',
+    );
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'Confirm password'),
       'fixture-password',
     );
     await tester.ensureVisible(
@@ -166,4 +284,85 @@ void main() {
     );
     expect(find.text('Home destination'), findsNothing);
   }, variant: TargetPlatformVariant.only(TargetPlatform.windows));
+
+  testWidgets('invalid credentials show the backend error and allow retry', (
+    tester,
+  ) async {
+    final requests = <http.Request>[];
+    await tester.runAsync(
+      () async => backend(rejectLogin: true, requests: requests),
+    );
+    await tester.pumpWidget(app());
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'Email'),
+      'fixture@example.test',
+    );
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'Password'),
+      'wrong-password',
+    );
+    await tester.ensureVisible(find.widgetWithText(FilledButton, 'Sign in'));
+    await tester.tap(find.widgetWithText(FilledButton, 'Sign in'));
+    await tester.pumpAndSettle();
+    expect(find.text('Invalid login credentials'), findsOneWidget);
+    expect(AccountService.instance.userId, isNull);
+    expect(find.text('Home destination'), findsNothing);
+    expect(
+      tester
+          .widget<FilledButton>(find.widgetWithText(FilledButton, 'Sign in'))
+          .onPressed,
+      isNotNull,
+    );
+    expect(requests, hasLength(1));
+  }, variant: TargetPlatformVariant.only(TargetPlatform.windows));
+
+  testWidgets('invalid email and missing password never call authentication', (
+    tester,
+  ) async {
+    final requests = <http.Request>[];
+    await tester.runAsync(() async => backend(requests: requests));
+    await tester.pumpWidget(app());
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'Email'),
+      'invalid-email',
+    );
+    await tester.ensureVisible(find.widgetWithText(FilledButton, 'Sign in'));
+    await tester.tap(find.widgetWithText(FilledButton, 'Sign in'));
+    await tester.pumpAndSettle();
+    expect(find.text('Enter a valid email address.'), findsOneWidget);
+    expect(find.text('Enter a password.'), findsOneWidget);
+    expect(requests, isEmpty);
+  }, variant: TargetPlatformVariant.only(TargetPlatform.windows));
+
+  testWidgets(
+    'failed car restore keeps the signed-in owner on retry instead of losing their cars',
+    (tester) async {
+      await tester.runAsync(() async => backend(failCars: true));
+      await tester.pumpWidget(app());
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'Email'),
+        'fixture@example.test',
+      );
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'Password'),
+        'fixture',
+      );
+      await tester.ensureVisible(find.widgetWithText(FilledButton, 'Sign in'));
+      await tester.tap(find.widgetWithText(FilledButton, 'Sign in'));
+      await tester.pumpAndSettle();
+      expect(AccountService.instance.userId, testOwner);
+      expect(
+        find.textContaining('we could not load your cars'),
+        findsOneWidget,
+      );
+      expect(find.text('Add car destination'), findsNothing);
+      expect(find.text('Continue'), findsOneWidget);
+      await tester.ensureVisible(find.text('Sign out'));
+      await tester.tap(find.text('Sign out'));
+      await tester.pumpAndSettle();
+      expect(AccountService.instance.userId, isNull);
+      expect(find.text('Continue without an account'), findsOneWidget);
+    },
+    variant: TargetPlatformVariant.only(TargetPlatform.windows),
+  );
 }

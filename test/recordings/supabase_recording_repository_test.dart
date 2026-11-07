@@ -36,6 +36,67 @@ Map<String, Object?> sessionResponse() {
 }
 
 void main() {
+  test(
+    'cloud restore downloads every sample in acquisition order across pages',
+    () async {
+      final requests = <http.Request>[];
+      final client = SupabaseClient(
+        'https://fixture.supabase.co',
+        'synthetic-public-key',
+        authOptions: const AuthClientOptions(autoRefreshToken: false),
+        httpClient: MockClient((request) async {
+          if (request.url.path == '/auth/v1/token') {
+            return http.Response(
+              jsonEncode(sessionResponse()),
+              200,
+              request: request,
+            );
+          }
+          requests.add(request);
+          final cursor = int.parse(
+            request.url.queryParameters['sample_id']!.substring(3),
+          );
+          final ascending = request.url.queryParameters['order']!.startsWith(
+            'sample_id.asc',
+          );
+          final ids = [
+            for (var id = 1; id <= 7; id++)
+              if (id > cursor) id,
+          ];
+          final ordered = ascending ? ids : ids.reversed;
+          final rows = ordered
+              .take(int.parse(request.url.queryParameters['limit']!))
+              .map((id) => {'sample_id': id, 'value': 1000 + id})
+              .toList();
+          return http.Response(
+            jsonEncode(rows),
+            200,
+            headers: {'content-type': 'application/json'},
+            request: request,
+          );
+        }),
+      );
+      addTearDown(client.dispose);
+      await client.auth.signInWithPassword(
+        email: 'fixture@example.test',
+        password: 'fixture',
+      );
+      final rows = await SupabaseRecordingRepository(client)
+          .downloadSamples('test-run', testOwner, pageSize: 3);
+      expect(rows.map((row) => row['sample_id']), [1, 2, 3, 4, 5, 6, 7]);
+      expect(
+        requests.map((request) => request.url.queryParameters['sample_id']),
+        ['gt.0', 'gt.3', 'gt.6'],
+      );
+      expect(
+        requests.every(
+          (request) =>
+              request.url.queryParameters['owner_id'] == 'eq.$testOwner',
+        ),
+        isTrue,
+      );
+    },
+  );
   test('Supabase requests preserve individual samples and use duplicate-safe batch keys', () async {
     final requests = <http.Request>[];
     final client = SupabaseClient(

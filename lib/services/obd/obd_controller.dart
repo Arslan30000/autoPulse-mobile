@@ -38,6 +38,7 @@ class ObdController extends ChangeNotifier with WidgetsBindingObserver {
   bool _disposed = false;
   Timer? _ageTimer;
   Future<void> _recordQueue = Future.value();
+  Future<void>? _stoppingRecording;
 
   ObdController({
     required this.transport,
@@ -106,8 +107,8 @@ class ObdController extends ChangeNotifier with WidgetsBindingObserver {
 
   Future<void> connect(ObdDevice selected) async {
     if (isBusy || _disposed) return;
-    await disconnect();
     final generation = ++_generation;
+    _ageTimer?.cancel();
     device = selected;
     status = ObdConnectionStatus.connecting;
     error = null;
@@ -119,6 +120,11 @@ class ObdController extends ChangeNotifier with WidgetsBindingObserver {
     adapterIdentity = null;
     _changed();
     try {
+      // Claim the attempt before asynchronous cleanup so a second tap cannot
+      // create another socket, and Disconnect can cancel this attempt too.
+      await _client.disconnect();
+      await stopRecording();
+      if (generation != _generation || _disposed) return;
       if (!await transport.requestPermission()) {
         throw const ElmException('Bluetooth permission was denied.');
       }
@@ -127,12 +133,15 @@ class ObdController extends ChangeNotifier with WidgetsBindingObserver {
       if (generation != _generation) return;
       status = ObdConnectionStatus.initializing;
       _changed();
-      adapterIdentity = await _client.initialize();
+      final identity = await _client.initialize();
+      if (generation != _generation) return;
       final bitmap = await _client.command(
         '0100',
         timeout: const Duration(seconds: 15),
       );
+      if (generation != _generation) return;
       final reply = ObdParser.select(ObdParser.responses(bitmap, 0, 4));
+      adapterIdentity = identity;
       ecuSource = reply.source;
       final pids = ObdParser.supported(reply.bytes);
       _supported.addAll(ObdParameter.values.where((p) => pids.contains(p.pid)));
@@ -228,12 +237,13 @@ class ObdController extends ChangeNotifier with WidgetsBindingObserver {
 
   Future<void> startRecording() async {
     if (!isReady || device == null || isRecording || recordingBusy) return;
+    final generation = _generation;
     recordingBusy = true;
     storageError = null;
     _changed();
     try {
       final id = await repository.start(vehicle, device!);
-      if (!isReady || _disposed) {
+      if (!isReady || _disposed || generation != _generation) {
         await repository.finish(id);
         return;
       }
@@ -263,12 +273,20 @@ class ObdController extends ChangeNotifier with WidgetsBindingObserver {
     });
   }
 
-  Future<void> stopRecording() async {
+  Future<void> stopRecording() {
+    final stopping = _stoppingRecording;
+    if (stopping != null) return stopping;
     final session = _sessionId;
-    if (session == null || recordingBusy) return;
+    if (session == null) return Future.value();
     _sessionId = null;
     recordingBusy = true;
     _changed();
+    return _stoppingRecording = _finishRecording(session).whenComplete(() {
+      _stoppingRecording = null;
+    });
+  }
+
+  Future<void> _finishRecording(int session) async {
     try {
       await _recordQueue;
       await repository.finish(session);

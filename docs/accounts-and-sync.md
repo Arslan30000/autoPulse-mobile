@@ -1,110 +1,44 @@
 # Accounts, cars and saved runs
 
-## Running the Android app
+See [the current backend and migration guide](free-cloud-backend.md) for the
+complete architecture, security rules, deployment record and phone checklist.
 
-Normal builds load the project's public Supabase connection from
-`assets/supabase.public.json`. No extra launch flags are required:
+Normal launches load the bundled public Supabase and Firebase identifiers:
 
 ```sh
+flutter pub get
 flutter run
 ```
 
-To override it with another project's configuration, use VS Code's
-**AutoPulseAI (Supabase)** launch configuration, or:
+Optional `.env` overrides supply `SUPABASE_URL` and `SUPABASE_ANON_KEY` (or
+`SUPABASE_PUBLISHABLE_KEY`). They must target a project configured with the matching
+Firebase integration and migrations. Public app settings are safe to bundle;
+administrator credentials are not. Use `--dart-define=AUTOPULSE_OFFLINE=true` for
+an offline-only build. The existing `.env` remains ignored by Git.
 
-```sh
-flutter run --dart-define-from-file=.env
-```
+New users create a Firebase email/password account and verify its email before
+cloud access. Verification and password-reset links use Firebase's hosted page;
+no custom domain/SMTP is needed. Returning Supabase users register once with the
+same email and enter their previous password on the verification screen. This
+links the verified identity to the original UUID and preserves cars/runs. Email
+equality alone never claims an old account. Later sign-ins use Firebase credentials.
 
-For an override, the root `.env` must contain `SUPABASE_URL` and `SUPABASE_ANON_KEY`
-(or `SUPABASE_PUBLISHABLE_KEY`). Only a public client key belongs in this file.
-Environment values are compiled into the app: fully restart/rebuild after changing them.
-The **AutoPulseAI (offline)** VS Code configuration builds without cloud services.
-Its explicit flag is `--dart-define=AUTOPULSE_OFFLINE=true`. Only public client
-settings are bundled; never include a service-role key, database password or SMTP
-credentials. RLS continues to enforce account ownership.
+An account with a car opens Home. Otherwise it opens Add Vehicle. Bluetooth can
+be connected later. Settings supports profile editing, adding/selecting cars,
+saved runs, sync, storage usage, connection controls and sign-out.
 
-## Account flow
+SQLite remains `obd_recordings.db`. Schema 3 adds durable download staging without
+dropping old sessions/samples. Preferences retain account-specific and offline
+cars. Signing out hides account data without deleting it. Offline runs are not
+automatically assigned to the next account; their upload button asks explicitly.
 
-- New installations open Sign in, with Create account and Continue offline.
-- Signup collects name, email and password. Supabase Auth handles credentials;
-  `profiles` mirrors the owner's display name. Passwords are never stored in app tables.
-- If email confirmation is enabled, confirm the email before signing in. The app
-  does not claim that an unconfirmed signup has a session.
-- A remembered account with a cached car opens Home immediately. A fresh sign-in
-  restores cars and uploaded runs, then opens Home when a car exists.
-- An account with no cars opens Add Vehicle. Bluetooth pairing is available later
-  through Live or Settings; account onboarding does not require an OBD adapter.
-- Settings provides profile editing, car selection/addition, recording history,
-  manual sync, connection controls, privacy information and sign-out.
+Acquisition saves locally first. Full chunks of an owned active run can back up
+while recording; the final tail uploads after stopping. Sync runs in the foreground,
+on a timer/resume and through manual retry. Internet is required for cloud access,
+not Bluetooth recording, graphs or CSV export. Only completed cloud runs restore
+to another phone. Downloads validate pages into SQLite staging and publish only
+a complete trip; interruptions resume from durable checkpoints.
 
-## Storage and offline behavior
-
-Vehicles and selected-car preferences are cached separately for each account and
-for offline use. The previous single-car preference key is preserved and migrated
-into the car collection without discarding it. The SQLite database filename and
-schema version remain unchanged. Existing phone recordings are not replaced or deleted.
-
-Cars and completed runs made while signed in back up automatically in the
-foreground. Sync retries every 30 seconds and when the app resumes; Settings
-also exposes a manual sync action. Recording goes to SQLite first, so loss of
-internet does not stop Bluetooth capture. Cloud backup requires connectivity.
-Only finished recordings are uploaded; individual live PID requests do not wait
-for Supabase. Keep the app open to finish syncing before changing devices.
-
-Older recordings made without an account remain available on the original phone.
-Their upload button explicitly assigns them to the signed-in account; they are
-not silently assigned to whichever account signs in next. Once uploaded, those
-runs restore on another phone using the same account. Cloud restoration uses
-paged requests, validates the complete sample count, and imports each finished
-run atomically. The cloud recording UUID prevents duplicate imports. Downloaded
-samples remain viewable without internet. Sample pages are currently collected
-in memory per run before import; very large individual recordings may require a
-future disk-staging implementation.
-
-Signing out retains cached data but hides that account's runs from other accounts.
-Continuing offline uses the separate offline car selection. Installing an update
-with the same Android application ID and signing certificate normally retains
-SQLite and preferences. Uninstalling or clearing app storage removes local data;
-export any runs that have not yet been uploaded before doing that.
-
-## Supabase migrations
-
-Apply, in order, to a fresh project:
-
-1. `20261003000000_owner_vehicle_ingestion.sql`
-2. `20261004000000_obd_recording_sync.sql`
-3. `20261006000000_account_profiles.sql`
-
-For the current AutoPulseAI project, the initial ingestion schema was already
-present. Recording/account ownership and profile migrations were applied through
-the Supabase SQL editor on 2026-10-06. Do not reapply these non-idempotent migrations
-to that database. SQL editor application does not automatically populate the
-Supabase CLI migration history; reconcile history before using CLI migrations
-against this existing project.
-
-Row-level security limits cars, profiles, sessions and samples to their owner.
-The client cannot choose another user's profile ID. The Auth trigger maintains
-profile changes, with a fixed search path and no direct client execute privilege.
-The sample/session foreign keys prevent cross-account vehicle associations.
-Other original mock-feature tables retain their existing restrictive policies;
-this work does not persist fabricated diagnostic or AI results.
-
-CI applies all three migrations in a disposable PostgreSQL database and checks
-recording and profile ownership policies. Never deploy `supabase/tests/auth_fixture.sql`
-to Supabase: it only supplies minimal Auth stubs for CI.
-
-## Signup email delivery
-
-Email authentication and new signups are enabled in the live project. Email
-confirmation was disabled at the project owner's request on 2026-10-06 for testing.
-Users can sign up with an email and password and sign in immediately without SMTP.
-Supabase Auth stores their email, but this testing configuration does not verify
-that they own that address.
-
-Before a public release, enable email confirmation and configure a custom SMTP
-sender in Authentication > Emails > SMTP Settings.
-See https://supabase.com/docs/guides/auth/auth-smtp. Keep SMTP credentials on the
-backend; never put them in the Flutter environment or repository. Enter the SMTP
-password directly in the dashboard. The app also handles signup responses that
-require email confirmation.
+Install updates with the same package ID and signing certificate. Do not uninstall
+or clear storage before exporting unsynced runs. Do not downgrade to a binary that
+cannot open schema 3. Keep the app visible and screen awake when recording.

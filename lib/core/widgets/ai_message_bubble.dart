@@ -72,10 +72,12 @@ class AIMessageBubble extends StatelessWidget {
                           color: AppColors.success,
                         ),
                         const SizedBox(width: 4),
-                        Text(
-                          e,
-                          style: AppTextStyles.labelSmall.copyWith(
-                            color: AppColors.textSecondary,
+                        Flexible(
+                          child: Text(
+                            e,
+                            style: AppTextStyles.labelSmall.copyWith(
+                              color: AppColors.textSecondary,
+                            ),
                           ),
                         ),
                       ],

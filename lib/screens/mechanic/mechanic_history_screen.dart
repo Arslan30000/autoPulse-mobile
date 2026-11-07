@@ -1,5 +1,6 @@
 import 'package:autopulse_ai/core/widgets/chart_labels.dart';
 import 'package:flutter/material.dart';
+import 'package:autopulse_ai/core/widgets/sample_data_notice.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:autopulse_ai/core/theme/app_colors.dart';
@@ -21,6 +22,7 @@ class MechanicHistoryScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            const SampleDataNotice(),
             // Vehicle info
             Container(
               padding: const EdgeInsets.all(12),
@@ -235,14 +237,15 @@ class MechanicHistoryScreen extends StatelessWidget {
           ),
           child: Row(
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(date, style: AppTextStyles.titleSmall),
-                  Text(time, style: AppTextStyles.labelSmall),
-                ],
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(date, style: AppTextStyles.titleSmall),
+                    Text(time, style: AppTextStyles.labelSmall),
+                  ],
+                ),
               ),
-              const Spacer(),
               _buildMiniStat(
                 'Health',
                 '$health',

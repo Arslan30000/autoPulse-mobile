@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:autopulse_ai/models/vehicle.dart';
 import 'package:autopulse_ai/repositories/local_vehicle_repository.dart';
 import 'package:autopulse_ai/repositories/obd_recording_repository.dart';
+import 'package:autopulse_ai/repositories/cloud_recording_repository.dart';
 import 'package:autopulse_ai/services/account_service.dart';
 import 'package:autopulse_ai/services/obd/obd_controller.dart';
 import 'package:autopulse_ai/services/recording_sync_service.dart';
@@ -16,9 +17,17 @@ class AccountDataService extends ChangeNotifier with WidgetsBindingObserver {
   final vehicles = LocalVehicleRepository();
   bool busy = false;
   String? message;
+  String? syncError;
+  int restoredRuns = 0;
+  int? cloudReservedBytes;
+  int cloudBudgetBytes = 850000000;
+  int? accountCloudBytes;
+  bool get cloudNearlyFull =>
+      cloudReservedBytes != null &&
+      cloudReservedBytes! >= cloudBudgetBytes * .8;
   String? resolvedOwner;
   Timer? _timer;
-  StreamSubscription<AuthState>? _auth;
+  StreamSubscription<void>? _auth;
   String? _activeOwner;
   String? _pendingOwner;
   bool _pendingCarsOnly = false;
@@ -29,13 +38,13 @@ class AccountDataService extends ChangeNotifier with WidgetsBindingObserver {
   void start() {
     WidgetsBinding.instance.addObserver(this);
     _activeOwner = AccountService.instance.userId;
-    _auth = AccountService.instance.client?.auth.onAuthStateChange.listen((
-      _,
-    ) async {
+    _auth = AccountService.instance.changes.listen((_) async {
       final owner = AccountService.instance.userId;
       if (_activeOwner == owner) return;
       _activeOwner = owner;
       resolvedOwner = null;
+      accountCloudBytes = null;
+      cloudReservedBytes = null;
       try {
         await ObdController.instance.disconnect();
         await restoreSelection(cloud: owner != null);
@@ -67,7 +76,7 @@ class AccountDataService extends ChangeNotifier with WidgetsBindingObserver {
     ObdController.instance.setVehicle(
       vehicle ?? const Vehicle(make: 'Vehicle', model: '', year: 2020),
     );
-    if (cloud && owner != null && canStoreRuns) unawaited(synchronize());
+    if (cloud && owner != null && canStoreRuns) await synchronize();
     return vehicle;
   }
 
@@ -124,6 +133,8 @@ class AccountDataService extends ChangeNotifier with WidgetsBindingObserver {
     final client = account.client;
     if (owner == null || client == null) return;
     busy = true;
+    syncError = null;
+    restoredRuns = 0;
     message = 'Syncing account...';
     notifyListeners();
     try {
@@ -154,6 +165,22 @@ class AccountDataService extends ChangeNotifier with WidgetsBindingObserver {
       }
       await vehicles.mergeCloud(cars, owner);
       _check(owner);
+      if (account.usesFirebase) {
+        try {
+          final usage = await client
+              .rpc('recording_cloud_usage')
+              .timeout(const Duration(seconds: 15));
+          _check(owner);
+          if (usage is Map) {
+            cloudReservedBytes = (usage['reserved_bytes'] as num).toInt();
+            cloudBudgetBytes = (usage['budget_bytes'] as num).toInt();
+            accountCloudBytes = (usage['account_bytes'] as num).toInt();
+          }
+        } catch (_) {
+          // Usage information must never stop car restoration or local capture.
+          _check(owner);
+        }
+      }
       resolvedOwner = owner;
       if (carsOnly) {
         message = 'Cars restored. Runs are syncing in the background.';
@@ -198,25 +225,28 @@ class AccountDataService extends ChangeNotifier with WidgetsBindingObserver {
           _check(owner);
           for (final run in page) {
             if (existing.contains(run['id'])) continue;
-            final car = cars.firstWhere((v) => v.id == run['vehicle_id']);
-            final samples = <Map<String, dynamic>>[];
-            var cursor = 0;
-            while (true) {
-              final batch = await client
-                  .from('obd_recording_samples')
-                  .select()
-                  .eq('owner_id', owner)
-                  .eq('session_id', run['id'])
-                  .gt('sample_id', cursor)
-                  .order('sample_id')
-                  .limit(500)
-                  .timeout(const Duration(seconds: 15));
+            message = 'Restoring saved runs ($restoredRuns restored)...';
+            notifyListeners();
+            try {
+              final car = cars.firstWhere((v) => v.id == run['vehicle_id']);
+              await store.restartRestore(run, owner);
+              final samples = SupabaseRecordingRepository(
+                client,
+                accountOwner: () => account.userId,
+                compressed: true,
+              ).samplePages(run, owner);
+              await store.importCloudPages(run, car, samples, owner);
               _check(owner);
-              samples.addAll(batch);
-              if (batch.length < 500) break;
-              cursor = (batch.last['sample_id'] as num).toInt();
+              existing.add(run['id']);
+              restoredRuns++;
+            } catch (error, stack) {
+              _check(owner);
+              debugPrint(
+                'Recording restore failed (${run['id']}): $error\n$stack',
+              );
+              syncError =
+                  'A saved run could not be restored. ${_syncErrorMessage(error)}';
             }
-            await store.importCloud(run, car, samples, owner);
           }
           if (page.length < 50) break;
         }
@@ -235,15 +265,31 @@ class AccountDataService extends ChangeNotifier with WidgetsBindingObserver {
           limit: 1,
         )).isNotEmpty;
       }
-      message = waiting
-          ? 'Cars restored. Some runs are waiting for backup; keep the app open and retry when online.'
-          : 'Account synced. Cars and uploaded runs are available offline.';
-    } catch (_) {
-      message = 'Cloud sync unavailable. Saved phone data is safe; we will retry when connected.';
+      message =
+          syncError ??
+          (waiting
+              ? 'Cars restored. Some runs are waiting for backup; keep the app open and retry when online.'
+              : 'Account synced. $restoredRuns runs restored. Cars and uploaded runs are available offline.');
+    } catch (error, stack) {
+      debugPrint('Account sync failed: $error\n$stack');
+      syncError = _syncErrorMessage(error);
+      message = 'Cloud sync unavailable. $syncError Saved phone data is safe.';
     } finally {
       busy = false;
       notifyListeners();
     }
+  }
+
+  String _syncErrorMessage(Object error) {
+    if (error is PostgrestException) {
+      return 'Database error ${error.code ?? ''}: ${error.message}';
+    }
+    if (error is AuthException) return 'Sign in again to restore your runs.';
+    if (error is TimeoutException) {
+      return 'The connection timed out. Tap Refresh to retry.';
+    }
+    if (error is StateError) return error.message.toString();
+    return 'Check your internet connection and tap Refresh to retry.';
   }
 
   @override
