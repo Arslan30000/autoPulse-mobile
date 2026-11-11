@@ -10,6 +10,11 @@ import 'package:autopulse_ai/services/account_service.dart';
 import 'package:autopulse_ai/services/role_service.dart';
 
 void main() {
+  test('root route resolves instead of being undefined', () {
+    final route = AppRouter.generateRoute(const RouteSettings(name: '/'));
+    expect(route.settings.name, '/');
+  });
+
   setUp(() {
     SharedPreferences.setMockInitialValues({});
     AccountService.instance.configure(null);

@@ -143,7 +143,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Recording details'), findsOneWidget);
       expect(find.byTooltip('Export CSV'), findsOneWidget);
-      expect(find.textContaining('2/2 valid samples'), findsOneWidget);
+      expect(find.textContaining('2/2 valid ·'), findsOneWidget);
       expect(tester.takeException(), isNull);
       await tester.pumpWidget(const SizedBox.shrink());
     },
@@ -192,27 +192,27 @@ void main() {
     },
   );
 
-  testWidgets(
-    'earlier graph windows retain full-session quality and trip time',
-    (tester) async {
-      final store = ScreenRecordingStore(rowCount: 661);
-      await tester.pumpWidget(
-        MaterialApp(
-          home: RecordingDetailsScreen(store: store, recording: store.saved),
-        ),
-      );
-      await tester.pumpAndSettle();
-      expect(find.textContaining('661/661 valid samples'), findsOneWidget);
-      await tester.scrollUntilVisible(find.text('View earlier readings'), 200);
-      await tester.tap(find.text('View earlier readings'));
-      await tester.pumpAndSettle();
-      expect(find.textContaining('Earlier 61 readings.'), findsOneWidget);
-      expect(find.text('View earlier readings'), findsNothing);
-      await tester.ensureVisible(find.text('Return to latest readings'));
-      await tester.tap(find.text('Return to latest readings'));
-      await tester.pumpAndSettle();
-      expect(find.textContaining('Latest 600 readings.'), findsOneWidget);
-      expect(tester.takeException(), isNull);
-    },
-  );
+  testWidgets('recording details open a dedicated full-session graph', (
+    tester,
+  ) async {
+    final store = ScreenRecordingStore(rowCount: 661);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: RecordingDetailsScreen(store: store, recording: store.saved),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.textContaining('661/661 valid ·'), findsOneWidget);
+    expect(find.text('Explore telemetry graphs'), findsOneWidget);
+    expect(find.textContaining('Latest 600 readings.'), findsNothing);
+    await tester.tap(find.text('Explore telemetry graphs'));
+    await tester.pumpAndSettle();
+    expect(find.text('Telemetry graph'), findsOneWidget);
+    expect(
+      find.textContaining('661 readings across the full session'),
+      findsOneWidget,
+    );
+    expect(find.text('Recorded parameter'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
 }

@@ -140,7 +140,8 @@ class _VehicleIllustrationState extends State<VehicleIllustration> {
                       #$_id .vehicle-retry { bottom: 48px; cursor: pointer; color: #55D5E6; }
                       ${widget.interactive ? '' : '#$_id, flt-platform-view:has(#$_id) { pointer-events: none !important; }'}
                     ''',
-                    innerModelViewerHtml: '''
+                    innerModelViewerHtml:
+                        '''
                       <span class="vehicle-status" aria-live="polite">Loading 3D vehicle...</span>
                       <button class="vehicle-retry" data-enabled="${widget.interactive}" type="button" hidden>Retry</button>
                     ''',

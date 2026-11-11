@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:autopulse_ai/core/config/firebase_config.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:autopulse_ai/core/config/supabase_config.dart';
 import 'package:autopulse_ai/core/theme/app_theme.dart';
@@ -16,19 +19,47 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final backend = await SupabaseConfig.load();
   backend.validate();
+  if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+    try {
+      await (ObdController.instance.repository as SqliteObdRecordingRepository)
+          .recoverInterruptedRecordings();
+    } catch (error) {
+      debugPrint('Recording recovery unavailable: $error');
+      // Keep the app's storage error/retry and offline navigation accessible.
+    }
+  }
   if (backend.isConfigured) {
-    await Supabase.initialize(
-      url: backend.url,
-      publishableKey: backend.publicKey,
+    await Firebase.initializeApp(options: FirebaseConfig.options);
+    final client = SupabaseClient(
+      backend.url,
+      backend.publicKey,
+      accessToken: () async {
+        final user = FirebaseAuth.instance.currentUser;
+        if (user == null || !user.emailVerified) return null;
+        return user.getIdToken();
+      },
     );
-    AccountService.instance.configure(Supabase.instance.client);
+    await AccountService.instance.configureFirebase(
+      FirebaseAuth.instance,
+      client,
+      SupabaseClient(
+        backend.url,
+        backend.publicKey,
+        authOptions: const AuthClientOptions(autoRefreshToken: false),
+      ),
+    );
     if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
       final sync = RecordingSyncService(
         store: ObdController.instance.repository as RecordingStore,
-        cloud: SupabaseRecordingRepository(Supabase.instance.client),
+        cloud: SupabaseRecordingRepository(
+          client,
+          accountOwner: () => AccountService.instance.userId,
+          compressed: true,
+        ),
+        batchSize: 1000,
       );
       RecordingSyncService.instance = sync;
-      sync.start(Supabase.instance.client);
+      sync.start(client, accountChanges: AccountService.instance.changes);
     }
   }
   SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
@@ -51,7 +82,7 @@ class AutoPulseApp extends StatelessWidget {
       title: 'AutoPulse_ai',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.darkTheme,
-      initialRoute: AppRouter.splash,
+      initialRoute: '/',
       onGenerateRoute: AppRouter.generateRoute,
     );
   }

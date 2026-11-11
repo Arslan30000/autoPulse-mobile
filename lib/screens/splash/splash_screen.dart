@@ -26,6 +26,7 @@ class _SplashScreenState extends State<SplashScreen> {
       Vehicle? vehicle;
       var onboarded = false;
       try {
+        await AccountService.instance.restoreVerifiedSession();
         onboarded = await OnboardingService.isComplete();
         vehicle = await data.restoreSelection(cloud: false);
         if (vehicle == null && AccountService.instance.userId != null) {

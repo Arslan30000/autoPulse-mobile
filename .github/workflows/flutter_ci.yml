@@ -7,6 +7,7 @@ on:
       - development
       - 'development/**'
       - feature/supabase-pid-testing
+      - feature/free-cloud-telemetry-auth
   pull_request:
     branches:
       - main
@@ -46,6 +47,11 @@ jobs:
           -f supabase/migrations/20261006000000_account_profiles.sql
           -f supabase/tests/recording_rls.sql
           -f supabase/tests/profile_rls.sql
+          -f supabase/migrations/20261107000000_verified_accounts.sql
+          -f supabase/migrations/20261107010000_recording_chunks.sql
+          -f supabase/migrations/20261107020000_recording_completion_guard.sql
+          -f supabase/migrations/20261107030000_legacy_auth_cutover.sql
+          -f supabase/tests/verified_chunks_rls.sql
   flutter:
     name: Flutter checks and Android release
     runs-on: ubuntu-latest

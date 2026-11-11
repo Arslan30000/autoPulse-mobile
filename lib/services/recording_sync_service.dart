@@ -25,7 +25,11 @@ class RecordingSyncService extends ChangeNotifier with WidgetsBindingObserver {
   int _failures = 0;
   bool _disposed = false;
   bool _foreground = true;
-  StreamSubscription<AuthState>? _auth;
+  bool get _canBackUpActive =>
+      store is SqliteObdRecordingRepository &&
+      cloud is SupabaseRecordingRepository &&
+      (cloud as SupabaseRecordingRepository).compressed;
+  StreamSubscription<Object?>? _auth;
 
   RecordingSyncService({
     required this.store,
@@ -38,9 +42,9 @@ class RecordingSyncService extends ChangeNotifier with WidgetsBindingObserver {
     }
   }
 
-  void start(SupabaseClient client) {
+  void start(SupabaseClient client, {Stream<void>? accountChanges}) {
     WidgetsBinding.instance.addObserver(this);
-    _auth = client.auth.onAuthStateChange.listen((_) {
+    _auth = (accountChanges ?? client.auth.onAuthStateChange).listen((_) {
       _retry?.cancel();
       if (cloud.ownerId != null) unawaited(retryPending());
     });
@@ -70,7 +74,12 @@ class RecordingSyncService extends ChangeNotifier with WidgetsBindingObserver {
     _changed();
     var claimed = false;
     try {
-      final recording = await store.claimCompleted(id, owner);
+      final recording = _canBackUpActive
+          ? await (store as SqliteObdRecordingRepository).claimForBackup(
+              id,
+              owner,
+            )
+          : await store.claimCompleted(id, owner);
       claimed = true;
       _check(owner);
       totalSamples = recording.sampleCount;
@@ -93,16 +102,28 @@ class RecordingSyncService extends ChangeNotifier with WidgetsBindingObserver {
         );
         _check(owner);
         if (samples.isEmpty) break;
-        await cloud.upload(recording, owner, samples);
+        final remaining = totalSamples - uploadedSamples;
+        if (remaining <= 0) break;
+        final batch = samples.take(remaining).toList();
+        // An active tail is still growing. Upload only full immutable chunks;
+        // once stopped, the final partial chunk is immutable as well.
+        if (recording.endedAt == null && batch.length < batchSize) break;
+        await cloud.upload(recording, owner, batch);
         _check(owner);
         // Persist only after acknowledgment. Lost acknowledgments replay safely.
-        cursor = samples.last.id;
+        cursor = batch.last.id;
         await store.checkpoint(id, owner, cursor);
-        uploadedSamples += samples.length;
+        uploadedSamples += batch.length;
         message = 'Uploading trip: $uploadedSamples of $totalSamples samples';
         _changed();
       }
       _check(owner);
+      if (recording.endedAt == null) {
+        await store.setSyncState(id, owner, RecordingSyncState.pending);
+        message =
+            'Recording continues. $uploadedSamples samples backed up; remaining readings are saved on this phone.';
+        return;
+      }
       message = 'Verifying trip upload...';
       _changed();
       await cloud.complete(recording, owner);
@@ -136,6 +157,8 @@ class RecordingSyncService extends ChangeNotifier with WidgetsBindingObserver {
       error is! ArgumentError &&
       error is! AuthException &&
       !(error is PostgrestException &&
+          error.message.contains('CLOUD_CAPACITY_FULL')) &&
+      !(error is PostgrestException &&
           [
             '42501',
             'PGRST205',
@@ -146,6 +169,10 @@ class RecordingSyncService extends ChangeNotifier with WidgetsBindingObserver {
           ].contains(error.code));
 
   String _errorMessage(Object error) {
+    if (error is PostgrestException &&
+        error.message.contains('CLOUD_CAPACITY_FULL')) {
+      return 'Free cloud storage is full. Recording continues on this phone. Export your runs; no local data has been deleted.';
+    }
     if (error is StateError) return error.message.toString();
     if (error is AuthException) return 'Sign in again to resume cloud backup.';
     if (error is PostgrestException &&
@@ -174,11 +201,12 @@ class RecordingSyncService extends ChangeNotifier with WidgetsBindingObserver {
         if (recordings.isEmpty) return;
         for (final recording in recordings) {
           if (recording.ownerId != owner ||
-              recording.endedAt == null ||
+              (recording.endedAt == null && !_canBackUpActive) ||
               ![
                 RecordingSyncState.pending,
                 RecordingSyncState.failed,
                 RecordingSyncState.uploading,
+                if (_canBackUpActive) RecordingSyncState.local,
               ].contains(recording.syncState)) {
             continue;
           }

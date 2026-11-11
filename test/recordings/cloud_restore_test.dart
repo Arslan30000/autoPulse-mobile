@@ -51,6 +51,31 @@ void main() {
       'ecu_source': '7E8',
     },
   ];
+  test('offline recording history loads without an account', () async {
+    owner = null;
+    final id = await store.start(fixtureVehicle, fixtureDevice);
+    await store.append(id, fixtureSample(0));
+    await store.finish(id);
+    expect((await store.listRecordings(null)).single.id, id);
+  });
+  test(
+    'resumed restore ignores replayed rows without duplicating the run',
+    () async {
+      final row = samples().single;
+      await store.importCloudPages(
+        session(),
+        car,
+        Stream.fromIterable([
+          [row],
+          [row],
+        ]),
+        owner!,
+      );
+      final recording = (await store.listRecordings(owner)).single;
+      expect(recording.sampleCount, 1);
+      expect((await store.samples(recording.id)), hasLength(1));
+    },
+  );
   test(
     'cloud restoration is idempotent and preserves existing offline runs',
     () async {

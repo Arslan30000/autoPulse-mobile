@@ -179,6 +179,13 @@ class _RecordingsScreenState extends State<RecordingsScreen> {
             const SizedBox(height: 12),
             if (_refreshingCloud || AccountDataService.instance.busy)
               const LinearProgressIndicator(),
+            if (AccountService.instance.userId == null)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 12),
+                child: Text(
+                  'Sign in with your verified account to restore its uploaded runs. Phone-only recordings appear here without signing in.',
+                ),
+              ),
             if (AccountService.instance.userId != null &&
                 AccountDataService.instance.message != null)
               Padding(
@@ -291,14 +298,8 @@ class RecordingDetailsScreen extends StatefulWidget {
 
 class _RecordingDetailsScreenState extends State<RecordingDetailsScreen> {
   Map<ObdParameter, PidQuality>? _quality;
-  List<RecordedObdSample> _chart = [];
-  ObdParameter _parameter = ObdParameter.rpm;
   String? _error;
   bool _exporting = false;
-  int _chartGeneration = 0;
-  bool _chartLoading = false;
-  bool _olderAvailable = false;
-  bool _latestWindow = true;
   late ObdRecording _recording;
   @override
   void initState() {
@@ -332,46 +333,9 @@ class _RecordingDetailsScreenState extends State<RecordingDetailsScreen> {
         _quality = quality;
         _error = null;
       });
-      if (reloadChart) await _loadChart();
     } catch (_) {
       if (mounted) {
         setState(() => _error = 'Recording could not be read. Please retry.');
-      }
-    }
-  }
-
-  Future<void> _loadChart({bool older = false}) async {
-    if (older && (_chartLoading || _chart.isEmpty)) return;
-    final generation = ++_chartGeneration;
-    final beforeId = older ? _chart.first.id : 0;
-    setState(() => _chartLoading = true);
-    try {
-      final samples = await widget.store.chartSamples(
-        _recording.id,
-        _parameter,
-        beforeId: beforeId,
-      );
-      if (mounted && generation == _chartGeneration) {
-        setState(() {
-          // A bounded window keeps long trips responsive; session statistics and
-          // export still include every page. Time remains relative to trip start.
-          if (samples.isNotEmpty || !older) {
-            _chart = samples;
-          }
-          _olderAvailable = samples.length == 600;
-          if (samples.isNotEmpty || !older) {
-            _latestWindow = !older;
-          }
-          _error = null;
-        });
-      }
-    } catch (_) {
-      if (mounted && generation == _chartGeneration) {
-        setState(() => _error = 'Graph could not be loaded. Please retry.');
-      }
-    } finally {
-      if (mounted && generation == _chartGeneration) {
-        setState(() => _chartLoading = false);
       }
     }
   }
@@ -416,7 +380,6 @@ class _RecordingDetailsScreenState extends State<RecordingDetailsScreen> {
   @override
   Widget build(BuildContext context) {
     final quality = _quality;
-    final metric = quality?[_parameter];
     return Scaffold(
       appBar: AppBar(
         title: const Text('Recording details'),
@@ -469,87 +432,28 @@ class _RecordingDetailsScreenState extends State<RecordingDetailsScreen> {
             onChanged: () => _load(reloadChart: false),
           ),
           const SizedBox(height: 20),
-          DropdownButtonFormField<ObdParameter>(
-            initialValue: _parameter,
-            isExpanded: true,
-            decoration: const InputDecoration(labelText: 'Recorded parameter'),
-            items: ObdParameter.values
-                .map(
-                  (p) => DropdownMenuItem(
-                    value: p,
-                    child: Text('${p.label} (${p.unit})'),
-                  ),
-                )
-                .toList(),
-            onChanged: (parameter) {
-              if (parameter == null) return;
-              setState(() {
-                _parameter = parameter;
-                _chart = [];
-              });
-              unawaited(_loadChart());
-            },
-          ),
-          const SizedBox(height: 20),
           if (_error != null) Text(_error!),
           if (quality == null && _error == null)
             const Center(child: CircularProgressIndicator()),
-          if (metric == null && quality != null)
-            const Text(
-              'No samples recorded for this PID. This does not establish whether the vehicle supports it.',
-            ),
-          if (metric != null) ...[
-            Text(
-              '${metric.valid}/${metric.total} valid samples \u00b7 mean latency ${metric.meanLatencyMs.toStringAsFixed(0)} ms',
-            ),
-            Text(
-              'Observed rate: ${metric.observedHz?.toStringAsFixed(2) ?? 'unavailable'} Hz \u00b7 longest gap ${(metric.longestGap.inMilliseconds / 1000).toStringAsFixed(2)} s',
-            ),
-            if (metric.clockDiscontinuities > 0)
-              const Text(
-                'Phone clock moved backwards; the update rate cannot be calculated reliably.',
+          Card(
+            child: ListTile(
+              leading: const Icon(Icons.show_chart),
+              title: const Text('Explore telemetry graphs'),
+              subtitle: const Text(
+                'Choose a recorded parameter to view its full-session graph.',
               ),
-            Wrap(
-              spacing: 12,
-              children: ObdSampleStatus.values
-                  .map(
-                    (s) => Chip(
-                      label: Text('${s.name}: ${metric.counts[s] ?? 0}'),
-                    ),
-                  )
-                  .toList(),
-            ),
-          ],
-          if (_chartLoading) const LinearProgressIndicator(),
-          if (_chart.isNotEmpty) ...[
-            const SizedBox(height: 16),
-            ObdTelemetryChart(
-              key: ValueKey((_parameter, _chart.first.id)),
-              parameter: _parameter,
-              samples: _chart.map((row) => row.sample).toList(),
-              timeOrigin: _recording.startedAt,
-            ),
-            Text(
-              '${_latestWindow ? 'Latest' : 'Earlier'} ${_chart.length} readings. Missing readings and gaps over 6 seconds break the line.',
-            ),
-            Wrap(
-              spacing: 12,
-              children: [
-                if (_olderAvailable)
-                  TextButton(
-                    onPressed: _chartLoading
-                        ? null
-                        : () => _loadChart(older: true),
-                    child: const Text('View earlier readings'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => RecordingGraphScreen(
+                    store: widget.store,
+                    recording: _recording,
                   ),
-                if (!_latestWindow)
-                  TextButton(
-                    onPressed: _chartLoading ? null : () => _loadChart(),
-                    child: const Text('Return to latest readings'),
-                  ),
-              ],
+                ),
+              ),
             ),
-          ],
+          ),
           const SizedBox(height: 24),
           const Text(
             'Quality summary - entire saved session',
@@ -571,4 +475,214 @@ class _RecordingDetailsScreenState extends State<RecordingDetailsScreen> {
       ),
     );
   }
+}
+
+class RecordingGraphScreen extends StatefulWidget {
+  final RecordingStore store;
+  final ObdRecording recording;
+  final ObdParameter initialParameter;
+  const RecordingGraphScreen({
+    super.key,
+    required this.store,
+    required this.recording,
+    this.initialParameter = ObdParameter.rpm,
+  });
+
+  @override
+  State<RecordingGraphScreen> createState() => _RecordingGraphScreenState();
+}
+
+class _RecordingGraphScreenState extends State<RecordingGraphScreen> {
+  static const _pageSize = 600;
+  static const _maxPlotPoints = 1800;
+  late ObdParameter _parameter = widget.initialParameter;
+  List<RecordedObdSample> _samples = [];
+  bool _loading = false;
+  int _generation = 0;
+  int _fullPointCount = 0;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_loadGraph());
+  }
+
+  Future<void> _loadGraph() async {
+    final generation = ++_generation;
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      final all = <RecordedObdSample>[];
+      var beforeId = 0;
+      while (true) {
+        final page = await widget.store.chartSamples(
+          widget.recording.id,
+          _parameter,
+          limit: _pageSize,
+          beforeId: beforeId,
+        );
+        if (!mounted || generation != _generation) return;
+        if (page.isEmpty) break;
+        if (beforeId != 0 && page.first.id >= beforeId) {
+          throw StateError('Graph history page did not move backwards.');
+        }
+        all.addAll(page);
+        beforeId = page.first.id;
+        if (page.length < _pageSize) break;
+      }
+      all.sort((a, b) => a.id.compareTo(b.id));
+      final plotted = _envelope(all, _maxPlotPoints);
+      if (!mounted || generation != _generation) return;
+      setState(() {
+        _samples = plotted;
+        _fullPointCount = all.length;
+      });
+    } catch (_) {
+      if (mounted && generation == _generation) {
+        setState(
+          () =>
+              _error = 'This graph could not be loaded. Tap refresh to retry.',
+        );
+      }
+    } finally {
+      if (mounted && generation == _generation) {
+        setState(() => _loading = false);
+      }
+    }
+  }
+
+  List<RecordedObdSample> _envelope(
+    List<RecordedObdSample> samples,
+    int maximum,
+  ) {
+    if (samples.length <= maximum) return samples;
+    final bucketSize = (samples.length / (maximum / 4)).ceil();
+    final selected = <int>{};
+    for (var start = 0; start < samples.length; start += bucketSize) {
+      final end = (start + bucketSize).clamp(0, samples.length);
+      selected.add(start);
+      selected.add(end - 1);
+      var minIndex = -1;
+      var maxIndex = -1;
+      for (var i = start; i < end; i++) {
+        final sample = samples[i].sample;
+        final value = sample.value;
+        if (sample.status != ObdSampleStatus.valid ||
+            value == null ||
+            !value.isFinite) {
+          continue;
+        }
+        if (minIndex == -1 || value < samples[minIndex].sample.value!) {
+          minIndex = i;
+        }
+        if (maxIndex == -1 || value > samples[maxIndex].sample.value!) {
+          maxIndex = i;
+        }
+      }
+      if (minIndex >= 0) selected.add(minIndex);
+      if (maxIndex >= 0) selected.add(maxIndex);
+    }
+    for (var i = 1; i < samples.length; i++) {
+      final previous = samples[i - 1].sample;
+      final current = samples[i].sample;
+      final gap = current.receivedAt.difference(previous.receivedAt);
+      final previousValid =
+          previous.status == ObdSampleStatus.valid && previous.value != null;
+      final currentValid =
+          current.status == ObdSampleStatus.valid && current.value != null;
+      if (previousValid != currentValid ||
+          gap > const Duration(seconds: 6) ||
+          gap.isNegative) {
+        selected
+          ..add(i - 1)
+          ..add(i);
+      }
+    }
+    final indices = selected.toList()..sort();
+    return indices.map((index) => samples[index]).toList();
+  }
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(
+      title: const Text('Telemetry graph'),
+      actions: [
+        IconButton(
+          tooltip: 'Refresh graph',
+          onPressed: _loading ? null : _loadGraph,
+          icon: const Icon(Icons.refresh),
+        ),
+      ],
+    ),
+    body: LayoutBuilder(
+      builder: (context, constraints) => ListView(
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+        children: [
+          Text(
+            widget.recording.vehicleName,
+            style: Theme.of(context).textTheme.titleLarge,
+          ),
+          Text(
+            '${_displayTime(context, widget.recording.startedAt)} · full session',
+          ),
+          const SizedBox(height: 16),
+          DropdownButtonFormField<ObdParameter>(
+            initialValue: _parameter,
+            isExpanded: true,
+            decoration: const InputDecoration(labelText: 'Recorded parameter'),
+            items: ObdParameter.values
+                .map(
+                  (parameter) => DropdownMenuItem(
+                    value: parameter,
+                    child: Text('${parameter.label} (${parameter.unit})'),
+                  ),
+                )
+                .toList(),
+            onChanged: _loading
+                ? null
+                : (parameter) {
+                    if (parameter == null) return;
+                    setState(() {
+                      _parameter = parameter;
+                      _samples = [];
+                      _fullPointCount = 0;
+                    });
+                    unawaited(_loadGraph());
+                  },
+          ),
+          const SizedBox(height: 16),
+          if (_loading) const LinearProgressIndicator(),
+          if (_error != null) ...[
+            Text(_error!),
+            TextButton(onPressed: _loadGraph, child: const Text('Retry')),
+          ],
+          if (!_loading && _error == null && _fullPointCount == 0)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 32),
+              child: Text('No readings for this parameter in this session.'),
+            ),
+          if (_samples.isNotEmpty) ...[
+            Text(
+              '$_fullPointCount readings across the full session${_samples.length < _fullPointCount ? ' · showing ${_samples.length} peak-preserving plot points' : ''}',
+            ),
+            const SizedBox(height: 12),
+            ObdTelemetryChart(
+              key: ValueKey((_parameter, _samples.first.id, _samples.last.id)),
+              parameter: _parameter,
+              samples: _samples.map((row) => row.sample).toList(),
+              timeOrigin: widget.recording.startedAt,
+              height: (constraints.maxHeight * .58).clamp(300, 480).toDouble(),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'The graph covers the whole recording. Missing readings and gaps over 6 seconds break the line. Tap a point for its value; pinch to zoom and drag to move through time.',
+            ),
+          ],
+        ],
+      ),
+    ),
+  );
 }

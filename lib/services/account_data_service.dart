@@ -19,9 +19,15 @@ class AccountDataService extends ChangeNotifier with WidgetsBindingObserver {
   String? message;
   String? syncError;
   int restoredRuns = 0;
+  int? cloudReservedBytes;
+  int cloudBudgetBytes = 850000000;
+  int? accountCloudBytes;
+  bool get cloudNearlyFull =>
+      cloudReservedBytes != null &&
+      cloudReservedBytes! >= cloudBudgetBytes * .8;
   String? resolvedOwner;
   Timer? _timer;
-  StreamSubscription<AuthState>? _auth;
+  StreamSubscription<void>? _auth;
   String? _activeOwner;
   String? _pendingOwner;
   bool _pendingCarsOnly = false;
@@ -32,13 +38,13 @@ class AccountDataService extends ChangeNotifier with WidgetsBindingObserver {
   void start() {
     WidgetsBinding.instance.addObserver(this);
     _activeOwner = AccountService.instance.userId;
-    _auth = AccountService.instance.client?.auth.onAuthStateChange.listen((
-      _,
-    ) async {
+    _auth = AccountService.instance.changes.listen((_) async {
       final owner = AccountService.instance.userId;
       if (_activeOwner == owner) return;
       _activeOwner = owner;
       resolvedOwner = null;
+      accountCloudBytes = null;
+      cloudReservedBytes = null;
       try {
         await ObdController.instance.disconnect();
         await restoreSelection(cloud: owner != null);
@@ -159,6 +165,22 @@ class AccountDataService extends ChangeNotifier with WidgetsBindingObserver {
       }
       await vehicles.mergeCloud(cars, owner);
       _check(owner);
+      if (account.usesFirebase) {
+        try {
+          final usage = await client
+              .rpc('recording_cloud_usage')
+              .timeout(const Duration(seconds: 15));
+          _check(owner);
+          if (usage is Map) {
+            cloudReservedBytes = (usage['reserved_bytes'] as num).toInt();
+            cloudBudgetBytes = (usage['budget_bytes'] as num).toInt();
+            accountCloudBytes = (usage['account_bytes'] as num).toInt();
+          }
+        } catch (_) {
+          // Usage information must never stop car restoration or local capture.
+          _check(owner);
+        }
+      }
       resolvedOwner = owner;
       if (carsOnly) {
         message = 'Cars restored. Runs are syncing in the background.';
@@ -207,10 +229,13 @@ class AccountDataService extends ChangeNotifier with WidgetsBindingObserver {
             notifyListeners();
             try {
               final car = cars.firstWhere((v) => v.id == run['vehicle_id']);
-              final samples = await SupabaseRecordingRepository(client)
-                  .downloadSamples(run['id'] as String, owner);
-              _check(owner);
-              await store.importCloud(run, car, samples, owner);
+              await store.restartRestore(run, owner);
+              final samples = SupabaseRecordingRepository(
+                client,
+                accountOwner: () => account.userId,
+                compressed: true,
+              ).samplePages(run, owner);
+              await store.importCloudPages(run, car, samples, owner);
               _check(owner);
               existing.add(run['id']);
               restoredRuns++;
