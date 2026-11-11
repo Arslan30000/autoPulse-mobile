@@ -82,10 +82,13 @@ class MemoryRecordingRepository implements ObdRecordingRepository {
   Future<List<ObdRecording>> recordings() async => [];
 }
 
-Future<void> waitUntil(bool Function() condition) async {
+Future<void> waitUntil(
+  FutureOr<bool> Function() condition, {
+  Duration timeout = const Duration(seconds: 3),
+}) async {
   final watch = Stopwatch()..start();
-  while (!condition()) {
-    if (watch.elapsed > const Duration(seconds: 3)) {
+  while (!await condition()) {
+    if (watch.elapsed > timeout) {
       throw StateError('Condition did not become true');
     }
     await Future<void>.delayed(const Duration(milliseconds: 5));

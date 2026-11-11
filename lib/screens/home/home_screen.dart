@@ -228,7 +228,6 @@ class HomeScreen extends StatelessWidget {
                         Icons.auto_awesome_rounded,
                         () =>
                             Navigator.pushNamed(context, AppRouter.aiAssistant),
-                        featured: true,
                       ),
                       _action(
                         context,
@@ -282,10 +281,9 @@ class HomeScreen extends StatelessWidget {
     String title,
     String subtitle,
     IconData icon,
-    VoidCallback onTap, {
-    bool featured = false,
-  }) => Material(
-    color: featured ? AppColors.tealSurface : AppColors.surface,
+    VoidCallback onTap,
+  ) => Material(
+    color: AppColors.surface,
     borderRadius: BorderRadius.circular(20),
     child: InkWell(
       onTap: onTap,
@@ -294,11 +292,7 @@ class HomeScreen extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: featured
-                ? AppColors.primary.withValues(alpha: .5)
-                : AppColors.border,
-          ),
+          border: Border.all(color: AppColors.border),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -306,11 +300,7 @@ class HomeScreen extends StatelessWidget {
           children: [
             Row(
               children: [
-                Icon(
-                  icon,
-                  size: 23,
-                  color: featured ? AppColors.textPrimary : AppColors.primary,
-                ),
+                Icon(icon, size: 23, color: AppColors.primary),
                 const Spacer(),
                 const Icon(
                   Icons.arrow_outward_rounded,

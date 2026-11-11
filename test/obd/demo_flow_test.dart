@@ -34,7 +34,14 @@ void main() {
     try {
       await controller.connect(device);
       await controller.startRecording();
-      await waitUntil(() => controller.savedSamples >= 10);
+      final activeRecording = (await store.listRecordings(null)).single;
+      // Recording can start midway through a polling cycle. Fast PIDs repeat
+      // before slower PIDs, so ten samples need not cover all ten parameters.
+      await waitUntil(() async {
+        final rows = await store.samples(activeRecording.id);
+        return rows.map((row) => row.sample.parameter).toSet().length ==
+            ObdParameter.values.length;
+      }, timeout: const Duration(seconds: 10));
       await controller.stopRecording();
       final recording = (await store.listRecordings(null)).single;
       expect(recording.endedAt, isNotNull);
