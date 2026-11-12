@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:autopulse_ai/models/obd.dart';
+import 'package:autopulse_ai/core/widgets/obd_telemetry_chart.dart';
 import 'package:autopulse_ai/repositories/obd_recording_repository.dart';
 import 'package:autopulse_ai/screens/history/recordings_screen.dart';
 
@@ -58,7 +59,87 @@ class ScreenRecordingStore implements RecordingStore {
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
+class _MixedPidStore extends ScreenRecordingStore {
+  _MixedPidStore() : super(rowCount: 20136);
+
+  @override
+  Future<List<RecordedObdSample>> chartSamples(
+    int sessionId,
+    ObdParameter parameter, {
+    int limit = 600,
+    int beforeId = 0,
+  }) async {
+    final parameterIndex = ObdParameter.values.indexOf(parameter);
+    if (parameterIndex >= 4) return [];
+    final rows = <RecordedObdSample>[];
+    for (var i = 0; i < 5034; i++) {
+      final id = i * 4 + parameterIndex + 1;
+      if (beforeId != 0 && id >= beforeId) break;
+      final time = DateTime.utc(2026).add(Duration(milliseconds: i * 800));
+      rows.add(
+        RecordedObdSample(
+          id,
+          ObdSample(
+            parameter: parameter,
+            value: (i % 100).toDouble(),
+            status: ObdSampleStatus.valid,
+            requestedAt: time,
+            receivedAt: time,
+            latencyMs: 0,
+          ),
+        ),
+      );
+    }
+    return rows.skip((rows.length - limit).clamp(0, rows.length)).toList();
+  }
+}
+
 void main() {
+  testWidgets(
+    'session totals and per-PID counts stay distinct across all pages',
+    (tester) async {
+      final store = _MixedPidStore();
+      await tester.pumpWidget(
+        MaterialApp(
+          home: RecordingGraphScreen(store: store, recording: store.saved),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(
+        find.text('20136 total PID readings across all parameters'),
+        findsOneWidget,
+      );
+      expect(
+        find.text('5034 readings across the full session for Engine RPM'),
+        findsOneWidget,
+      );
+      var chart = tester.widget<ObdTelemetryChart>(
+        find.byType(ObdTelemetryChart),
+      );
+      expect(chart.samples, hasLength(5034));
+      expect(chart.samples.first.receivedAt, DateTime.utc(2026));
+      expect(
+        chart.samples.last.receivedAt,
+        DateTime.utc(2026).add(const Duration(milliseconds: 5033 * 800)),
+      );
+      await tester.tap(find.byType(DropdownButtonFormField<ObdParameter>));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Vehicle speed (km/h)').last);
+      await tester.pumpAndSettle();
+      chart = tester.widget<ObdTelemetryChart>(find.byType(ObdTelemetryChart));
+      expect(chart.samples, hasLength(5034));
+      expect(
+        chart.samples.every((sample) => sample.parameter == ObdParameter.speed),
+        isTrue,
+      );
+      expect(
+        find.text('5034 readings across the full session for Vehicle speed'),
+        findsOneWidget,
+      );
+      expect(tester.takeException(), isNull);
+    },
+  );
+
   testWidgets(
     'opening recordings restores cloud runs before showing an empty history',
     (tester) async {

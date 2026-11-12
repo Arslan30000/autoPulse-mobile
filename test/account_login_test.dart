@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -8,6 +9,7 @@ import 'package:http/testing.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:autopulse_ai/navigation/app_router.dart';
+import 'package:autopulse_ai/models/vehicle.dart';
 import 'package:autopulse_ai/screens/auth/login_screen.dart';
 import 'package:autopulse_ai/services/account_service.dart';
 import 'package:autopulse_ai/services/account_data_service.dart';
@@ -39,6 +41,7 @@ void main() {
     List<http.Request>? requests,
     bool rejectLogin = false,
     bool failCars = false,
+    Future<void> Function()? beforeCars,
   }) {
     final client = SupabaseClient(
       'https://fixture.supabase.co',
@@ -73,6 +76,7 @@ void main() {
         } else if (request.url.path.endsWith('/recover')) {
           response = <String, dynamic>{};
         } else if (request.url.path.endsWith('/vehicles')) {
+          await beforeCars?.call();
           if (failCars) {
             return http.Response(
               jsonEncode({'code': '42501', 'message': 'permission denied'}),
@@ -159,6 +163,79 @@ void main() {
       variant: TargetPlatformVariant.only(TargetPlatform.windows),
     );
   }
+  testWidgets('Continue opens a cached car without waiting for the network', (
+    tester,
+  ) async {
+    final requests = <http.Request>[];
+    await tester.runAsync(() async {
+      final client = backend(requests: requests, failCars: true);
+      await client.auth.signInWithPassword(
+        email: 'fixture@example.test',
+        password: 'fixture',
+      );
+      await AccountDataService.instance.vehicles.select(
+        const Vehicle(
+          id: '33333333-3333-4333-8333-333333333333',
+          ownerId: testOwner,
+          make: 'Toyota',
+          model: 'Yaris',
+          year: 2020,
+        ),
+        testOwner,
+      );
+    });
+    await tester.pumpWidget(app());
+    await tester.ensureVisible(find.text('Continue'));
+    await tester.tap(find.text('Continue'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Home destination'), findsOneWidget);
+    expect(requests.where((r) => r.url.path.endsWith('/vehicles')), isEmpty);
+  }, variant: TargetPlatformVariant.only(TargetPlatform.windows));
+
+  testWidgets(
+    'slow car restoration shows progress and unlocks retry and sign out',
+    (tester) async {
+      final blocked = Completer<void>();
+      await tester.runAsync(() async {
+        final client = backend(beforeCars: () => blocked.future);
+        await client.auth.signInWithPassword(
+          email: 'fixture@example.test',
+          password: 'fixture',
+        );
+      });
+      addTearDown(() => blocked.complete());
+      await tester.pumpWidget(app());
+      await tester.ensureVisible(find.text('Continue'));
+      await tester.tap(find.text('Continue'));
+      await tester.pump();
+
+      expect(find.text('Loading your cars...'), findsOneWidget);
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      await tester.pump(const Duration(seconds: 16));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.textContaining('we could not load your cars'),
+        findsOneWidget,
+      );
+      expect(
+        tester
+            .widget<FilledButton>(find.widgetWithText(FilledButton, 'Continue'))
+            .onPressed,
+        isNotNull,
+      );
+      expect(
+        tester
+            .widget<TextButton>(find.widgetWithText(TextButton, 'Sign out'))
+            .onPressed,
+        isNotNull,
+      );
+      expect(find.text('Add car destination'), findsNothing);
+    },
+    variant: TargetPlatformVariant.only(TargetPlatform.windows),
+  );
+
   testWidgets('signup rejects mismatched passwords before contacting backend', (
     tester,
   ) async {

@@ -494,7 +494,7 @@ class RecordingGraphScreen extends StatefulWidget {
 
 class _RecordingGraphScreenState extends State<RecordingGraphScreen> {
   static const _pageSize = 600;
-  static const _maxPlotPoints = 1800;
+  late ObdRecording _recording = widget.recording;
   late ObdParameter _parameter = widget.initialParameter;
   List<RecordedObdSample> _samples = [];
   bool _loading = false;
@@ -515,6 +515,7 @@ class _RecordingGraphScreenState extends State<RecordingGraphScreen> {
       _error = null;
     });
     try {
+      final recording = await widget.store.recording(widget.recording.id);
       final all = <RecordedObdSample>[];
       var beforeId = 0;
       while (true) {
@@ -534,10 +535,10 @@ class _RecordingGraphScreenState extends State<RecordingGraphScreen> {
         if (page.length < _pageSize) break;
       }
       all.sort((a, b) => a.id.compareTo(b.id));
-      final plotted = _envelope(all, _maxPlotPoints);
       if (!mounted || generation != _generation) return;
       setState(() {
-        _samples = plotted;
+        _recording = recording;
+        _samples = all;
         _fullPointCount = all.length;
       });
     } catch (_) {
@@ -552,57 +553,6 @@ class _RecordingGraphScreenState extends State<RecordingGraphScreen> {
         setState(() => _loading = false);
       }
     }
-  }
-
-  List<RecordedObdSample> _envelope(
-    List<RecordedObdSample> samples,
-    int maximum,
-  ) {
-    if (samples.length <= maximum) return samples;
-    final bucketSize = (samples.length / (maximum / 4)).ceil();
-    final selected = <int>{};
-    for (var start = 0; start < samples.length; start += bucketSize) {
-      final end = (start + bucketSize).clamp(0, samples.length);
-      selected.add(start);
-      selected.add(end - 1);
-      var minIndex = -1;
-      var maxIndex = -1;
-      for (var i = start; i < end; i++) {
-        final sample = samples[i].sample;
-        final value = sample.value;
-        if (sample.status != ObdSampleStatus.valid ||
-            value == null ||
-            !value.isFinite) {
-          continue;
-        }
-        if (minIndex == -1 || value < samples[minIndex].sample.value!) {
-          minIndex = i;
-        }
-        if (maxIndex == -1 || value > samples[maxIndex].sample.value!) {
-          maxIndex = i;
-        }
-      }
-      if (minIndex >= 0) selected.add(minIndex);
-      if (maxIndex >= 0) selected.add(maxIndex);
-    }
-    for (var i = 1; i < samples.length; i++) {
-      final previous = samples[i - 1].sample;
-      final current = samples[i].sample;
-      final gap = current.receivedAt.difference(previous.receivedAt);
-      final previousValid =
-          previous.status == ObdSampleStatus.valid && previous.value != null;
-      final currentValid =
-          current.status == ObdSampleStatus.valid && current.value != null;
-      if (previousValid != currentValid ||
-          gap > const Duration(seconds: 6) ||
-          gap.isNegative) {
-        selected
-          ..add(i - 1)
-          ..add(i);
-      }
-    }
-    final indices = selected.toList()..sort();
-    return indices.map((index) => samples[index]).toList();
   }
 
   @override
@@ -627,6 +577,10 @@ class _RecordingGraphScreenState extends State<RecordingGraphScreen> {
           ),
           Text(
             '${_displayTime(context, widget.recording.startedAt)} · full session',
+          ),
+          const SizedBox(height: 8),
+          Text(
+            '${_recording.sampleCount} total PID readings across all parameters',
           ),
           const SizedBox(height: 16),
           DropdownButtonFormField<ObdParameter>(
@@ -666,7 +620,7 @@ class _RecordingGraphScreenState extends State<RecordingGraphScreen> {
             ),
           if (_samples.isNotEmpty) ...[
             Text(
-              '$_fullPointCount readings across the full session${_samples.length < _fullPointCount ? ' · showing ${_samples.length} peak-preserving plot points' : ''}',
+              '$_fullPointCount readings across the full session for ${_parameter.label}',
             ),
             const SizedBox(height: 12),
             ObdTelemetryChart(
@@ -678,7 +632,7 @@ class _RecordingGraphScreenState extends State<RecordingGraphScreen> {
             ),
             const SizedBox(height: 8),
             const Text(
-              'The graph covers the whole recording. Missing readings and gaps over 6 seconds break the line. Tap a point for its value; pinch to zoom and drag to move through time.',
+              'All saved readings for the selected parameter are loaded. The overview preserves peaks; zooming redraws the original readings in view. Only recorded missing/invalid readings, clock resets, and acquisition gaps over 6 seconds break the line. Zero and idle readings stay on the graph.',
             ),
           ],
         ],

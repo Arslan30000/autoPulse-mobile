@@ -21,6 +21,54 @@ void main() {
   tearDown(() => store.close());
 
   test(
+    '20136 interleaved PID readings paginate into 5034 complete RPM readings',
+    () async {
+      final id = await store.start(fixtureVehicle, fixtureDevice);
+      final db = await store.database;
+      // Batch a sizeable synthetic fixture without making 20,000 native calls.
+      final batch = db.batch();
+      for (var i = 0; i < 20136; i++) {
+        final parameter = ObdParameter.values[i % 4];
+        final time = DateTime.utc(2026)
+            .add(Duration(milliseconds: (i ~/ 4) * 800 + (i % 4) * 100))
+            .toIso8601String();
+        batch.insert('samples', {
+          'session_id': id,
+          'pid': parameter.pid,
+          'value': i.toDouble(),
+          'unit': parameter.unit,
+          'quality': 'valid',
+          'requested_at': time,
+          'received_at': time,
+          'latency_ms': 0,
+        });
+      }
+      await batch.commit(noResult: true);
+      var before = 0;
+      final ids = <int>[];
+      while (true) {
+        final page = await store.chartSamples(
+          id,
+          ObdParameter.rpm,
+          beforeId: before,
+        );
+        if (page.isEmpty) break;
+        expect(
+          page.every((row) => row.sample.parameter == ObdParameter.rpm),
+          isTrue,
+        );
+        ids.addAll(page.map((row) => row.id));
+        before = page.first.id;
+      }
+      expect((await store.recording(id)).sampleCount, 20136);
+      expect(ids, hasLength(5034));
+      expect(ids.toSet(), hasLength(5034));
+      expect(ids.reduce((a, b) => a < b ? a : b), 1);
+      expect(ids.reduce((a, b) => a > b ? a : b), 20133);
+    },
+  );
+
+  test(
     'earlier graph pages exclude other PIDs and sessions without overlap',
     () async {
       final id = await store.start(fixtureVehicle, fixtureDevice);

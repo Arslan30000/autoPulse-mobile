@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:autopulse_ai/core/theme/app_colors.dart';
 import 'package:autopulse_ai/core/theme/app_text_styles.dart';
@@ -77,9 +79,14 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _continue() async {
-    setState(() => _busy = true);
+    setState(() {
+      _busy = true;
+      _message = null;
+    });
     try {
-      final vehicle = await AccountDataService.instance.restoreSelection();
+      final vehicle = await AccountDataService.instance
+          .restoreSelection()
+          .timeout(const Duration(seconds: 20));
       if (!mounted) return;
       if (_account.userId != null &&
           vehicle == null &&
@@ -96,6 +103,12 @@ class _LoginScreenState extends State<LoginScreen> {
           context,
           vehicle == null ? AppRouter.addVehicle : AppRouter.main,
           (_) => false,
+        );
+      }
+    } on TimeoutException {
+      if (mounted) {
+        setState(
+          () => _message = 'Loading your cars timed out. Check your connection and retry, or sign out to continue offline.',
         );
       }
     } catch (_) {
@@ -478,7 +491,22 @@ class _LoginScreenState extends State<LoginScreen> {
                             const SizedBox(height: 20),
                             FilledButton(
                               onPressed: _busy ? null : _continue,
-                              child: const Text('Continue'),
+                              child: _busy
+                                  ? const Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        SizedBox(
+                                          width: 20,
+                                          height: 20,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                          ),
+                                        ),
+                                        SizedBox(width: 12),
+                                        Text('Loading your cars...'),
+                                      ],
+                                    )
+                                  : const Text('Continue'),
                             ),
                             TextButton(
                               onPressed: _busy ? null : _signOut,

@@ -32,6 +32,7 @@ class AccountDataService extends ChangeNotifier with WidgetsBindingObserver {
   String? _pendingOwner;
   bool _pendingCarsOnly = false;
   Future<void>? _pending;
+  Completer<void>? _carsReady;
   bool _foreground = true;
   bool get canStoreRuns =>
       !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
@@ -68,15 +69,24 @@ class AccountDataService extends ChangeNotifier with WidgetsBindingObserver {
 
   Future<Vehicle?> restoreSelection({bool cloud = true}) async {
     final owner = AccountService.instance.userId;
-    if (cloud && owner != null) await synchronize(carsOnly: true);
-    final vehicle = await vehicles.load(owner);
+    var vehicle = await vehicles.load(owner);
+    if (cloud && owner != null && vehicle == null && resolvedOwner != owner) {
+      await synchronize(carsOnly: true);
+      vehicle = await vehicles.load(owner);
+    }
     if (AccountService.instance.userId != owner) {
       throw StateError('Account changed.');
     }
     ObdController.instance.setVehicle(
       vehicle ?? const Vehicle(make: 'Vehicle', model: '', year: 2020),
     );
-    if (cloud && owner != null && canStoreRuns) await synchronize();
+    // Opening the app must not wait for potentially large recording transfers.
+    if (cloud &&
+        owner != null &&
+        canStoreRuns &&
+        (vehicle != null || resolvedOwner == owner)) {
+      unawaited(synchronize());
+    }
     return vehicle;
   }
 
@@ -115,23 +125,40 @@ class AccountDataService extends ChangeNotifier with WidgetsBindingObserver {
     if (pending != null) {
       final pendingOwner = _pendingOwner;
       final pendingCarsOnly = _pendingCarsOnly;
+      if (carsOnly && pendingOwner == owner) {
+        // A background run restore may still be active after cars are ready.
+        await (_carsReady?.future ?? pending);
+        return;
+      }
       await pending;
       if (AccountService.instance.userId != owner ||
           (pendingOwner == owner && (!pendingCarsOnly || carsOnly))) {
         return;
       }
+      // Other callers may have started the next sync while we were waiting.
+      // Rejoin it without replacing its car-ready signal.
+      return synchronize(carsOnly: carsOnly);
     }
     _pendingOwner = owner;
     _pendingCarsOnly = carsOnly;
-    await (_pending ??= _synchronize(carsOnly: carsOnly)
-        .whenComplete(() => _pending = null));
+    final carsReady = _carsReady = Completer<void>();
+    await (_pending ??= _synchronize(
+      carsOnly: carsOnly,
+      carsReady: carsReady,
+    ).whenComplete(() => _pending = null));
   }
 
-  Future<void> _synchronize({required bool carsOnly}) async {
+  Future<void> _synchronize({
+    required bool carsOnly,
+    required Completer<void> carsReady,
+  }) async {
     final account = AccountService.instance;
     final owner = account.userId;
     final client = account.client;
-    if (owner == null || client == null) return;
+    if (owner == null || client == null) {
+      carsReady.complete();
+      return;
+    }
     busy = true;
     syncError = null;
     restoredRuns = 0;
@@ -165,6 +192,12 @@ class AccountDataService extends ChangeNotifier with WidgetsBindingObserver {
       }
       await vehicles.mergeCloud(cars, owner);
       _check(owner);
+      resolvedOwner = owner;
+      carsReady.complete();
+      if (carsOnly) {
+        message = 'Cars restored. Runs are syncing in the background.';
+        return;
+      }
       if (account.usesFirebase) {
         try {
           final usage = await client
@@ -180,11 +213,6 @@ class AccountDataService extends ChangeNotifier with WidgetsBindingObserver {
           // Usage information must never stop car restoration or local capture.
           _check(owner);
         }
-      }
-      resolvedOwner = owner;
-      if (carsOnly) {
-        message = 'Cars restored. Runs are syncing in the background.';
-        return;
       }
       if (canStoreRuns) {
         final store =
@@ -275,6 +303,7 @@ class AccountDataService extends ChangeNotifier with WidgetsBindingObserver {
       syncError = _syncErrorMessage(error);
       message = 'Cloud sync unavailable. $syncError Saved phone data is safe.';
     } finally {
+      if (!carsReady.isCompleted) carsReady.complete();
       busy = false;
       notifyListeners();
     }

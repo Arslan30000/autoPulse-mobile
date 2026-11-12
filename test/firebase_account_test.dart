@@ -8,6 +8,7 @@ import 'package:http/testing.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:autopulse_ai/services/account_service.dart';
+import 'package:autopulse_ai/services/account_data_service.dart';
 
 import 'recordings/supabase_recording_repository_test.dart'
     show sessionResponse, testOwner;
@@ -90,9 +91,75 @@ class _Auth extends Fake implements firebase.FirebaseAuth {
   }
 }
 
+class _MetadataOnlyDataService extends AccountDataService {
+  @override
+  bool get canStoreRuns => false;
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   setUp(() => SharedPreferences.setMockInitialValues({}));
+  test('concurrent full sync requests do not block car restoration', () async {
+    final auth = _Auth();
+    auth.currentUser = auth.user;
+    auth.user.emailVerified = true;
+    await (await SharedPreferences.getInstance()).setString(
+      'account.firebase.firebase-fixture',
+      testOwner,
+    );
+    final usageRequested = Completer<void>();
+    final usageResponse = Completer<void>();
+    final cloud = SupabaseClient(
+      'https://fixture.supabase.co',
+      'public',
+      accessToken: () async => 'synthetic',
+      httpClient: MockClient((request) async {
+        Object response = [];
+        if (request.url.path.endsWith('/recording_cloud_usage')) {
+          usageRequested.complete();
+          await usageResponse.future;
+          response = {
+            'reserved_bytes': 0,
+            'budget_bytes': 850000000,
+            'account_bytes': 0,
+          };
+        }
+        return http.Response(
+          jsonEncode(response),
+          200,
+          request: request,
+          headers: {'content-type': 'application/json'},
+        );
+      }),
+    );
+    final legacy = SupabaseClient('https://fixture.supabase.co', 'public');
+    final service = _MetadataOnlyDataService();
+    await AccountService.instance.configureFirebase(auth, cloud, legacy);
+    final carsOnlySync = service.synchronize(carsOnly: true);
+    final fullSync = Future.wait([
+      service.synchronize(),
+      service.synchronize(),
+    ]);
+    addTearDown(() async {
+      if (!usageResponse.isCompleted) usageResponse.complete();
+      await fullSync;
+      service.dispose();
+      AccountService.instance.configure(null);
+      await auth.events.close();
+      await cloud.dispose();
+      await legacy.dispose();
+    });
+    await carsOnlySync;
+    await usageRequested.future;
+    await service
+        .synchronize(carsOnly: true)
+        .timeout(const Duration(seconds: 1));
+
+    expect(service.resolvedOwner, testOwner);
+    expect(service.busy, isTrue);
+    expect(usageResponse.isCompleted, isFalse);
+  });
+
   test(
     'startup refreshes verified identity and recovers its existing owner',
     () async {
