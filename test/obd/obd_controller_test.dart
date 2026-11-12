@@ -220,7 +220,7 @@ void main() {
     expect(controller.isReady, isTrue);
   });
 
-  test('unsupported PIDs are never requested from the ECU', () async {
+  test('unsupported telemetry PIDs are never requested from the ECU', () async {
     transport.reply = (command) => command == '0100'
         ? '7E8 06 41 00 00 18 00 00'
         : transport.defaultReply(command);
@@ -231,7 +231,8 @@ void main() {
       transport.writes
           .where((command) => command.startsWith('01') && command != '0100')
           .toSet(),
-      {'010C', '010D'},
+      // Monitor status (0101) is a separate read-only diagnostic query.
+      {'0101', '010C', '010D'},
     );
   });
 }
