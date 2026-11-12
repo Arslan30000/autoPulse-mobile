@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:autopulse_ai/repositories/obd_recording_repository.dart';
 import 'package:autopulse_ai/services/recording_sync_service.dart';
 import 'package:autopulse_ai/screens/history/recordings_screen.dart';
+import 'package:autopulse_ai/screens/diagnostics/diagnostics_screen.dart';
 import 'package:autopulse_ai/core/widgets/obd_telemetry_chart.dart';
 import 'package:autopulse_ai/core/theme/app_colors.dart';
 import 'package:autopulse_ai/core/widgets/telemetry_card.dart';
@@ -50,6 +51,15 @@ class LiveObdView extends StatelessWidget {
         appBar: AppBar(
           title: Text(title),
           actions: [
+            IconButton(
+              tooltip: 'Diagnostic trouble codes',
+              icon: const Icon(Icons.car_crash_outlined),
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => DiagnosticsScreen(controller: controller),
+                ),
+              ),
+            ),
             IconButton(
               tooltip: 'Local recordings',
               onPressed: !obd.transport.isSupported
