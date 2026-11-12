@@ -10,6 +10,7 @@ import 'package:autopulse_ai/repositories/cloud_recording_repository.dart';
 import 'package:autopulse_ai/services/account_service.dart';
 import 'package:autopulse_ai/services/obd/obd_controller.dart';
 import 'package:autopulse_ai/services/recording_sync_service.dart';
+import 'package:autopulse_ai/services/recording_restore_service.dart';
 
 /// Account data is cached by owner; signing out never deletes phone recordings.
 class AccountDataService extends ChangeNotifier with WidgetsBindingObserver {
@@ -19,6 +20,11 @@ class AccountDataService extends ChangeNotifier with WidgetsBindingObserver {
   String? message;
   String? syncError;
   int restoredRuns = 0;
+  int restoredSamples = 0;
+  int restoreTotalSamples = 0;
+  double? get restoreProgress => restoreTotalSamples == 0
+      ? null
+      : (restoredSamples / restoreTotalSamples).clamp(0.0, 1.0);
   int? cloudReservedBytes;
   int cloudBudgetBytes = 850000000;
   int? accountCloudBytes;
@@ -162,6 +168,8 @@ class AccountDataService extends ChangeNotifier with WidgetsBindingObserver {
     busy = true;
     syncError = null;
     restoredRuns = 0;
+    restoredSamples = 0;
+    restoreTotalSamples = 0;
     message = 'Syncing account...';
     notifyListeners();
     try {
@@ -233,7 +241,6 @@ class AccountDataService extends ChangeNotifier with WidgetsBindingObserver {
           }
           before = page.last.id;
         }
-        await RecordingSyncService.instance?.retryPending();
         final ids = await (await store.database).query(
           'sessions',
           columns: ['cloud_id'],
@@ -241,12 +248,21 @@ class AccountDataService extends ChangeNotifier with WidgetsBindingObserver {
           whereArgs: [owner],
         );
         final existing = ids.map((r) => r['cloud_id']).toSet();
+        final restorer = RecordingRestoreService(
+          store: store,
+          cloud: SupabaseRecordingRepository(
+            client,
+            accountOwner: () => account.userId,
+            compressed: true,
+          ),
+        );
         for (var offset = 0; ; offset += 50) {
           final page = await client
               .from('obd_recording_sessions')
               .select()
               .eq('owner_id', owner)
               .not('uploaded_at', 'is', null)
+              .order('started_at', ascending: false)
               .order('id')
               .range(offset, offset + 49)
               .timeout(const Duration(seconds: 15));
@@ -257,16 +273,23 @@ class AccountDataService extends ChangeNotifier with WidgetsBindingObserver {
             notifyListeners();
             try {
               final car = cars.firstWhere((v) => v.id == run['vehicle_id']);
-              await store.restartRestore(run, owner);
-              final samples = SupabaseRecordingRepository(
-                client,
-                accountOwner: () => account.userId,
-                compressed: true,
-              ).samplePages(run, owner);
-              await store.importCloudPages(run, car, samples, owner);
+              await restorer.restore(
+                run,
+                car,
+                owner,
+                onProgress: (done, total) {
+                  restoredSamples = done;
+                  restoreTotalSamples = total;
+                  message =
+                      'Restoring ${car.displayName}: $done of $total readings ($restoredRuns drives ready)...';
+                  notifyListeners();
+                },
+              );
               _check(owner);
               existing.add(run['id']);
               restoredRuns++;
+              message = '$restoredRuns drives restored and ready to open.';
+              notifyListeners();
             } catch (error, stack) {
               _check(owner);
               debugPrint(
@@ -278,6 +301,9 @@ class AccountDataService extends ChangeNotifier with WidgetsBindingObserver {
           }
           if (page.length < 50) break;
         }
+        // Pending uploads can be large too. Do not make drive restoration wait
+        // for them; their own durable queue and retry handling remain active.
+        unawaited(RecordingSyncService.instance?.retryPending());
       }
       var waiting = false;
       if (canStoreRuns) {
@@ -304,6 +330,8 @@ class AccountDataService extends ChangeNotifier with WidgetsBindingObserver {
       message = 'Cloud sync unavailable. $syncError Saved phone data is safe.';
     } finally {
       if (!carsReady.isCompleted) carsReady.complete();
+      restoredSamples = 0;
+      restoreTotalSamples = 0;
       busy = false;
       notifyListeners();
     }

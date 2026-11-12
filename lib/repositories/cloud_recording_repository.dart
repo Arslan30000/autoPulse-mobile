@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:autopulse_ai/repositories/obd_recording_repository.dart';
 import 'package:autopulse_ai/services/recording_chunk_codec.dart';
@@ -14,6 +16,8 @@ abstract interface class CloudRecordingRepository {
 }
 
 class SupabaseRecordingRepository implements CloudRecordingRepository {
+  static const _manifestPageSize = 64;
+  static const _parallelDownloads = 3;
   final SupabaseClient client;
   final String? Function()? accountOwner;
   final bool compressed;
@@ -51,45 +55,74 @@ class SupabaseRecordingRepository implements CloudRecordingRepository {
             .eq('owner_id', owner)
             .gt('last_sample_id', cursor)
             .order('first_sample_id', ascending: true)
-            .limit(1)
+            .limit(_manifestPageSize)
             .timeout(const Duration(seconds: 25));
         _check(owner);
         if (chunks.isEmpty) return;
-        final chunk = chunks.single;
-        if (chunk['previous_sample_id'] != cursor) {
-          throw StateError('Recording chunk chain is incomplete.');
-        }
-        final bytes = await client.storage
-            .from('obd-recordings')
-            .download(chunk['object_path'] as String)
-            .timeout(const Duration(seconds: 30));
-        _check(owner);
-        if (bytes.length != chunk['byte_count']) {
-          throw StateError('Recording object size differs.');
-        }
-        final rows = await RecordingChunkCodec.decodeAsync(
-          bytes,
-          expectedChecksum: chunk['sha256'] as String,
-          expectedRows: (chunk['sample_count'] as num).toInt(),
-        );
-        var previous = cursor;
-        for (final row in rows) {
-          final id = row['sample_id'] as int;
-          if (id <= previous ||
-              row['owner_id'] != owner ||
-              row['session_id'] != sessionId) {
-            throw StateError(
-              'Recording chunk contains invalid ownership or sample order.',
-            );
+        var expected = cursor;
+        for (final chunk in chunks) {
+          final first = (chunk['first_sample_id'] as num).toInt();
+          final last = (chunk['last_sample_id'] as num).toInt();
+          final count = (chunk['sample_count'] as num).toInt();
+          final size = (chunk['byte_count'] as num).toInt();
+          if (chunk['previous_sample_id'] != expected ||
+              first <= expected ||
+              last < first ||
+              count < 1 ||
+              count > RecordingChunkCodec.maxRows ||
+              size < 1 ||
+              size > RecordingChunkCodec.maxCompressedBytes) {
+            throw StateError('Recording chunk chain is incomplete or invalid.');
           }
-          previous = id;
+          expected = last;
         }
-        if (rows.first['sample_id'] != chunk['first_sample_id'] ||
-            rows.last['sample_id'] != chunk['last_sample_id']) {
-          throw StateError('Recording chunk range differs.');
+        // Only a small window of immutable objects is in flight. Results are
+        // consumed in manifest order, regardless of network completion order.
+        final pending = <int, Future<_ChunkDownload>>{};
+        var scheduled = 0;
+        void fillWindow() {
+          while (scheduled < chunks.length &&
+              pending.length < _parallelDownloads) {
+            final index = scheduled++;
+            pending[index] = _downloadChunk(chunks[index], owner);
+          }
         }
-        cursor = previous;
-        yield rows;
+
+        fillWindow();
+        for (var index = 0; index < chunks.length; index++) {
+          final chunk = chunks[index];
+          final download = await pending.remove(index)!;
+          _check(owner);
+          final bytes = download.bytesOrThrow();
+          if (bytes.length != chunk['byte_count']) {
+            throw StateError('Recording object size differs.');
+          }
+          final rows = await RecordingChunkCodec.decodeAsync(
+            bytes,
+            expectedChecksum: chunk['sha256'] as String,
+            expectedRows: (chunk['sample_count'] as num).toInt(),
+          );
+          _check(owner);
+          var previous = cursor;
+          for (final row in rows) {
+            final id = row['sample_id'] as int;
+            if (id <= previous ||
+                row['owner_id'] != owner ||
+                row['session_id'] != sessionId) {
+              throw StateError(
+                'Recording chunk contains invalid ownership or sample order.',
+              );
+            }
+            previous = id;
+          }
+          if (rows.first['sample_id'] != chunk['first_sample_id'] ||
+              rows.last['sample_id'] != chunk['last_sample_id']) {
+            throw StateError('Recording chunk range differs.');
+          }
+          cursor = previous;
+          fillWindow();
+          yield rows;
+        }
       }
     }
     while (true) {
@@ -101,7 +134,7 @@ class SupabaseRecordingRepository implements CloudRecordingRepository {
           .eq('session_id', sessionId)
           .gt('sample_id', cursor)
           .order('sample_id', ascending: true)
-          .limit(500)
+          .limit(1000)
           .timeout(const Duration(seconds: 25));
       _check(owner);
       if (rows.isEmpty) return;
@@ -111,6 +144,25 @@ class SupabaseRecordingRepository implements CloudRecordingRepository {
       }
       yield rows;
       cursor = next;
+    }
+  }
+
+  Future<_ChunkDownload> _downloadChunk(
+    Map<String, dynamic> chunk,
+    String owner,
+  ) async {
+    try {
+      _check(owner);
+      final bytes = await client.storage
+          .from('obd-recordings')
+          .download(chunk['object_path'] as String)
+          .timeout(const Duration(seconds: 30));
+      _check(owner);
+      return _ChunkDownload(bytes, null, null);
+    } catch (error, stack) {
+      // Prefetched errors remain handled if the consumer cancels or an earlier
+      // chunk fails. They are rethrown only when their ordered turn is reached.
+      return _ChunkDownload(null, error, stack);
     }
   }
 
@@ -315,5 +367,16 @@ class SupabaseRecordingRepository implements CloudRecordingRepository {
           params: {'recording_id': recording.cloudId},
         )
         .timeout(const Duration(seconds: 25));
+  }
+}
+
+class _ChunkDownload {
+  final Uint8List? bytes;
+  final Object? error;
+  final StackTrace? stack;
+  const _ChunkDownload(this.bytes, this.error, this.stack);
+  Uint8List bytesOrThrow() {
+    if (error != null) Error.throwWithStackTrace(error!, stack!);
+    return bytes!;
   }
 }

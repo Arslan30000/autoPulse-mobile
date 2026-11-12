@@ -49,6 +49,7 @@ class _RecordingsScreenState extends State<RecordingsScreen> {
   bool _more = true;
   bool _refreshingCloud = false;
   bool _reloadRequested = false;
+  int _restoredRunsSeen = AccountDataService.instance.restoredRuns;
   String? _error;
   @override
   void initState() {
@@ -73,8 +74,11 @@ class _RecordingsScreenState extends State<RecordingsScreen> {
 
   void _accountChanged() {
     if (!mounted) return;
+    final account = AccountDataService.instance;
+    final driveReady = _restoredRunsSeen != account.restoredRuns;
+    _restoredRunsSeen = account.restoredRuns;
     setState(() {});
-    if (!AccountDataService.instance.busy) unawaited(_load());
+    if (!account.busy || driveReady) unawaited(_load());
   }
 
   Future<void> _refreshCloud() async {
@@ -178,7 +182,9 @@ class _RecordingsScreenState extends State<RecordingsScreen> {
             ),
             const SizedBox(height: 12),
             if (_refreshingCloud || AccountDataService.instance.busy)
-              const LinearProgressIndicator(),
+              LinearProgressIndicator(
+                value: AccountDataService.instance.restoreProgress,
+              ),
             if (AccountService.instance.userId == null)
               const Padding(
                 padding: EdgeInsets.symmetric(vertical: 12),

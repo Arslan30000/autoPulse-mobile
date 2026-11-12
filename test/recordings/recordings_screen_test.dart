@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:autopulse_ai/models/obd.dart';
 import 'package:autopulse_ai/core/widgets/obd_telemetry_chart.dart';
 import 'package:autopulse_ai/repositories/obd_recording_repository.dart';
 import 'package:autopulse_ai/screens/history/recordings_screen.dart';
+import 'package:autopulse_ai/services/account_data_service.dart';
 
 import 'fixtures.dart';
 
@@ -95,6 +98,62 @@ class _MixedPidStore extends ScreenRecordingStore {
 }
 
 void main() {
+  testWidgets('a completed drive appears while other restores remain active', (
+    tester,
+  ) async {
+    final account = AccountDataService.instance;
+    final previous = (
+      account.busy,
+      account.restoredRuns,
+      account.restoredSamples,
+      account.restoreTotalSamples,
+    );
+    final restOfAccount = Completer<void>();
+    addTearDown(() {
+      if (!restOfAccount.isCompleted) restOfAccount.complete();
+      account.busy = previous.$1;
+      account.restoredRuns = previous.$2;
+      account.restoredSamples = previous.$3;
+      account.restoreTotalSamples = previous.$4;
+    });
+    final store = ScreenRecordingStore(populated: false);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: RecordingsScreen(
+          store: store,
+          synchronizeAccount: () => restOfAccount.future,
+        ),
+      ),
+    );
+    await tester.pump();
+    expect(find.text('Synthetic Fixture'), findsNothing);
+
+    store.populated = true;
+    account.busy = true;
+    account.restoredRuns++;
+    account.restoredSamples = 500;
+    account.restoreTotalSamples = 1000;
+    // Simulate a production restore-progress notification without network IO.
+    // ignore: invalid_use_of_protected_member, invalid_use_of_visible_for_testing_member
+    account.notifyListeners();
+    await tester.pump();
+    expect(find.text('Synthetic Fixture'), findsOneWidget);
+    expect(account.busy, isTrue);
+    expect(
+      tester
+          .widget<LinearProgressIndicator>(find.byType(LinearProgressIndicator))
+          .value,
+      .5,
+    );
+
+    restOfAccount.complete();
+    account.busy = false;
+    // ignore: invalid_use_of_protected_member, invalid_use_of_visible_for_testing_member
+    account.notifyListeners();
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets(
     'session totals and per-PID counts stay distinct across all pages',
     (tester) async {

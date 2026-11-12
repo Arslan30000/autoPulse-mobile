@@ -208,18 +208,30 @@ class SqliteObdRecordingRepository implements RecordingStore {
     Map<String, dynamic> session,
     Vehicle vehicle,
     Stream<List<Map<String, dynamic>>> pages,
-    String owner,
-  ) async {
+    String owner, {
+    void Function(int restored, int total)? onProgress,
+  }) async {
     var cursor = await restoreCursor(session, owner);
     if (vehicle.ownerId != owner) {
       throw StateError('Vehicle ownership differs.');
     }
     final db = await database;
+    var restored =
+        Sqflite.firstIntValue(
+          await db.rawQuery(
+            'SELECT COUNT(*) FROM restore_samples WHERE cloud_id = ?',
+            [session['id']],
+          ),
+        ) ??
+        0;
+    final total = (session['sample_count'] as num).toInt();
+    onProgress?.call(restored, total);
     await for (final rows in pages) {
       if (_owner() != owner) {
         throw StateError('Account changed during restore.');
       }
       if (rows.length > 1000) throw StateError('Restore page is too large.');
+      var inserted = 0;
       await db.transaction((tx) async {
         final batch = tx.batch();
         final pageIds = <int>{};
@@ -263,12 +275,15 @@ class SqliteObdRecordingRepository implements RecordingStore {
             'ecu_source': row['ecu_source'],
           });
           cursor = id;
+          inserted++;
         }
         await batch.commit(noResult: true);
         if (_owner() != owner) {
           throw StateError('Account changed during restore.');
         }
       });
+      restored += inserted;
+      onProgress?.call(restored, total);
     }
     await db.transaction((tx) async {
       if (_owner() != owner) {
