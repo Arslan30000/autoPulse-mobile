@@ -97,9 +97,10 @@ class Elm327Client {
       'ATSP0',
     };
     if (!initializationCommands.contains(command) &&
+        !const {'03', '07', '0A'}.contains(command) &&
         !RegExp(r'^01[0-9A-F]{2}$').hasMatch(command)) {
       throw const ElmException(
-        'Only initialization and read-only Mode 01 commands are allowed.',
+        'Only initialization and read-only diagnostic commands are allowed.',
       );
     }
     _buffer = '';

@@ -25,6 +25,17 @@ void main() {
     transport.receive('>');
     expect(await response, '7E8 04 41 0C 1A F8\r');
   });
+  test(
+    'read-only DTC services are allowed; clearing codes stays blocked',
+    () async {
+      transport.automatic = true;
+      for (final command in ['03', '07', '0A']) {
+        expect(await client.command(command), contains('7E8'));
+      }
+      await expectLater(client.command('04'), throwsA(isA<ElmException>()));
+      expect(transport.writes, ['03', '07', '0A']);
+    },
+  );
   test('concurrent callers use one serialized command queue', () async {
     final first = client.command('010C');
     final second = client.command('010D');

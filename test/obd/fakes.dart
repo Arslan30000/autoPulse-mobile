@@ -45,6 +45,10 @@ class FakeBluetoothTransport implements BluetoothTransport {
   String defaultReply(String command) {
     if (command == 'ATZ') return 'ELM327 v1.5\r';
     if (command.startsWith('AT')) return 'OK\r';
+    if (command == '0101') return '7E8 06 41 01 00 00 00 00\r';
+    if (command == '03') return '7E8 02 43 00\r';
+    if (command == '07') return '7E8 02 47 00\r';
+    if (command == '0A') return '7E8 02 4A 00\r';
     if (command == '0100') {
       var mask = 0;
       for (final p in ObdParameter.values) {
