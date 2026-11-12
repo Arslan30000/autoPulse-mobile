@@ -6,6 +6,7 @@ import 'package:autopulse_ai/core/config/firebase_config.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:autopulse_ai/core/config/supabase_config.dart';
 import 'package:autopulse_ai/core/theme/app_theme.dart';
+import 'package:autopulse_ai/core/widgets/dtc_alert_host.dart';
 import 'package:autopulse_ai/navigation/app_router.dart';
 import 'package:autopulse_ai/services/account_service.dart';
 import 'package:autopulse_ai/services/account_data_service.dart';
@@ -75,15 +76,23 @@ Future<void> main() async {
 
 class AutoPulseApp extends StatelessWidget {
   const AutoPulseApp({super.key});
+  static final _navigatorKey = GlobalKey<NavigatorState>();
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'AutoPulse_ai',
+      navigatorKey: _navigatorKey,
       debugShowCheckedModeBanner: false,
       theme: AppTheme.darkTheme,
       initialRoute: '/',
       onGenerateRoute: AppRouter.generateRoute,
+      builder: (context, child) => DtcAlertHost(
+        monitor: ObdController.instance.diagnostics,
+        onViewCodes: () =>
+            _navigatorKey.currentState?.pushNamed(AppRouter.diagnostics),
+        child: child ?? const SizedBox.shrink(),
+      ),
     );
   }
 }
