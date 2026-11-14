@@ -54,6 +54,7 @@ class AccountDataService extends ChangeNotifier with WidgetsBindingObserver {
       cloudReservedBytes = null;
       try {
         await ObdController.instance.disconnect();
+        ObdController.instance.diagnostics.reset();
         await restoreSelection(cloud: owner != null);
       } catch (_) {
         message = 'Account data could not be loaded. Retry from Settings.';

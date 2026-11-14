@@ -1,299 +1,275 @@
 import 'package:flutter/material.dart';
-import 'package:autopulse_ai/core/widgets/sample_data_notice.dart';
-import 'package:autopulse_ai/services/obd/obd_controller.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:autopulse_ai/core/theme/app_colors.dart';
 import 'package:autopulse_ai/core/theme/app_text_styles.dart';
-import 'package:autopulse_ai/core/widgets/diagnostic_card.dart';
-import 'package:autopulse_ai/core/widgets/section_header.dart';
-import 'package:autopulse_ai/data/mock/mock_data.dart';
-import 'package:autopulse_ai/navigation/app_router.dart';
+import 'package:autopulse_ai/core/widgets/connection_sheet.dart';
+import 'package:autopulse_ai/models/obd_dtc.dart';
+import 'package:autopulse_ai/services/obd/obd_controller.dart';
 
-class DiagnosticsScreen extends StatelessWidget {
-  const DiagnosticsScreen({super.key});
+class DiagnosticsScreen extends StatefulWidget {
+  const DiagnosticsScreen({super.key, this.controller});
+  final ObdController? controller;
+  @override
+  State<DiagnosticsScreen> createState() => _DiagnosticsScreenState();
+}
+
+class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
+  DtcKind _selected = DtcKind.stored;
+  ObdController get controller => widget.controller ?? ObdController.instance;
+
+  String _time(DateTime? value) => value == null
+      ? 'Not read yet'
+      : value.toLocal().toString().split('.').first;
+
+  Widget _panel(Widget child, {Color color = AppColors.border}) => Container(
+    width: double.infinity,
+    padding: const EdgeInsets.all(20),
+    decoration: BoxDecoration(
+      color: AppColors.surface,
+      borderRadius: BorderRadius.circular(20),
+      border: Border.all(color: color),
+    ),
+    child: child,
+  );
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(title: const Text('Diagnostics')),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+  Widget build(BuildContext context) => ListenableBuilder(
+    listenable: Listenable.merge([controller, controller.diagnostics]),
+    builder: (context, _) {
+      final monitor = controller.diagnostics;
+      final snapshot = monitor.snapshot(_selected);
+      final fresh =
+          controller.isReady &&
+          snapshot.error == null &&
+          snapshot.readAt != null;
+      return Scaffold(
+        backgroundColor: AppColors.background,
+        appBar: AppBar(title: const Text('Diagnostic codes')),
+        body: SafeArea(
+          child: ListView(
+            padding: const EdgeInsets.all(20),
             children: [
-              const SampleDataNotice(),
-              const SizedBox(height: 4),
               Text(
-                ObdController.instance.vehicle.fullDisplayName,
+                controller.vehicle.fullDisplayName,
+                style: AppTextStyles.titleMedium,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Read codes directly from your vehicle ECU.',
                 style: AppTextStyles.bodyMedium,
-              ).animate().fadeIn(duration: 500.ms, delay: 100.ms),
-
-              const SizedBox(height: 24),
-
-              // Summary cards
-              Row(
-                children: [
-                  _buildSummaryCard(
-                    '1',
-                    'Active\nAnomalies',
-                    AppColors.warning,
-                  ),
-                  const SizedBox(width: 12),
-                  _buildSummaryCard('0', 'Critical\nIssues', AppColors.success),
-                  const SizedBox(width: 12),
-                  _buildSummaryCard(
-                    '1',
-                    'Diagnostic\nCodes',
-                    AppColors.primary,
-                  ),
-                ],
-              ).animate().fadeIn(duration: 400.ms, delay: 200.ms),
-
-              const SizedBox(height: 24),
-
-              SectionHeader(title: 'Active Anomalies')
-                  .animate()
-                  .fadeIn(duration: 400.ms, delay: 300.ms),
-              const SizedBox(height: 12),
-
-              DiagnosticCard(
-                title: MockData.anomalies.first.title,
-                severity: MockData.anomalies.first.severity,
-                description: MockData.anomalies.first.description,
-                status: MockData.anomalies.first.status,
-                actionLabel: 'Analyze',
-                onAction: () => Navigator.pushNamed(
-                  context,
-                  AppRouter.diagnosticDetail,
-                  arguments: MockData.anomalies.first,
-                ),
-              ).animate().fadeIn(duration: 400.ms, delay: 400.ms),
-
-              const SizedBox(height: 24),
-
-              SectionHeader(title: 'Diagnostic Trouble Codes')
-                  .animate()
-                  .fadeIn(duration: 400.ms, delay: 500.ms),
-              const SizedBox(height: 12),
-
-              // DTC Card
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      AppColors.surface.withValues(alpha: 0.8),
-                      AppColors.surface.withValues(alpha: 0.4),
-                    ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: AppColors.warning.withValues(alpha: 0.4),
-                    width: 1.5,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.warning.withValues(alpha: 0.15),
-                      blurRadius: 24,
-                      spreadRadius: 2,
-                    ),
-                  ],
-                ),
-                child: Column(
+              ),
+              const SizedBox(height: 20),
+              _panel(
+                Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
                       children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 8,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppColors.surfaceTertiary.withValues(
-                              alpha: 0.8,
-                            ),
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(
-                              color: AppColors.primary.withValues(alpha: 0.3),
-                            ),
-                          ),
+                        Icon(
+                          Icons.engineering_outlined,
+                          color: monitor.milOn == true
+                              ? AppColors.warning
+                              : AppColors.primary,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
                           child: Text(
-                            MockData.dtcs.first.code,
-                            style: AppTextStyles.titleMedium.copyWith(
-                              color: AppColors.primary,
-                              shadows: [
-                                Shadow(
-                                  color: AppColors.primary.withValues(
-                                    alpha: 0.5,
-                                  ),
-                                  blurRadius: 8,
-                                ),
-                              ],
-                            ),
+                            'Check-engine light',
+                            style: AppTextStyles.titleMedium,
                           ),
                         ),
                       ],
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      MockData.dtcs.first.description,
-                      style: AppTextStyles.bodyMedium,
                     ),
                     const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Container(
-                          width: 8,
-                          height: 8,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: AppColors.warning,
-                            boxShadow: [
-                              BoxShadow(
-                                color: AppColors.warning.withValues(alpha: 0.6),
-                                blurRadius: 6,
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          MockData.dtcs.first.status,
-                          style: AppTextStyles.bodySmall.copyWith(
-                            color: AppColors.warning,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: OutlinedButton(
-                        style: OutlinedButton.styleFrom(
-                          side: BorderSide(
-                            color: AppColors.primary.withValues(alpha: 0.5),
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        onPressed: () => Navigator.pushNamed(
-                          context,
-                          AppRouter.diagnosticDetail,
-                          arguments: MockData.anomalies.first,
-                        ),
-                        child: const Text('View Details'),
+                    Text(
+                      monitor.milOn == null
+                          ? 'Status not available'
+                          : 'ECU reported: ${monitor.milOn! ? 'ON' : 'OFF'}',
+                      style: AppTextStyles.titleLarge.copyWith(
+                        color: monitor.milOn == true
+                            ? AppColors.warning
+                            : AppColors.textPrimary,
                       ),
                     ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Last read: ${_time(monitor.milReadAt)}',
+                      style: AppTextStyles.bodySmall,
+                    ),
+                    if (monitor.storedCount != null)
+                      Text(
+                        'ECU-reported stored count: ${monitor.storedCount}',
+                        style: AppTextStyles.bodySmall,
+                      ),
+                    if (monitor.milError != null)
+                      Text(
+                        monitor.milError!,
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: AppColors.warning,
+                        ),
+                      ),
+                    if (!controller.isReady && monitor.milReadAt != null)
+                      const Text(
+                        'Previous connection • status may have changed.',
+                      ),
                   ],
                 ),
-              ).animate().fadeIn(duration: 400.ms, delay: 600.ms),
-
-              const SizedBox(height: 24),
-
-              // Disclaimer
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      AppColors.surfaceSecondary.withValues(alpha: 0.6),
-                      AppColors.surfaceSecondary.withValues(alpha: 0.2),
+              ),
+              const SizedBox(height: 16),
+              if (!controller.isReady) ...[
+                _panel(
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Connect to scan', style: AppTextStyles.titleMedium),
+                      const SizedBox(height: 8),
+                      const Text(
+                        'Pair your ELM327, switch the ignition on, then connect. Previous scan results remain visible until reconnecting.',
+                      ),
+                      if (controller.error != null) Text(controller.error!),
+                      const SizedBox(height: 12),
+                      FilledButton.icon(
+                        onPressed: () => showConnectionSheet(
+                          context,
+                          controller: controller,
+                        ),
+                        icon: const Icon(Icons.bluetooth),
+                        label: const Text('Connect adapter'),
+                      ),
                     ],
                   ),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: AppColors.border.withValues(alpha: 0.3),
-                  ),
                 ),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Icon(
-                      Icons.info_outline,
-                      color: AppColors.textTertiary,
-                      size: 20,
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        'autopulse provides diagnostic assistance and does not replace professional inspection.',
-                        style: AppTextStyles.bodySmall.copyWith(
-                          fontStyle: FontStyle.italic,
-                          color: AppColors.textSecondary,
-                        ),
+                const SizedBox(height: 16),
+              ],
+              FilledButton.icon(
+                onPressed: controller.isReady && !monitor.scanning
+                    ? monitor.scan
+                    : null,
+                icon: monitor.scanning
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.refresh),
+                label: Text(
+                  monitor.scanning ? 'Reading ECU…' : 'Scan diagnostic codes',
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Automatic checks every 60 seconds while connected and the app is open.',
+                style: AppTextStyles.bodySmall,
+              ),
+              const SizedBox(height: 20),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  for (final kind in DtcKind.values)
+                    ChoiceChip(
+                      label: Text(
+                        '${kind.label} ${monitor.snapshot(kind).readAt == null ? '—' : monitor.snapshot(kind).codes.length}',
                       ),
+                      selected: kind == _selected,
+                      onSelected: (_) => setState(() => _selected = kind),
                     ),
-                  ],
-                ),
-              ).animate().fadeIn(duration: 400.ms, delay: 700.ms),
-
-              const SizedBox(height: 24),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSummaryCard(String count, String label, Color accentColor) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              AppColors.surface.withValues(alpha: 0.7),
-              AppColors.surface.withValues(alpha: 0.3),
-            ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: accentColor.withValues(alpha: 0.3),
-            width: 1.5,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: accentColor.withValues(alpha: 0.15),
-              blurRadius: 16,
-              spreadRadius: 2,
-            ),
-          ],
-        ),
-        child: Column(
-          children: [
-            Text(
-              count,
-              style: AppTextStyles.headlineMedium.copyWith(
-                color: accentColor,
-                fontWeight: FontWeight.bold,
-                shadows: [
-                  Shadow(
-                    color: accentColor.withValues(alpha: 0.6),
-                    blurRadius: 10,
-                  ),
                 ],
               ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              label,
-              style: AppTextStyles.labelSmall.copyWith(
-                color: AppColors.textSecondary,
+              const SizedBox(height: 16),
+              Text(_selected.explanation, style: AppTextStyles.bodyMedium),
+              const SizedBox(height: 8),
+              Text(
+                'Last successful read: ${_time(snapshot.readAt)}',
+                style: AppTextStyles.bodySmall,
               ),
-              textAlign: TextAlign.center,
-            ),
-          ],
+              if (snapshot.error != null) ...[
+                const SizedBox(height: 12),
+                _panel(
+                  Text(
+                    snapshot.error!,
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      color: AppColors.warning,
+                    ),
+                  ),
+                  color: AppColors.warning,
+                ),
+              ],
+              const SizedBox(height: 12),
+              if (snapshot.codes.isEmpty)
+                _panel(
+                  Column(
+                    children: [
+                      Icon(
+                        snapshot.readAt == null
+                            ? Icons.search
+                            : Icons.fact_check_outlined,
+                        color: AppColors.primary,
+                        size: 32,
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        snapshot.readAt == null
+                            ? 'No scan results yet'
+                            : fresh
+                            ? 'No ${_selected.label.toLowerCase()} codes reported'
+                            : 'No codes in the previous successful scan',
+                        textAlign: TextAlign.center,
+                        style: AppTextStyles.titleMedium,
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        'An empty code list does not establish overall vehicle health.',
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                ),
+              for (final code in snapshot.codes) ...[
+                _panel(
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Wrap(
+                        spacing: 12,
+                        runSpacing: 6,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        children: [
+                          SelectableText(
+                            code.code,
+                            style: AppTextStyles.headlineMedium.copyWith(
+                              color: AppColors.warning,
+                            ),
+                          ),
+                          Chip(label: Text(code.kind.label)),
+                          if (!fresh)
+                            const Text(
+                              'Previous reading',
+                              style: TextStyle(color: AppColors.warning),
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Text(code.description, style: AppTextStyles.bodyMedium),
+                      const SizedBox(height: 12),
+                      Text(
+                        'ECU: ${code.source} • Read: ${_time(code.readAt)}',
+                        style: AppTextStyles.bodySmall,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+              ],
+              const SizedBox(height: 12),
+              Text(
+                'Standard OBD emissions diagnostics. Manufacturer-specific systems may require a dedicated scanner. Codes identify detected conditions, not a confirmed failed part.',
+                style: AppTextStyles.bodySmall,
+              ),
+              const SizedBox(height: 20),
+            ],
+          ),
         ),
-      ),
-    );
-  }
+      );
+    },
+  );
 }

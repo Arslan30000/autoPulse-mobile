@@ -8,6 +8,7 @@ import 'package:autopulse_ai/repositories/obd_recording_repository.dart';
 import 'package:autopulse_ai/services/obd/bluetooth_transport.dart';
 import 'package:autopulse_ai/services/obd/elm327_client.dart';
 import 'package:autopulse_ai/services/obd/obd_parser.dart';
+import 'package:autopulse_ai/services/obd/dtc_monitor.dart';
 
 /// App-scoped owner of the connection. Tabs never create independent pollers.
 class ObdController extends ChangeNotifier with WidgetsBindingObserver {
@@ -18,6 +19,7 @@ class ObdController extends ChangeNotifier with WidgetsBindingObserver {
   final BluetoothTransport transport;
   final ObdRecordingRepository repository;
   late final Elm327Client _client;
+  late final DtcMonitor diagnostics;
   final bool observeLifecycle;
   ObdConnectionStatus status = ObdConnectionStatus.disconnected;
   Vehicle vehicle = const Vehicle(make: 'Vehicle', model: '', year: 2020);
@@ -46,6 +48,11 @@ class ObdController extends ChangeNotifier with WidgetsBindingObserver {
     this.observeLifecycle = true,
   }) {
     _client = Elm327Client(transport)..onDisconnected = _onDisconnected;
+    diagnostics = DtcMonitor(
+      client: _client,
+      isReady: () => isReady,
+      ecuSource: () => ecuSource,
+    );
     if (observeLifecycle) WidgetsBinding.instance.addObserver(this);
   }
   bool get isReady => status == ObdConnectionStatus.ready;
@@ -62,6 +69,14 @@ class ObdController extends ChangeNotifier with WidgetsBindingObserver {
   }
 
   void setVehicle(Vehicle value) {
+    if (vehicle.id != value.id ||
+        vehicle.ownerId != value.ownerId ||
+        vehicle.make != value.make ||
+        vehicle.model != value.model ||
+        vehicle.year != value.year ||
+        vehicle.vin != value.vin) {
+      diagnostics.reset();
+    }
     vehicle = value;
     _changed();
   }
@@ -111,6 +126,7 @@ class ObdController extends ChangeNotifier with WidgetsBindingObserver {
     _ageTimer?.cancel();
     device = selected;
     status = ObdConnectionStatus.connecting;
+    diagnostics.reset();
     error = null;
     storageError = null;
     _samples.clear();
@@ -169,6 +185,7 @@ class ObdController extends ChangeNotifier with WidgetsBindingObserver {
     final lastRead = <ObdParameter, DateTime>{};
     try {
       while (!_disposed && generation == _generation && isReady) {
+        if (diagnostics.due) await diagnostics.scan();
         for (final parameter in ObdParameter.values.where(
           _supported.contains,
         )) {
@@ -302,6 +319,7 @@ class ObdController extends ChangeNotifier with WidgetsBindingObserver {
     _generation++;
     _ageTimer?.cancel();
     status = ObdConnectionStatus.disconnected;
+    diagnostics.disconnected();
     error = 'Adapter disconnected. Reconnect to resume.';
     unawaited(stopRecording());
     _changed();
@@ -311,6 +329,7 @@ class ObdController extends ChangeNotifier with WidgetsBindingObserver {
     _generation++;
     _ageTimer?.cancel();
     status = ObdConnectionStatus.disconnected;
+    diagnostics.disconnected();
     await _client.disconnect();
     await stopRecording();
     _changed();
@@ -329,6 +348,7 @@ class ObdController extends ChangeNotifier with WidgetsBindingObserver {
     if (observeLifecycle) WidgetsBinding.instance.removeObserver(this);
     _ageTimer?.cancel();
     unawaited(disconnect());
+    diagnostics.dispose();
     super.dispose();
   }
 }

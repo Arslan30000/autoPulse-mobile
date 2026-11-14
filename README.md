@@ -132,6 +132,9 @@ The artifact is written to `build/app/outputs/flutter-apk/app-release.apk`.
 
 ## Accounts and vehicle restoration
 
+Live ECU trouble-code scanning, category filters and foreground alerts are
+available from Diagnostics and Live. See [DTC behavior and testing](docs/live-dtc-diagnostics.md).
+
 Sign in or create an owner account, or continue offline. Settings supports profile
 editing, adding/selecting cars, viewing saved runs and syncing account data.
 Owned active runs back up complete chunks when online; their final tail uploads
