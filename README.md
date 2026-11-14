@@ -132,6 +132,9 @@ The artifact is written to `build/app/outputs/flutter-apk/app-release.apk`.
 
 ## Accounts and vehicle restoration
 
+Saved runs default to newest first and support date/duration sorting in either
+direction. See [saved-run sorting and integration](docs/saved-run-sorting.md).
+
 Live ECU trouble-code scanning, category filters and foreground alerts are
 available from Diagnostics and Live. See [DTC behavior and testing](docs/live-dtc-diagnostics.md).
 
