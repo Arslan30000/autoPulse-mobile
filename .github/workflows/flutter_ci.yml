@@ -69,8 +69,15 @@ jobs:
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
+          # Keep CI on the SDK validated by this app; upgrade it deliberately.
+          flutter-version: '3.47.1'
           channel: stable
           cache: true
+
+      - name: Report Flutter and Dart versions
+        run: |
+          flutter --version
+          dart --version
 
       - name: Cache Pub dependencies
         uses: actions/cache@v4

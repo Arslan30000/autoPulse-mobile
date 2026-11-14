@@ -113,6 +113,10 @@ after changing its values. VS Code launch configurations pass it automatically.
 
 ### Install and check
 
+Use Flutter **3.47.1** (Dart **3.13.1**) to match the pinned GitHub Actions SDK.
+Upgrade the CI pin together with the app's SDK compatibility checks; the latest
+stable channel can introduce new analyzer diagnostics between builds.
+
 From the repository root, install dependencies and run the same checks used by CI before pushing:
 
 ```bash
