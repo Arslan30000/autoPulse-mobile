@@ -7,6 +7,8 @@ import 'package:autopulse_ai/services/account_service.dart';
 
 enum RecordingSyncState { local, pending, uploading, synced, failed }
 
+enum RecordingSortField { date, duration }
+
 class ObdRecording {
   final int id;
   final String vehicleName;
@@ -21,6 +23,13 @@ class ObdRecording {
   final int uploadedSampleId;
   final int uploadedSampleCount;
   final String? syncError;
+  Duration? get duration {
+    final end = endedAt;
+    return end == null || end.isBefore(startedAt)
+        ? null
+        : end.difference(startedAt);
+  }
+
   const ObdRecording({
     required this.id,
     required this.vehicleName,
@@ -59,6 +68,8 @@ abstract interface class RecordingStore implements ObdRecordingRepository {
     String? owner, {
     int beforeId = 0,
     int limit = 50,
+    RecordingSortField sortBy = RecordingSortField.date,
+    bool ascending = false,
   });
   Future<ObdRecording> recording(int id);
   Future<List<RecordedObdSample>> samples(
@@ -656,17 +667,56 @@ class SqliteObdRecordingRepository implements RecordingStore {
     String? owner, {
     int beforeId = 0,
     int limit = 50,
+    RecordingSortField sortBy = RecordingSortField.date,
+    bool ascending = false,
   }) async {
     _limit(limit);
-    final arguments = owner == null
-        ? <Object?>[beforeId, beforeId, limit]
-        : <Object?>[owner, beforeId, beforeId, limit];
-    final rows = await (await database).rawQuery(
-      '$_select WHERE ${owner == null ? 's.owner_id IS NULL' : '(s.owner_id IS NULL OR s.owner_id = ?)'} '
-      'AND (? = 0 OR s.id < ?) ORDER BY s.id DESC LIMIT ?',
-      arguments,
-    );
-    return rows.map(_recording).toList();
+    final visibility = owner == null
+        ? 's.owner_id IS NULL'
+        : '(s.owner_id IS NULL OR s.owner_id = ?)';
+    final ownerArguments = <Object?>[?owner];
+    // Compare actual instants, including restored timestamps with UTC offsets.
+    // Unknown/invalid durations stay last in either direction, without guessing.
+    final key = switch (sortBy) {
+      RecordingSortField.date => 'julianday(s.started_at)',
+      RecordingSortField.duration =>
+        '''CASE
+        WHEN julianday(s.ended_at) >= julianday(s.started_at)
+        THEN ROUND((julianday(s.ended_at) - julianday(s.started_at)) * 86400000)
+        ELSE NULL END''',
+    };
+    final direction = ascending ? 'ASC' : 'DESC';
+    final comparison = ascending ? '>' : '<';
+    // beforeId identifies the previous page's final row, not an ID cutoff.
+    // Keep the anchor lookup and page query in one consistent read transaction.
+    return (await database).transaction((tx) async {
+      var afterCursor = '';
+      final arguments = [...ownerArguments];
+      if (beforeId != 0) {
+        final anchor = await tx.rawQuery(
+          'SELECT $key AS sort_key FROM sessions s WHERE $visibility AND s.id = ?',
+          [...ownerArguments, beforeId],
+        );
+        if (anchor.isEmpty) return <ObdRecording>[];
+        final value = anchor.single['sort_key'];
+        if (value == null) {
+          afterCursor = 'AND ($key) IS NULL AND s.id $comparison ?';
+          arguments.add(beforeId);
+        } else {
+          afterCursor =
+              'AND (($key) IS NULL OR ($key) $comparison ? '
+              'OR (($key) = ? AND s.id $comparison ?))';
+          arguments.addAll([value, value, beforeId]);
+        }
+      }
+      arguments.add(limit);
+      final rows = await tx.rawQuery(
+        '$_select WHERE $visibility $afterCursor '
+        'ORDER BY (($key) IS NULL) ASC, ($key) $direction, s.id $direction LIMIT ?',
+        arguments,
+      );
+      return rows.map(_recording).toList();
+    });
   }
 
   @override

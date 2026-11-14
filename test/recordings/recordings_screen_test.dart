@@ -30,6 +30,8 @@ class ScreenRecordingStore implements RecordingStore {
     String? owner, {
     int beforeId = 0,
     int limit = 50,
+    RecordingSortField sortBy = RecordingSortField.date,
+    bool ascending = false,
   }) async => populated ? [saved] : [];
   @override
   Future<ObdRecording> recording(int id) async => saved;
@@ -60,6 +62,48 @@ class ScreenRecordingStore implements RecordingStore {
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+class SortingScreenRecordingStore extends ScreenRecordingStore {
+  final calls = <({RecordingSortField field, bool ascending, int beforeId})>[];
+  Completer<List<ObdRecording>>? nextResponse;
+  final runs = [
+    ObdRecording(
+      id: 10,
+      vehicleName: 'Newest short trip',
+      startedAt: DateTime.utc(2026, 11, 14),
+      endedAt: DateTime.utc(2026, 11, 14, 0, 2),
+      sampleCount: 2,
+    ),
+    ObdRecording(
+      id: 20,
+      vehicleName: 'Older long trip',
+      startedAt: DateTime.utc(2026, 11, 13),
+      endedAt: DateTime.utc(2026, 11, 13, 1),
+      sampleCount: 2,
+    ),
+  ];
+  @override
+  Future<List<ObdRecording>> listRecordings(
+    String? owner, {
+    int beforeId = 0,
+    int limit = 50,
+    RecordingSortField sortBy = RecordingSortField.date,
+    bool ascending = false,
+  }) async {
+    calls.add((field: sortBy, ascending: ascending, beforeId: beforeId));
+    final blocked = nextResponse;
+    nextResponse = null;
+    if (blocked != null) return blocked.future;
+    final sorted = [...runs]
+      ..sort((a, b) {
+        final comparison = sortBy == RecordingSortField.date
+            ? a.startedAt.compareTo(b.startedAt)
+            : a.duration!.compareTo(b.duration!);
+        return ascending ? comparison : -comparison;
+      });
+    return sorted;
+  }
 }
 
 class _MixedPidStore extends ScreenRecordingStore {
@@ -98,6 +142,152 @@ class _MixedPidStore extends ScreenRecordingStore {
 }
 
 void main() {
+  void showBothRows(WidgetTester tester) {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(800, 1200);
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+  }
+
+  Future<void> choose(WidgetTester tester, String key, String value) async {
+    await tester.tap(find.byKey(ValueKey(key)));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(value).last);
+    await tester.pumpAndSettle();
+  }
+
+  testWidgets('saved runs default to newest and expose all sort choices', (
+    tester,
+  ) async {
+    showBothRows(tester);
+    final store = SortingScreenRecordingStore();
+    await tester.pumpWidget(MaterialApp(home: RecordingsScreen(store: store)));
+    await tester.pumpAndSettle();
+    expect(store.calls.last, (
+      field: RecordingSortField.date,
+      ascending: false,
+      beforeId: 0,
+    ));
+    expect(find.text('Newest first'), findsOneWidget);
+    expect(
+      tester.getTopLeft(find.text('Newest short trip')).dy,
+      lessThan(tester.getTopLeft(find.text('Older long trip')).dy),
+    );
+    expect(find.text('Duration 00:02:00'), findsOneWidget);
+    await choose(tester, 'recording-sort-field', 'Duration');
+    expect(store.calls.last, (
+      field: RecordingSortField.duration,
+      ascending: false,
+      beforeId: 0,
+    ));
+    expect(
+      tester.getTopLeft(find.text('Older long trip')).dy,
+      lessThan(tester.getTopLeft(find.text('Newest short trip')).dy),
+    );
+    await choose(tester, 'recording-sort-order', 'Ascending');
+    expect(store.calls.last, (
+      field: RecordingSortField.duration,
+      ascending: true,
+      beforeId: 0,
+    ));
+    expect(find.text('Shortest first; unknown durations last'), findsOneWidget);
+    await choose(tester, 'recording-sort-field', 'Date');
+    expect(store.calls.last, (
+      field: RecordingSortField.date,
+      ascending: true,
+      beforeId: 0,
+    ));
+    expect(find.text('Oldest first'), findsOneWidget);
+    await choose(tester, 'recording-sort-order', 'Descending');
+    expect(find.text('Newest first'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('refresh keeps the chosen field and direction', (tester) async {
+    final store = SortingScreenRecordingStore();
+    await tester.pumpWidget(MaterialApp(home: RecordingsScreen(store: store)));
+    await tester.pumpAndSettle();
+    await choose(tester, 'recording-sort-field', 'Duration');
+    await choose(tester, 'recording-sort-order', 'Ascending');
+    final beforeRefresh = store.calls.length;
+    await tester.tap(find.byTooltip('Refresh recordings'));
+    await tester.pumpAndSettle();
+    expect(store.calls.length, greaterThan(beforeRefresh));
+    expect(
+      store.calls
+          .skip(beforeRefresh)
+          .every(
+            (c) =>
+                c.field == RecordingSortField.duration &&
+                c.ascending &&
+                c.beforeId == 0,
+          ),
+      isTrue,
+    );
+  });
+
+  testWidgets('changing sort during a load discards the late old response', (
+    tester,
+  ) async {
+    showBothRows(tester);
+    final store = SortingScreenRecordingStore();
+    await tester.pumpWidget(MaterialApp(home: RecordingsScreen(store: store)));
+    await tester.pumpAndSettle();
+    final blocked = Completer<List<ObdRecording>>();
+    store.nextResponse = blocked;
+    await tester.tap(find.byTooltip('Refresh recordings'));
+    await tester.pump();
+    await tester.tap(find.byKey(const ValueKey('recording-sort-field')));
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.tap(find.text('Duration').last);
+    await tester.pump(const Duration(milliseconds: 400));
+    blocked.complete([
+      ObdRecording(
+        id: 99,
+        vehicleName: 'Stale response',
+        startedAt: DateTime.utc(2026),
+        endedAt: DateTime.utc(2026),
+        sampleCount: 0,
+      ),
+    ]);
+    await tester.pumpAndSettle();
+    expect(find.text('Stale response'), findsNothing);
+    expect(store.calls.last.field, RecordingSortField.duration);
+    expect(
+      tester.getTopLeft(find.text('Older long trip')).dy,
+      lessThan(tester.getTopLeft(find.text('Newest short trip')).dy),
+    );
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets(
+    'sort controls remain usable on a narrow phone with larger text',
+    (tester) async {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = const Size(320, 740);
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      await tester.pumpWidget(
+        MaterialApp(
+          builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(context)
+                .copyWith(textScaler: const TextScaler.linear(1.3)),
+            child: child!,
+          ),
+          home: RecordingsScreen(store: SortingScreenRecordingStore()),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await choose(tester, 'recording-sort-field', 'Duration');
+      await choose(tester, 'recording-sort-order', 'Ascending');
+      expect(
+        find.text('Shortest first; unknown durations last'),
+        findsOneWidget,
+      );
+      expect(tester.takeException(), isNull);
+    },
+  );
+
   testWidgets('a completed drive appears while other restores remain active', (
     tester,
   ) async {

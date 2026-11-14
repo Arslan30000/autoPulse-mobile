@@ -45,6 +45,9 @@ class RecordingsScreen extends StatefulWidget {
 
 class _RecordingsScreenState extends State<RecordingsScreen> {
   final List<ObdRecording> _recordings = [];
+  RecordingSortField _sortBy = RecordingSortField.date;
+  bool _ascending = false;
+  int _queryVersion = 0;
   bool _loading = false;
   bool _more = true;
   bool _refreshingCloud = false;
@@ -109,6 +112,7 @@ class _RecordingsScreenState extends State<RecordingsScreen> {
       return;
     }
     final owner = AccountService.instance.userId;
+    final version = _queryVersion;
     setState(() {
       _loading = true;
       _error = null;
@@ -117,15 +121,23 @@ class _RecordingsScreenState extends State<RecordingsScreen> {
       final rows = await widget.store.listRecordings(
         owner,
         beforeId: more && _recordings.isNotEmpty ? _recordings.last.id : 0,
+        sortBy: _sortBy,
+        ascending: _ascending,
       );
-      if (!mounted || AccountService.instance.userId != owner) return;
+      if (!mounted ||
+          AccountService.instance.userId != owner ||
+          version != _queryVersion) {
+        return;
+      }
       setState(() {
         if (!more) _recordings.clear();
         _recordings.addAll(rows);
         _more = rows.length == 50;
       });
     } catch (_) {
-      if (mounted) {
+      if (mounted &&
+          version == _queryVersion &&
+          AccountService.instance.userId == owner) {
         setState(
           () => _error = 'Recordings could not be loaded. Please retry.',
         );
@@ -153,6 +165,25 @@ class _RecordingsScreenState extends State<RecordingsScreen> {
     await _load();
   }
 
+  void _changeSort({RecordingSortField? sortBy, bool? ascending}) {
+    setState(() {
+      _sortBy = sortBy ?? _sortBy;
+      _ascending = ascending ?? _ascending;
+      _queryVersion++;
+      _recordings.clear();
+      _more = true;
+      _error = null;
+    });
+    unawaited(_load());
+  }
+
+  String _durationLabel(ObdRecording run) {
+    final duration = run.duration;
+    if (duration == null) return 'Duration unavailable';
+    String two(int value) => value.toString().padLeft(2, '0');
+    return 'Duration ${two(duration.inHours)}:${two(duration.inMinutes.remainder(60))}:${two(duration.inSeconds.remainder(60))}';
+  }
+
   @override
   Widget build(BuildContext context) {
     final sync = widget.sync;
@@ -177,6 +208,73 @@ class _RecordingsScreenState extends State<RecordingsScreen> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
+            Text(
+              'Sort saved runs',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: DropdownButtonFormField<RecordingSortField>(
+                    key: const ValueKey('recording-sort-field'),
+                    initialValue: _sortBy,
+                    isExpanded: true,
+                    decoration: const InputDecoration(labelText: 'Sort by'),
+                    items: const [
+                      DropdownMenuItem(
+                        value: RecordingSortField.date,
+                        child: Text('Date'),
+                      ),
+                      DropdownMenuItem(
+                        value: RecordingSortField.duration,
+                        child: Text('Duration'),
+                      ),
+                    ],
+                    onChanged: (value) {
+                      if (value != null) _changeSort(sortBy: value);
+                    },
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: DropdownButtonFormField<bool>(
+                    key: const ValueKey('recording-sort-order'),
+                    initialValue: _ascending,
+                    isExpanded: true,
+                    decoration: const InputDecoration(labelText: 'Order'),
+                    items: const [
+                      DropdownMenuItem(
+                        value: false,
+                        child: Text(
+                          'Descending',
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      DropdownMenuItem(
+                        value: true,
+                        child: Text(
+                          'Ascending',
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                    onChanged: (value) {
+                      if (value != null) _changeSort(ascending: value);
+                    },
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              _sortBy == RecordingSortField.date
+                  ? (_ascending ? 'Oldest first' : 'Newest first')
+                  : (_ascending
+                        ? 'Shortest first; unknown durations last'
+                        : 'Longest first; unknown durations last'),
+            ),
+            const SizedBox(height: 16),
             const Text(
               'Signed-in runs back up automatically when online. Offline runs stay on this phone until you choose to upload them. Synced runs are restored when you sign in.',
             ),
@@ -258,6 +356,16 @@ class _RecordingsScreenState extends State<RecordingsScreen> {
                           if (mounted) await _load();
                         },
                       ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 4,
+                        ),
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text(_durationLabel(recording)),
+                        ),
+                      ),
                       if (recording.syncError != null)
                         Padding(
                           padding: const EdgeInsets.all(8),
@@ -279,7 +387,7 @@ class _RecordingsScreenState extends State<RecordingsScreen> {
             if (_more && !_loading && _recordings.isNotEmpty)
               TextButton(
                 onPressed: () => _load(more: true),
-                child: const Text('Load older recordings'),
+                child: const Text('Load more recordings'),
               ),
           ],
         ),
