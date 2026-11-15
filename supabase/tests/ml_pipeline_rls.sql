@@ -28,4 +28,13 @@ do $$ begin
     values('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','cccccccc-cccc-4ccc-8ccc-cccccccccccc',1,'active','{}',array[]::uuid[],100);
     raise exception 'Client forged model'; exception when insufficient_privilege then null; end;
 end $$;
+reset role;
+set local role service_role;
+select set_config('request.jwt.claim.role','service_role',true);
+do $$ begin
+  if (select count(*) from public.claim_ml_jobs(1)) <> 1 then
+    raise exception 'Server worker did not claim completed upload'; end if;
+  if (select count(*) from public.claim_ml_jobs(1)) <> 0 then
+    raise exception 'Worker claimed the same job twice'; end if;
+end $$;
 rollback;
