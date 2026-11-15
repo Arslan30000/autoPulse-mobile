@@ -33,7 +33,7 @@ The pipeline was run on eight supplied Yaris recordings (5 hours 30 minutes). On
 
 1. Apply `supabase/migrations/20261115000000_ml_pipeline.sql` to the existing project. Its backfill queues all previously completed uploads. It does not alter saved recordings.
 2. Add GitHub Actions secrets `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`. The service-role key must stay in GitHub Actions secrets; never put it in Flutter assets, Dart source, or the mobile `.env`.
-3. On this feature branch, run **Vehicle baseline pipeline → Run workflow** once to process the backfill. GitHub schedules run only from the repository's default branch, so the 15-minute automatic worker starts after this workflow is merged into `main`.
+3. A push to this feature branch runs the worker when both secrets are available. The 15-minute automatic schedule starts after the workflow is merged into the repository's default branch. `workflow_dispatch` is also available once the workflow exists on the default branch.
 4. In a debug build, open **Settings → Model diagnostics** and refresh to see queued, running, completed, or failed jobs and their results.
 
 On each newly completed upload, the database trigger immediately creates a job. The scheduled worker processes it within roughly 15 minutes, subject to GitHub scheduling delay. The worker uses the Supabase service role only on the server and checks chunk order, SHA-256, sizes, and final sample count. A failed job retains its error for investigation. `ml_models` and `ml_run_results` are owner-readable under RLS and client-write-protected.

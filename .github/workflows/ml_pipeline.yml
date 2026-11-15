@@ -34,7 +34,9 @@ jobs:
         run: python -m unittest discover -s ml/tests -v
 
   process_completed_runs:
-    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    if: >-
+      github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'push' && github.ref == 'refs/heads/feature/vehicle-anomaly-pipeline')
     needs: model_tests
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -50,6 +52,8 @@ jobs:
         with:
           python-version: '3.12'
       - name: Check worker credentials
+        if: github.event_name != 'push'
         run: test -n "$SUPABASE_URL" && test -n "$SUPABASE_SERVICE_ROLE_KEY"
       - name: Score queued recordings
+        if: github.event_name != 'push' || (env.SUPABASE_URL != '' && env.SUPABASE_SERVICE_ROLE_KEY != '')
         run: python -m ml.pipeline worker --max-jobs 100
