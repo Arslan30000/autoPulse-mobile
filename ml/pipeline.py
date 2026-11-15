@@ -13,6 +13,7 @@ import os
 import datetime as dt
 import sys
 import urllib.parse
+import urllib.error
 import urllib.request
 from pathlib import Path
 
@@ -33,8 +34,12 @@ class Cloud:
         if method in ("POST", "PATCH"):
             headers["Prefer"] = "return=representation,resolution=merge-duplicates"
         request = urllib.request.Request(self.url + root + path, payload, headers, method=method)
-        with urllib.request.urlopen(request, timeout=60) as response:
-            content = response.read()
+        try:
+            with urllib.request.urlopen(request, timeout=60) as response:
+                content = response.read()
+        except urllib.error.HTTPError as error:
+            detail = error.read(2048).decode("utf-8", errors="replace")
+            raise RuntimeError(f"Cloud {method} {path.split('?')[0]} failed: HTTP {error.code}: {detail}") from error
         return content if storage else (json.loads(content) if content else None)
 
     def rows(self, table: str, **filters):
