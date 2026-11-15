@@ -1,0 +1,26 @@
+{
+  "algorithm": "airflow-ridge-v1",
+  "window_seconds": 5,
+  "coefficients": [
+    -2.65060553530995,
+    -4.936494330840105,
+    -6.917875054210656,
+    5.890097806459963,
+    2.38515819445765,
+    -2.678739605857339,
+    138.07941701527508
+  ],
+  "threshold_maf_g_s": 10.307031629844102,
+  "training_windows": 8965,
+  "public_prior": false,
+  "source": {
+    "dataset": "cephasax/obdii-ds3",
+    "author_mirror": "https://github.com/cephasax/OBDdatasets",
+    "file": "masterDegreeResearch/dailyRoutes.csv",
+    "sha256": "f65f8369400265629c2b9cecc9ac487e1f7f8dab9b129b1a4a7c4c24d16b3102",
+    "vehicle_rows": {
+      "car11": 7288,
+      "car12": 1678
+    }
+  }
+}
