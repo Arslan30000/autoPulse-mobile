@@ -32,6 +32,9 @@ migrate_working_dir/
 .pub/
 /build/
 /coverage/
+/ml/output/
+/ml/data/
+/ml/.deps/
 
 # Local environment and Android signing credentials
 .env

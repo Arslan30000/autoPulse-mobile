@@ -8,6 +8,7 @@ on:
       - 'development/**'
       - feature/supabase-pid-testing
       - feature/free-cloud-telemetry-auth
+      - feature/vehicle-anomaly-pipeline
   pull_request:
     branches:
       - main
@@ -51,7 +52,11 @@ jobs:
           -f supabase/migrations/20261107010000_recording_chunks.sql
           -f supabase/migrations/20261107020000_recording_completion_guard.sql
           -f supabase/migrations/20261107030000_legacy_auth_cutover.sql
+          -f supabase/migrations/20261115000000_ml_pipeline.sql
+          -f supabase/migrations/20261115090000_ml_worker_invoker.sql
+          -f supabase/migrations/20261115091000_ml_worker_grants.sql
           -f supabase/tests/verified_chunks_rls.sql
+          -f supabase/tests/ml_pipeline_rls.sql
   flutter:
     name: Flutter checks and Android release
     runs-on: ubuntu-latest

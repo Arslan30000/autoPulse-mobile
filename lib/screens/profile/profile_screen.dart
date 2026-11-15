@@ -9,6 +9,8 @@ import 'package:autopulse_ai/screens/vehicle/vehicles_screen.dart';
 import 'package:autopulse_ai/screens/history/recordings_screen.dart';
 import 'package:autopulse_ai/repositories/obd_recording_repository.dart';
 import 'package:autopulse_ai/services/recording_sync_service.dart';
+import 'package:flutter/foundation.dart';
+import 'package:autopulse_ai/screens/profile/model_debug_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -167,6 +169,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             ),
           ),
+          if (kDebugMode)
+            ListTile(
+              leading: const Icon(Icons.science_outlined),
+              title: const Text('Model diagnostics'),
+              subtitle: const Text(
+                'Development view of training and run processing',
+              ),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute<void>(
+                  builder: (_) => const ModelDebugScreen(),
+                ),
+              ),
+            ),
           if (_account.userId != null) ...[
             ListTile(
               leading: _data.busy
