@@ -30,7 +30,6 @@ do $$ begin
 end $$;
 reset role;
 set local role service_role;
-select set_config('request.jwt.claim.role','service_role',true);
 do $$ begin
   if (select count(*) from public.claim_ml_jobs(1)) <> 1 then
     raise exception 'Server worker did not claim completed upload'; end if;

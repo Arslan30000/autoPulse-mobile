@@ -8,12 +8,16 @@ on:
     paths:
       - 'ml/**'
       - 'supabase/migrations/20261115000000_ml_pipeline.sql'
+      - 'supabase/migrations/20261115090000_ml_worker_invoker.sql'
+      - 'supabase/migrations/20261115091000_ml_worker_grants.sql'
       - '.github/workflows/ml_pipeline.yml'
   pull_request:
     branches: [main]
     paths:
       - 'ml/**'
       - 'supabase/migrations/20261115000000_ml_pipeline.sql'
+      - 'supabase/migrations/20261115090000_ml_worker_invoker.sql'
+      - 'supabase/migrations/20261115091000_ml_worker_grants.sql'
       - '.github/workflows/ml_pipeline.yml'
   schedule:
     - cron: '*/15 * * * *'
