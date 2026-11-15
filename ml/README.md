@@ -32,7 +32,7 @@ The pipeline was run on eight supplied Yaris recordings (5 hours 30 minutes). On
 ## Cloud setup and processing
 
 1. Apply `supabase/migrations/20261115000000_ml_pipeline.sql` to the existing project. Its backfill queues all previously completed uploads. It does not alter saved recordings.
-2. Add GitHub Actions secrets `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`. The service-role key must stay in GitHub Actions secrets; never put it in Flutter assets, Dart source, or the mobile `.env`.
+2. Add GitHub Actions secrets `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`. Use the project's legacy `service_role` JWT for the latter; the worker sends it as a Bearer token. The service-role key must stay in GitHub Actions secrets; never put it in Flutter assets, Dart source, or the mobile `.env`.
 3. A push to this feature branch runs the worker when both secrets are available. The 15-minute automatic schedule starts after the workflow is merged into the repository's default branch. `workflow_dispatch` is also available once the workflow exists on the default branch.
 4. In a debug build, open **Settings → Model diagnostics** and refresh to see queued, running, completed, or failed jobs and their results.
 
