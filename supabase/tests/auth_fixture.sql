@@ -1,7 +1,7 @@
 -- CI-only stand-in for Supabase Auth. Never apply this to a Supabase project.
 create role authenticated nologin;
 create role anon nologin;
-create role service_role nologin;
+create role service_role nologin bypassrls;
 create schema auth;
 create table auth.users (id uuid primary key, email text, raw_user_meta_data jsonb not null default '{}'::jsonb);
 create function auth.uid() returns uuid language sql stable as $$
