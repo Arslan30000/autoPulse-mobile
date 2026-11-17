@@ -1,0 +1,5 @@
+{
+  "schema_version": 1,
+  "driving_context": "assets/ml/driving_context/context-weak-yaris-v1-forest-40-depth6.json",
+  "allow_experimental_driving_context": true
+}

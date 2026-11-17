@@ -41,6 +41,8 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   assets:
+    - assets/ml/
+    - assets/ml/driving_context/
     - assets/models/car/
     - assets/
     - assets/branding/

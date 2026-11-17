@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - feature/vehicle-anomaly-pipeline
+      - feature/driving-context-runtime
     paths:
       - 'ml/**'
       - 'supabase/migrations/20261115000000_ml_pipeline.sql'
@@ -61,3 +62,18 @@ jobs:
       - name: Score queued recordings
         if: github.event_name != 'push' || (env.SUPABASE_URL != '' && env.SUPABASE_SERVICE_ROLE_KEY != '')
         run: python -m ml.pipeline worker --max-jobs 100
+
+  context_training_tests:
+    name: Offline context training and export
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: ml/driving_context/requirements.txt
+      - name: Install pinned training dependencies
+        run: python -m pip install -r ml/driving_context/requirements.txt
+      - name: Verify synthetic fitting, export and causal feature parity
+        run: python -m unittest discover -s ml/tests -v
