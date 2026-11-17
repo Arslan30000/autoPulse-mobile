@@ -3,7 +3,8 @@ import 'package:autopulse_ai/core/theme/app_colors.dart';
 import 'package:autopulse_ai/core/theme/app_text_styles.dart';
 
 class SampleDataNotice extends StatelessWidget {
-  const SampleDataNotice({super.key});
+  const SampleDataNotice({super.key, this.message});
+  final String? message;
   @override
   Widget build(BuildContext context) => Container(
     width: double.infinity,
@@ -24,7 +25,7 @@ class SampleDataNotice extends StatelessWidget {
         const SizedBox(width: 10),
         Expanded(
           child: Text(
-            'Sample data · These insights are a preview, not an assessment of your vehicle.',
+            message ?? 'Sample data · These insights are a preview, not an assessment of your vehicle.',
             style: AppTextStyles.bodySmall.copyWith(height: 1.5),
           ),
         ),

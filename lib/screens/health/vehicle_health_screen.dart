@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:autopulse_ai/core/widgets/sample_data_notice.dart';
+import 'package:autopulse_ai/core/widgets/driving_context_card.dart';
+import 'package:autopulse_ai/services/driving_context/driving_context_controller.dart';
+import 'package:autopulse_ai/services/obd/obd_controller.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:autopulse_ai/core/theme/app_colors.dart';
 import 'package:autopulse_ai/core/theme/app_text_styles.dart';
@@ -13,7 +16,8 @@ import 'package:autopulse_ai/models/health.dart';
 import 'package:autopulse_ai/navigation/app_router.dart';
 
 class VehicleHealthScreen extends StatefulWidget {
-  const VehicleHealthScreen({super.key});
+  const VehicleHealthScreen({super.key, this.contextController});
+  final DrivingContextController? contextController;
 
   @override
   State<VehicleHealthScreen> createState() => _VehicleHealthScreenState();
@@ -40,7 +44,9 @@ class _VehicleHealthScreenState extends State<VehicleHealthScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const SampleDataNotice(),
+                  const SampleDataNotice(
+                    message: 'Sample health assessment · The score and system tiles are previews. Driving context uses live OBD-II readings when connected.',
+                  ),
                   Center(
                     child: Container(
                       padding: const EdgeInsets.all(24),
@@ -64,6 +70,12 @@ class _VehicleHealthScreenState extends State<VehicleHealthScreen> {
                         ],
                       ),
                     ),
+                  ),
+                  const SizedBox(height: 20),
+                  DrivingContextCard(
+                    controller:
+                        widget.contextController ??
+                        ObdController.instance.drivingContext,
                   ),
                   const SizedBox(height: 28),
                   SectionHeader(title: 'Vehicle Systems')

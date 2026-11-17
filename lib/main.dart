@@ -7,17 +7,27 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:autopulse_ai/core/config/supabase_config.dart';
 import 'package:autopulse_ai/core/theme/app_theme.dart';
 import 'package:autopulse_ai/core/widgets/dtc_alert_host.dart';
+import 'package:autopulse_ai/core/widgets/context_change_banner.dart';
 import 'package:autopulse_ai/navigation/app_router.dart';
 import 'package:autopulse_ai/services/account_service.dart';
 import 'package:autopulse_ai/services/account_data_service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:autopulse_ai/services/obd/obd_controller.dart';
+import 'package:autopulse_ai/services/driving_context/context_model_loader.dart';
 import 'package:autopulse_ai/services/recording_sync_service.dart';
 import 'package:autopulse_ai/repositories/obd_recording_repository.dart';
 import 'package:autopulse_ai/repositories/cloud_recording_repository.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  try {
+    final model = await ContextModelLoader.load();
+    if (model != null) {
+      ObdController.instance.drivingContext.useEvaluator(model);
+    }
+  } catch (error) {
+    debugPrint('Context model unavailable; using provisional rules: $error');
+  }
   final backend = await SupabaseConfig.load();
   backend.validate();
   if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
@@ -89,6 +99,9 @@ class AutoPulseApp extends StatelessWidget {
       onGenerateRoute: AppRouter.generateRoute,
       builder: (context, child) => DtcAlertHost(
         monitor: ObdController.instance.diagnostics,
+        passiveAlert: ContextChangeBanner(
+          controller: ObdController.instance.drivingContext,
+        ),
         onViewCodes: () =>
             _navigatorKey.currentState?.pushNamed(AppRouter.diagnostics),
         child: child ?? const SizedBox.shrink(),

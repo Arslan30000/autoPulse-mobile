@@ -33,29 +33,36 @@ class HealthScoreWidget extends StatelessWidget {
       circularStrokeCap: CircularStrokeCap.round,
       progressColor: _progressColor,
       backgroundColor: AppColors.surfaceTertiary,
-      center: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.baseline,
-            textBaseline: TextBaseline.alphabetic,
-            children: [
-              Text(
-                '$score',
-                style: size < 160
-                    ? AppTextStyles.telemetryValue.copyWith(fontSize: 36)
-                    : AppTextStyles.healthScore,
+      center: SizedBox(
+        width: size - 24,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.baseline,
+                textBaseline: TextBaseline.alphabetic,
+                children: [
+                  Text(
+                    '$score',
+                    style: size < 160
+                        ? AppTextStyles.telemetryValue.copyWith(fontSize: 36)
+                        : AppTextStyles.healthScore,
+                  ),
+                  Text(' /100', style: AppTextStyles.bodySmall),
+                ],
               ),
-              Text(' /100', style: AppTextStyles.bodySmall),
-            ],
-          ),
-          const SizedBox(height: 4),
-          Text(
-            status,
-            style: AppTextStyles.healthLabel.copyWith(color: _progressColor),
-          ),
-        ],
+            ),
+            const SizedBox(height: 4),
+            Text(
+              status,
+              textAlign: TextAlign.center,
+              style: AppTextStyles.healthLabel.copyWith(color: _progressColor),
+            ),
+          ],
+        ),
       ),
     );
   }

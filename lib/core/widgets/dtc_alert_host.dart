@@ -9,10 +9,14 @@ class DtcAlertHost extends StatefulWidget {
     required this.monitor,
     required this.onViewCodes,
     required this.child,
+    this.passiveAlert,
   });
   final DtcMonitor monitor;
   final VoidCallback onViewCodes;
   final Widget child;
+
+  /// Removed while DTC is visible, discarding routine notices instead of queuing.
+  final Widget? passiveAlert;
   @override
   State<DtcAlertHost> createState() => _DtcAlertHostState();
 }
@@ -59,6 +63,8 @@ class _DtcAlertHostState extends State<DtcAlertHost> {
   Widget build(BuildContext context) => Stack(
     children: [
       widget.child,
+      if (_codes.isEmpty && widget.passiveAlert != null)
+        Positioned.fill(child: widget.passiveAlert!),
       if (_codes.isNotEmpty)
         Positioned(
           top: 0,
