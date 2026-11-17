@@ -1,4 +1,18 @@
-# Vehicle anomaly baseline (experimental)
+# ML pipelines
+
+| Task | Entry point | Runtime | Status |
+| --- | --- | --- | --- |
+| Driving context | [driving_context/README.md](driving_context/README.md) | Offline Yaris-trained forest + physical rules | Experimental weak-label model packaged; independent accuracy unknown |
+| MAF deviation baseline | `python -m ml.pipeline` | Existing server worker | Experimental regression pipeline, documented below |
+
+Keep each new task in its own `ml/<task>/` package, its mobile evaluator in
+`lib/services/<task>/`, versioned accepted artifacts under `assets/ml/<task>/`,
+and generated experiments under ignored `ml/output/<task>/`. Use
+`assets/ml/registry.json` for mobile model selection. Keep curated results in
+`docs/ml/`; never confuse synthetic tests, unlabelled replay and measured accuracy.
+Existing MAF entry points remain in place for workflow compatibility.
+
+## Vehicle anomaly baseline (experimental)
 
 This branch adds a reproducible **vehicle-specific airflow deviation** pipeline. It does not classify or confirm mechanical faults. DTCs remain independent ECU evidence. The phone continues to record offline; the server analyzes completed cloud runs.
 

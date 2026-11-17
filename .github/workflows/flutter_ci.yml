@@ -9,6 +9,7 @@ on:
       - feature/supabase-pid-testing
       - feature/free-cloud-telemetry-auth
       - feature/vehicle-anomaly-pipeline
+      - feature/driving-context-runtime
   pull_request:
     branches:
       - main
