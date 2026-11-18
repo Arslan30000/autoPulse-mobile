@@ -113,7 +113,7 @@ class SqliteObdRecordingRepository implements RecordingStore {
         databasePath ??
             path.join(await selected.getDatabasesPath(), 'obd_recordings.db'),
         options: OpenDatabaseOptions(
-          version: 3,
+          version: 4,
           onConfigure: (db) => db.execute('PRAGMA foreign_keys = ON'),
           onCreate: (db, _) async {
             await db.execute('''CREATE TABLE sessions (
@@ -131,10 +131,12 @@ class SqliteObdRecordingRepository implements RecordingStore {
             );
             await _upgrade(db);
             await _createRestoreStaging(db);
+            await _createDiagnostics(db);
           },
           onUpgrade: (db, oldVersion, _) async {
             if (oldVersion < 2) await _upgrade(db);
             if (oldVersion < 3) await _createRestoreStaging(db);
+            if (oldVersion < 4) await _createDiagnostics(db);
           },
         ),
       );
@@ -142,6 +144,19 @@ class SqliteObdRecordingRepository implements RecordingStore {
       _database = null;
       rethrow;
     }
+  }
+
+  static Future<void> _createDiagnostics(Database db) async {
+    await db.execute('''CREATE TABLE diagnostic_scans (
+      session_id INTEGER PRIMARY KEY REFERENCES sessions(id) ON DELETE CASCADE,
+      payload TEXT NOT NULL)''');
+    await db.execute('''CREATE TABLE diagnostic_results (
+      session_id INTEGER PRIMARY KEY REFERENCES sessions(id) ON DELETE CASCADE,
+      version INTEGER NOT NULL, payload TEXT NOT NULL)''');
+    await db.execute(
+      '''CREATE TABLE diagnostic_references (
+      vehicle_key TEXT PRIMARY KEY, version INTEGER NOT NULL, payload TEXT NOT NULL)''',
+    );
   }
 
   static Future<void> _createRestoreStaging(Database db) async {

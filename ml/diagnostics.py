@@ -138,7 +138,7 @@ def fit(train, calibration, method):
     return models
 
 
-def score(trip, models, method):
+def score(trip, models, method, on_scored=None):
     stats = {str(pid): {"name": spec[0], "scored": 0, "valid": 0, "absolute_error": 0.,
                        "quality": Counter()} for pid, spec in SIGNALS.items()}
     events, pending = [], {}
@@ -160,6 +160,8 @@ def score(trip, models, method):
             residual = observed - estimate
             summary["scored"] += 1
             summary["absolute_error"] += abs(residual)
+            if on_scored is not None:
+                on_scored(index, pid, estimate)
             if abs(residual) <= model["threshold"]:
                 pending.pop(pid, None)
                 continue

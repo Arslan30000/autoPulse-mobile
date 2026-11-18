@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:autopulse_ai/core/widgets/saved_diagnostic_panel.dart';
 import 'package:autopulse_ai/core/widgets/obd_telemetry_chart.dart';
 import 'package:autopulse_ai/core/widgets/trip_upload_button.dart';
 import 'package:path/path.dart' as path;
@@ -547,6 +548,8 @@ class _RecordingDetailsScreenState extends State<RecordingDetailsScreen> {
           ),
           const SizedBox(height: 20),
           if (_error != null) Text(_error!),
+          if (_recording.endedAt != null)
+            SavedDiagnosticPanel(sessionId: _recording.id),
           if (quality == null && _error == null)
             const Center(child: CircularProgressIndicator()),
           Card(

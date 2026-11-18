@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+
+import 'dart:async';
+
 import 'package:flutter/services.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -14,6 +17,7 @@ import 'package:autopulse_ai/services/account_data_service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:autopulse_ai/services/obd/obd_controller.dart';
 import 'package:autopulse_ai/services/driving_context/context_model_loader.dart';
+import 'package:autopulse_ai/services/diagnostics/vehicle_diagnostics.dart';
 import 'package:autopulse_ai/services/recording_sync_service.dart';
 import 'package:autopulse_ai/repositories/obd_recording_repository.dart';
 import 'package:autopulse_ai/repositories/cloud_recording_repository.dart';
@@ -74,6 +78,16 @@ Future<void> main() async {
     }
   }
   SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+  if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+    final diagnostics = VehicleDiagnostics(
+      ObdController.instance.repository as SqliteObdRecordingRepository,
+    );
+    VehicleDiagnostics.instance = diagnostics;
+    AccountService.instance.changes.listen(
+      (_) => unawaited(diagnostics.refresh()),
+    );
+    unawaited(diagnostics.refresh());
+  }
   AccountDataService.instance.start();
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(

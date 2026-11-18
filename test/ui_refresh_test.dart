@@ -12,7 +12,6 @@ import 'package:autopulse_ai/core/theme/app_theme.dart';
 import 'package:autopulse_ai/core/widgets/health_score_widget.dart';
 import 'package:autopulse_ai/core/widgets/live_obd_view.dart';
 import 'package:autopulse_ai/core/widgets/telemetry_gauge.dart';
-import 'package:autopulse_ai/core/widgets/system_status_card.dart';
 import 'package:autopulse_ai/core/widgets/vehicle_illustration.dart';
 import 'package:autopulse_ai/main.dart';
 import 'package:autopulse_ai/models/vehicle.dart';
@@ -237,29 +236,19 @@ void main() {
   });
 
   for (final width in [320.0, 390.0, 1920.0]) {
-    testWidgets('health centers its score and tiles at $width', (tester) async {
+    testWidgets('health lays out recording diagnostics at $width', (
+      tester,
+    ) async {
       phone(tester, width);
       await tester.pumpWidget(app(const VehicleHealthScreen()));
       await tester.pumpAndSettle();
-      expect(find.byType(HealthScoreWidget), findsOneWidget);
-      expect(
-        tester.getCenter(find.byType(HealthScoreWidget)).dx,
-        closeTo(width / 2, 1),
-      );
-      final cards = find.byType(SystemStatusCard);
-      expect(cards, findsNWidgets(6));
-      expect(
-        tester.getTopLeft(cards.at(0)).dy,
-        tester.getTopLeft(cards.at(1)).dy,
-      );
+      expect(find.byType(HealthScoreWidget), findsNothing);
+      expect(find.text('Recording diagnostics'), findsOneWidget);
+      expect(find.text('View diagnostic history'), findsOneWidget);
+      final bounds = tester.getRect(find.text('Recording diagnostics'));
+      expect(bounds.left, greaterThanOrEqualTo(0));
+      expect(bounds.right, lessThanOrEqualTo(width));
       await capture(tester, 'health-${width.round()}');
-      await tester.ensureVisible(find.text('Engine'));
-      await tester.tap(find.text('Engine'));
-      await tester.pumpAndSettle();
-      expect(
-        find.textContaining('Engine is operating normally'),
-        findsOneWidget,
-      );
       expect(tester.takeException(), isNull);
     });
   }

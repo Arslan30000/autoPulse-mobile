@@ -10,6 +10,7 @@ import 'package:autopulse_ai/services/obd/elm327_client.dart';
 import 'package:autopulse_ai/services/obd/obd_parser.dart';
 import 'package:autopulse_ai/services/obd/dtc_monitor.dart';
 import 'package:autopulse_ai/services/driving_context/driving_context_controller.dart';
+import 'package:autopulse_ai/services/diagnostics/vehicle_diagnostics.dart';
 
 /// App-scoped owner of the connection. Tabs never create independent pollers.
 class ObdController extends ChangeNotifier with WidgetsBindingObserver {
@@ -43,6 +44,24 @@ class ObdController extends ChangeNotifier with WidgetsBindingObserver {
   Timer? _ageTimer;
   Future<void> _recordQueue = Future.value();
   Future<void>? _stoppingRecording;
+  DateTime? _diagnosticScanSince;
+  Map<String, dynamic>? _openingScan;
+  final _driveCodes = <String, Map>{};
+  bool _driveFault = false;
+  VehicleDiagnostics? get _pipeline {
+    final pipeline = VehicleDiagnostics.instance;
+    return identical(pipeline?.store, repository) ? pipeline : null;
+  }
+
+  void _observeScan() {
+    final since = _diagnosticScanSince;
+    if (since == null) return;
+    final evidence = diagnosticScan(diagnostics, since);
+    _driveFault |= evidence['blocked'] as bool;
+    for (final item in evidence['codes'] as List<Map<String, String>>) {
+      _driveCodes['${item['code']}:${item['status']}'] = item;
+    }
+  }
 
   ObdController({
     required this.transport,
@@ -55,6 +74,7 @@ class ObdController extends ChangeNotifier with WidgetsBindingObserver {
       isReady: () => isReady,
       ecuSource: () => ecuSource,
     );
+    diagnostics.addListener(_observeScan);
     if (observeLifecycle) WidgetsBinding.instance.addObserver(this);
   }
   bool get isReady => status == ObdConnectionStatus.ready;
@@ -77,6 +97,7 @@ class ObdController extends ChangeNotifier with WidgetsBindingObserver {
         vehicle.model != value.model ||
         vehicle.year != value.year ||
         vehicle.vin != value.vin) {
+      if (isRecording) _driveFault = true;
       diagnostics.reset();
       drivingContext.reset(connected: isReady);
     }
@@ -270,6 +291,14 @@ class ObdController extends ChangeNotifier with WidgetsBindingObserver {
     storageError = null;
     _changed();
     try {
+      if (_pipeline != null) {
+        _driveCodes.clear();
+        _driveFault = false;
+        _diagnosticScanSince = DateTime.now();
+        final since = await diagnostics.scanForRecording();
+        _openingScan = diagnosticScan(diagnostics, since);
+        if (!isReady || _disposed || generation != _generation) return;
+      }
       final id = await repository.start(vehicle, device!);
       if (!isReady || _disposed || generation != _generation) {
         await repository.finish(id);
@@ -280,6 +309,7 @@ class ObdController extends ChangeNotifier with WidgetsBindingObserver {
     } catch (_) {
       storageError = 'Could not start local recording.';
     } finally {
+      if (!isRecording) _diagnosticScanSince = null;
       recordingBusy = false;
       _changed();
     }
@@ -317,10 +347,37 @@ class ObdController extends ChangeNotifier with WidgetsBindingObserver {
   Future<void> _finishRecording(int session) async {
     try {
       await _recordQueue;
+      final pipeline = _pipeline;
+      if (pipeline != null) {
+        final since = await diagnostics.scanForRecording();
+        final closing = diagnosticScan(diagnostics, since);
+        _observeScan();
+        try {
+          await pipeline.attachScan(session, {
+            'complete':
+                isReady &&
+                _openingScan?['complete'] == true &&
+                closing['complete'] == true,
+            'blocked':
+                _driveFault ||
+                _openingScan?['blocked'] == true ||
+                closing['blocked'] == true,
+            'codes': _driveCodes.values.toList(),
+          });
+        } catch (_) {
+          // A failed write leaves the drive ineligible for reference fitting.
+          storageError = 'ECU scan evidence could not be stored.';
+        }
+      }
       await repository.finish(session);
+      if (pipeline != null) {
+        unawaited(pipeline.evaluate(session).then((_) => pipeline.refresh()));
+      }
     } catch (_) {
       storageError = 'Recording could not be finalized; saved samples remain on this phone.';
     } finally {
+      _diagnosticScanSince = null;
+      _openingScan = null;
       recordingBusy = false;
       _changed();
     }

@@ -11,6 +11,7 @@ import 'package:autopulse_ai/services/account_service.dart';
 import 'package:autopulse_ai/services/obd/obd_controller.dart';
 import 'package:autopulse_ai/services/recording_sync_service.dart';
 import 'package:autopulse_ai/services/recording_restore_service.dart';
+import 'package:autopulse_ai/services/diagnostics/vehicle_diagnostics.dart';
 
 /// Account data is cached by owner; signing out never deletes phone recordings.
 class AccountDataService extends ChangeNotifier with WidgetsBindingObserver {
@@ -305,6 +306,7 @@ class AccountDataService extends ChangeNotifier with WidgetsBindingObserver {
         // Pending uploads can be large too. Do not make drive restoration wait
         // for them; their own durable queue and retry handling remain active.
         unawaited(RecordingSyncService.instance?.retryPending());
+        if (restoredRuns > 0) unawaited(VehicleDiagnostics.instance?.refresh());
       }
       var waiting = false;
       if (canStoreRuns) {

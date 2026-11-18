@@ -95,16 +95,13 @@ Compare v1 and v2 on retained recordings before using the candidate. Keep v1
 for rollback. The previous validation in the candidate bundle belongs to the
 original fit. Run a fresh holdout comparison before claiming improved accuracy.
 
-## View in the app
+## View on Android
 
-Run the Flutter app locally. Open Vehicle Health for live driving context.
-Open the report JSON on your device, copy its contents, and tap **Paste
-diagnostic report**. Use **View recording history** to open the run list and
-select a **Drive Report**. You can also open **Recording diagnostic history**
-from Diagnostic Codes and paste the report there. Run details show check
-coverage, measured evidence, suggested inspection steps and any related scan
-evidence. The view labels simulated and training runs. The report stays in
-memory while the associated screens are open.
+The app stores its own results and builds a reference from scan-qualified
+recordings. Open Vehicle Health or Diagnostic History for the results. This
+local Python workflow remains available for research and reproducible replay.
+See [the Android diagnostic guide](ANDROID_DIAGNOSTICS.md) for the complete
+app flow and parity commands.
 
 The diagnostic branch removes the scheduled remote worker from its workflow.
 The schedule on the default branch changes when this workflow is merged there.

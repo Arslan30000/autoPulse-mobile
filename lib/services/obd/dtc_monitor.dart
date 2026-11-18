@@ -33,6 +33,7 @@ class DtcMonitor extends ChangeNotifier {
   int alertRevision = 0;
   int _generation = 0;
   bool _disposed = false;
+  Future<void>? _inFlight;
 
   DtcSnapshot snapshot(DtcKind kind) => _snapshots[kind] ?? const DtcSnapshot();
   bool get due =>
@@ -65,7 +66,24 @@ class DtcMonitor extends ChangeNotifier {
     _changed();
   }
 
-  Future<void> scan() async {
+  Future<void> scan() {
+    if (_inFlight case final active?) return active;
+    final next = _scan();
+    _inFlight = next;
+    return next.whenComplete(() {
+      if (identical(_inFlight, next)) _inFlight = null;
+    });
+  }
+
+  /// Wait for an earlier scan, then acquire evidence for this boundary.
+  Future<DateTime> scanForRecording() async {
+    await _inFlight;
+    final since = DateTime.now();
+    await scan();
+    return since;
+  }
+
+  Future<void> _scan() async {
     if (scanning || !isReady() || _disposed) return;
     final generation = _generation;
     bool current() => !_disposed && generation == _generation && isReady();
