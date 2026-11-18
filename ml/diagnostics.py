@@ -1,5 +1,6 @@
 """Local context-aware sensor diagnostics. Raw recordings are read-only."""
 import argparse
+import csv
 import hashlib
 import json
 import math
@@ -9,6 +10,8 @@ from dataclasses import replace
 from datetime import timedelta
 from pathlib import Path
 from statistics import median
+from tempfile import NamedTemporaryFile
+from uuid import UUID
 
 from ml.driving_context.features import timestamp
 from ml.driving_context.replay import read_sessions, timeline
@@ -220,6 +223,77 @@ def recordings(directory):
     return sessions
 
 
+def fetch(args):
+    from ml.pipeline import Cloud, cloud_rows
+
+    vehicle = str(UUID(args.vehicle_id))
+    cloud = Cloud()
+    directory = Path(args.csv_dir)
+    directory.mkdir(parents=True, exist_ok=True)
+    index_path = directory / "supabase-recordings.json"
+    if not index_path.exists() and next(directory.glob("*.csv"), None) is not None:
+        raise ValueError("Use an empty cache folder for the first Supabase fetch")
+    index = load(index_path) if index_path.exists() else {
+        "project": cloud.url, "vehicle_id": vehicle, "recordings": {},
+    }
+    if (index["project"], index["vehicle_id"]) != (cloud.url, vehicle):
+        raise ValueError("Use a separate cache folder for each Supabase project and car")
+    csv_fields = ("session_id", "sample_id", "pid", "value", "unit", "quality",
+                  "requested_at_utc", "received_at_utc", "latency_ms", "ecu_source")
+    counts = Counter()
+    cursor = None
+    failed = []
+    while True:
+        filters = {"vehicle_id": f"eq.{vehicle}", "uploaded_at": "not.is.null",
+                   "order": "id.asc", "limit": "100"}
+        if cursor is not None:
+            filters["id"] = f"gt.{cursor}"
+        sessions = cloud.rows("obd_recording_sessions", **filters)
+        if not sessions:
+            break
+        for session in sessions:
+            sid = str(UUID(session["id"]))
+            target = directory / f"obd-{sid}.csv"
+            metadata = {key: session[key] for key in ("uploaded_at", "sample_count", "storage_format")}
+            cached = index["recordings"].get(sid)
+            if cached and all(cached.get(key) == value for key, value in metadata.items()) and target.is_file():
+                if hashlib.sha256(target.read_bytes()).hexdigest() == cached.get("sha256"):
+                    counts["cached"] += 1
+                    continue
+            temporary = None
+            try:
+                rows = cloud_rows(cloud, session)
+                with NamedTemporaryFile(mode="w", encoding="utf-8", newline="", dir=directory,
+                                        suffix=".tmp", delete=False) as handle:
+                    temporary = Path(handle.name)
+                    writer = csv.DictWriter(handle, fieldnames=csv_fields)
+                    writer.writeheader()
+                    for row in rows:
+                        timestamp(row["received_at"])
+                        writer.writerow({
+                            "session_id": sid, "sample_id": row["sample_id"],
+                            "pid": f"{int(row['pid']):02X}", "value": row["value"],
+                            "unit": row["unit"], "quality": row["quality"],
+                            "requested_at_utc": row["requested_at"], "received_at_utc": row["received_at"],
+                            "latency_ms": row["latency_ms"], "ecu_source": row.get("ecu_source"),
+                        })
+                metadata["sha256"] = hashlib.sha256(temporary.read_bytes()).hexdigest()
+                temporary.replace(target)
+                index["recordings"][sid] = metadata
+                counts["downloaded"] += 1
+            except (ValueError, KeyError, RuntimeError, OSError, EOFError) as error:
+                failed.append(sid)
+                print(f"Could not fetch {sid}: {error}")
+            finally:
+                if temporary is not None:
+                    temporary.unlink(missing_ok=True)
+        cursor = str(UUID(sessions[-1]["id"]))
+    save(index_path, index)
+    print(f"Completed recordings: {counts['downloaded']} downloaded, {counts['cached']} cached, {len(failed)} failed")
+    if failed:
+        raise SystemExit(1)
+
+
 def train(args):
     sessions = recordings(args.csv_dir)
     train_ids, calibration_ids, test_ids = split_sessions(sessions)
@@ -372,6 +446,10 @@ def audit(args):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(required=True)
+    download = commands.add_parser("fetch", help="Cache every completed Supabase recording for one vehicle")
+    download.add_argument("--vehicle-id", required=True, help="Supabase vehicles.id UUID")
+    download.add_argument("--csv-dir", required=True, help="Dedicated cache directory for this vehicle")
+    download.set_defaults(action=fetch)
     for name, action in (("audit", audit), ("train", train), ("score", analyze), ("adapt", adapt)):
         cmd = commands.add_parser(name)
         cmd.add_argument("--csv-dir", required=True)

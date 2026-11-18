@@ -5,10 +5,37 @@ duplicates outside that folder. Commands run from the repository root in
 PowerShell with Python 3.12 or later. The diagnostic workflow uses the standard
 library, including the exported context forest interpreter.
 
+## Fetch recordings from Supabase
+
+Copy the car's `id` UUID from the `vehicles` table in the Supabase dashboard.
+The fetch command uses the same legacy `service_role` JWT as the earlier
+worker. Enter it in the masked PowerShell prompt below. Use a trusted laptop
+and keep this credential out of the repo and the Flutter app.
+
+```powershell
+$env:SUPABASE_URL = 'https://ffedjcrehudjwvdogqiw.supabase.co'
+$env:SUPABASE_SERVICE_ROLE_KEY = Read-Host 'Supabase legacy service_role key' -MaskInput
+$data = 'ml/data/yaris-cloud'
+try {
+    python -m ml.diagnostics fetch --vehicle-id 'PASTE-CAR-UUID' --csv-dir $data
+} finally {
+    Remove-Item Env:SUPABASE_SERVICE_ROLE_KEY
+}
+```
+
+Use PowerShell 7. Repeat the fetch after uploads complete to pick up new runs.
+It fetches both cloud storage formats, verifies the recordings, saves phone-compatible
+CSVs, and skips intact cached files. Use a dedicated folder per car. A partial
+fetch reports individual failures and returns an error. Resolve those failures
+before training. The cache index includes completed sessions with zero samples,
+which cannot be scored. Review the cache and remove any bench or test runs from
+the **training input** by copying the eligible CSVs into a separate folder.
+Fetch is read-only and runs on demand from your laptop.
+
 ## Audit, train and evaluate
 
 ```powershell
-$data = 'D:/7th/FYP/data/recs'
+$data = 'ml/data/yaris-cloud' # Or your audited folder of eligible CSVs.
 $out = 'ml/output/diagnostics'
 python -m ml.diagnostics audit --csv-dir $data --out "$out/audit.json"
 python -m ml.diagnostics train --csv-dir $data --vehicle yaris --out "$out/yaris-v1.json"
