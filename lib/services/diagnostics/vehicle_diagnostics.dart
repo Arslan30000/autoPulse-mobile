@@ -318,7 +318,15 @@ class VehicleDiagnostics extends ChangeNotifier {
     if (vehicleId == null) return null;
     final owner = _owner();
     final db = await store.database;
-    final key = '${owner ?? 'offline'}:$vehicleId';
+    final localVehicles = await db.rawQuery(
+      'SELECT id FROM local_vehicles WHERE owner_id IS ? '
+      'AND (source_id = ? OR id = ?) ORDER BY CASE WHEN source_id = ? THEN 0 ELSE 1 END LIMIT 1',
+      [owner, vehicleId, vehicleId, vehicleId],
+    );
+    final localId = localVehicles.isEmpty
+        ? vehicleId
+        : localVehicles.single['id'] as String;
+    final key = '${owner ?? 'offline'}:$localId';
     final rows = await db.rawQuery(
       '''
       SELECT s.id, d.payload, ? AS vehicle_key FROM sessions s
@@ -326,7 +334,7 @@ class VehicleDiagnostics extends ChangeNotifier {
       WHERE s.vehicle_id = ? AND s.owner_id IS ? AND s.ended_at IS NOT NULL
       ORDER BY julianday(s.started_at) DESC, s.id DESC
     ''',
-      [key, vehicleId, owner],
+      [key, localId, owner],
     );
     final references = await db.query(
       'diagnostic_references',

@@ -119,6 +119,13 @@ void main() {
     expect(range['low'], 3);
     expect(range['high'], 15);
     expect(range['drives'], 3);
+    await (await store.database).update(
+      'local_vehicles',
+      {'source_id': 'cloud-car-a'},
+      where: 'id = ?',
+      whereArgs: ['car-a'],
+    );
+    expect((await pipeline.healthSummary('cloud-car-a'))?['saved'], 3);
     owner = 'owner-b';
     expect(await pipeline.result(clean), isNull);
     expect(await pipeline.visibleRecordings(0), isEmpty);

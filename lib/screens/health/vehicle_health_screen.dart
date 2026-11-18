@@ -25,12 +25,6 @@ class VehicleHealthScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  DrivingContextCard(
-                    controller:
-                        contextController ??
-                        ObdController.instance.drivingContext,
-                  ),
-                  const SizedBox(height: 24),
                   Text(
                     'Vehicle baseline',
                     style: Theme.of(context).textTheme.titleLarge,
@@ -50,6 +44,19 @@ class VehicleHealthScreen extends StatelessWidget {
                     icon: const Icon(Icons.history),
                     label: const Text('View diagnostic history'),
                   ),
+                  if (contextController != null)
+                    DrivingContextCard(controller: contextController!)
+                  else
+                    ListenableBuilder(
+                      listenable: ObdController.instance.drivingContext,
+                      builder: (_, _) {
+                        final controller =
+                            ObdController.instance.drivingContext;
+                        return controller.current.state.name == 'disconnected'
+                            ? const SizedBox.shrink()
+                            : DrivingContextCard(controller: controller);
+                      },
+                    ),
                 ],
               ),
             ),

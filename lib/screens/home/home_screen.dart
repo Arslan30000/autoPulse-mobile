@@ -232,7 +232,7 @@ class HomeScreen extends StatelessWidget {
                       _action(
                         context,
                         'Vehicle health',
-                        'Score and systems',
+                        'Sensor ranges and alerts',
                         Icons.favorite_border_rounded,
                         () => Navigator.pushNamed(
                           context,

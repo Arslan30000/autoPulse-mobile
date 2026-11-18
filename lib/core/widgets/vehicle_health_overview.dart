@@ -1,4 +1,5 @@
 import 'package:autopulse_ai/models/driving_context.dart';
+import 'package:autopulse_ai/services/account_data_service.dart';
 import 'package:autopulse_ai/navigation/app_router.dart';
 import 'package:autopulse_ai/services/diagnostics/vehicle_diagnostics.dart';
 import 'package:flutter/material.dart';
@@ -50,13 +51,13 @@ class _VehicleHealthOverviewState extends State<VehicleHealthOverview> {
     return [
       DrivingState.values.byName(parts.first).label,
       if (parts.contains('demand')) 'High demand',
-      if (parts.contains('initial')) 'First 10 min',
-      if (parts.contains('later')) 'Later in drive',
-    ].join(' · ');
+      if (parts.contains('initial')) 'Early drive',
+      if (parts.contains('later')) 'Later drive',
+    ].join(' Â· ');
   }
 
   String _range(Map signal, String unit) =>
-      '${(signal['low'] as num).toStringAsFixed(1)}–'
+      '${(signal['low'] as num).toStringAsFixed(1)}â€“'
       '${(signal['high'] as num).toStringAsFixed(1)} $unit';
 
   Future<void> _openFinding(int id) async {
@@ -103,19 +104,28 @@ class _VehicleHealthOverviewState extends State<VehicleHealthOverview> {
       final version = summary['reference_version'] as int;
       final checked = summary['checked'] as int;
       final findings = summary['findings'] as List;
+      final saved = summary['saved'] as int;
+      final analyzed = summary['analyzed'] as int;
+      if (saved == 0) {
+        return ListenableBuilder(
+          listenable: AccountDataService.instance,
+          builder: (context, _) => Text(
+            AccountDataService.instance.busy ? 'Restoring your saved drives…' : 'Save a drive to see this car’s sensor history. For a new baseline, keep the adapter connected when you start and stop the drive.',
+          ),
+        );
+      }
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            version == 0
-                ? 'Learning personal baseline'
-                : 'Personal baseline v$version',
+            version == 0 ? 'Recorded ranges' : 'Personal baseline ready',
             style: theme.textTheme.titleMedium,
           ),
           const SizedBox(height: 4),
           Text(
-            '${summary['analyzed']} of ${summary['saved']} saved drives analyzed'
-            ' · $checked checked against a model',
+            analyzed == saved
+                ? '$saved saved drives'
+                : 'Preparing $analyzed of $saved drives',
           ),
           if (selected != null) ...[
             const SizedBox(height: 12),
@@ -134,10 +144,6 @@ class _VehicleHealthOverviewState extends State<VehicleHealthOverview> {
               ],
               onChanged: (value) => setState(() => _condition = value),
             ),
-            const Text(
-              'Historical bands span the middle 80% ranges of the contributing drives. Model ranges show an example for this condition.',
-            ),
-            const SizedBox(height: 6),
             for (final item in signals)
               Builder(
                 builder: (context) {
@@ -145,29 +151,38 @@ class _VehicleHealthOverviewState extends State<VehicleHealthOverview> {
                   final unit = signal['unit'] == 'C'
                       ? '°C'
                       : signal['unit'] as String? ?? '';
-                  final expected = signal['expected'] as Map?;
-                  final example = signal['example_band'] as Map?;
-                  return Card(
-                    child: ListTile(
-                      title: Text(signal['name'] as String),
-                      subtitle: Text(
-                        [
-                          if (signal['low'] != null)
-                            'Historical: ${_range(signal, unit)} · ${signal['drives']} drives',
-                          if (example != null)
-                            'Model example: ${_range(example, unit)}'
-                          else if (expected != null)
-                            'Latest expected: ${_range(expected, unit)}',
-                          if (example == null &&
-                              expected == null &&
-                              version > 0)
-                            'Awaiting a comparison with the current model',
-                        ].join('\n'),
-                      ),
+                  final band =
+                      (signal['example_band'] ?? signal['expected']) as Map?;
+                  final observed = signal['low'] == null
+                      ? null
+                      : _range(signal, unit);
+                  return ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    dense: true,
+                    title: Text(signal['name'] as String),
+                    subtitle: Text(
+                      band == null
+                          ? observed ?? 'Range unavailable'
+                          : 'Expected: ${_range(band, unit)}',
                     ),
                   );
                 },
               ),
+            ExpansionTile(
+              tilePadding: EdgeInsets.zero,
+              title: const Text('About these ranges'),
+              children: [
+                const ListTile(
+                  title: Text(
+                    'Recorded ranges combine the middle readings from comparable drives. Expected ranges come from your personal model once it is available.',
+                  ),
+                ),
+                if (version > 0)
+                  ListTile(
+                    title: Text('$checked drives checked · Model v$version'),
+                  ),
+              ],
+            ),
           ] else
             const Padding(
               padding: EdgeInsets.symmetric(vertical: 12),
@@ -178,7 +193,7 @@ class _VehicleHealthOverviewState extends State<VehicleHealthOverview> {
           const SizedBox(height: 6),
           if (version == 0)
             const Text(
-              'Anomaly detection is waiting for a qualified baseline. Start and stop a drive with the adapter connected so both ECU scans can finish.',
+              'Automatic alerts are pending for this car. You can still review its recorded ranges.',
             )
           else if (checked == 0)
             const Text(
@@ -198,7 +213,7 @@ class _VehicleHealthOverviewState extends State<VehicleHealthOverview> {
                   Icons.warning_amber_rounded,
                   color: theme.colorScheme.tertiary,
                 ),
-                title: Text('${finding['signal']} · ${finding['direction']}'),
+                title: Text('${finding['signal']} Â· ${finding['direction']}'),
                 subtitle: Text(
                   '${_label(finding['context'] as String)}\n'
                   '${DateTime.parse(finding['detected_at'] as String).toLocal().toString().split('.').first}',
