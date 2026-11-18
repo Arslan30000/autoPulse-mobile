@@ -426,7 +426,8 @@ def analyze(args):
                         if event["pid"] == pid and onset <= timestamp(event["started_at"]) < end]
             result["injection_result"] = {"modified_samples": affected, "detected": bool(detected),
                                           "delay_seconds": (min(detected) - onset).total_seconds() if detected else None}
-        result.update(session=key, sha256=fingerprint, simulation=args.inject,
+        result.update(session=key, started_at=samples[0].at.isoformat(),
+                      ended_at=samples[-1].at.isoformat(), sha256=fingerprint, simulation=args.inject,
                       used_for_fit_or_calibration=key in (bundle["splits"]["train"] + bundle["splits"]["calibration"]))
         reports.append(result)
     save(args.out, {"schema": 1, "vehicle": args.vehicle, "model": method,

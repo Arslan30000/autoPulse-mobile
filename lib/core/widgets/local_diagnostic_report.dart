@@ -4,16 +4,30 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 class LocalDiagnosticReport extends StatefulWidget {
-  const LocalDiagnosticReport({super.key});
+  const LocalDiagnosticReport({
+    super.key,
+    this.initialReport,
+    this.history = false,
+  });
+
+  final Map<String, dynamic>? initialReport;
+  final bool history;
 
   @override
   State<LocalDiagnosticReport> createState() => _LocalDiagnosticReportState();
 }
 
 class _LocalDiagnosticReportState extends State<LocalDiagnosticReport> {
-  Map<String, dynamic>? _report;
+  late Map<String, dynamic>? _report = widget.initialReport;
   String? _error;
   int _selected = 0;
+
+  String _runLabel(Map<dynamic, dynamic> run) {
+    final started = DateTime.tryParse('${run['started_at']}')?.toLocal();
+    return started == null
+        ? '${run['session']}'
+        : started.toString().split('.').first;
+  }
 
   Future<void> _import() async {
     try {
@@ -85,69 +99,111 @@ class _LocalDiagnosticReportState extends State<LocalDiagnosticReport> {
         if (_error != null) Text(_error!),
         if (run != null) ...[
           Text('${_report!['vehicle']} · Model v${_report!['model_version']}'),
-          if (_report!['provisional'] == true)
-            const Text('Provisional baseline · No separate calibration day.'),
-          DropdownButton<int>(
-            isExpanded: true,
-            value: _selected,
-            items: [
-              for (var i = 0; i < runs!.length; i++)
-                DropdownMenuItem(
-                  value: i,
-                  child: Text(
-                    'Recording ${i + 1} · ${runs[i]['session']}',
-                    overflow: TextOverflow.ellipsis,
+          if (widget.history)
+            for (final item in runs!)
+              ListTile(
+                title: Text(_runLabel(item as Map)),
+                subtitle: Text(
+                  '${(item['events'] as List).length} findings'
+                  '${item['simulation'] == null ? '' : ' · Simulated'}',
+                ),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => Scaffold(
+                      appBar: AppBar(title: const Text('Drive Report')),
+                      body: SingleChildScrollView(
+                        padding: const EdgeInsets.all(16),
+                        child: LocalDiagnosticReport(
+                          initialReport: {
+                            ..._report!,
+                            'runs': [item],
+                          },
+                        ),
+                      ),
+                    ),
                   ),
                 ),
-            ],
-            onChanged: (value) {
-              if (value != null) setState(() => _selected = value);
-            },
-          ),
-          if (run['simulation'] != null)
-            const Text(
-              'Simulated replay · Readings were modified for this test.',
-            ),
-          if (run['used_for_fit_or_calibration'] == true)
-            const Text(
-              'This recording contributed to model training or calibration.',
-            ),
-          for (final entry in checks)
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              title: Text('${entry.value['name']}'),
-              subtitle: Text(
-                '${entry.value['scored']} of ${run['windows']} windows scored'
-                '\n${entry.value['valid'] ?? 0} windows with a valid sensor reading',
               ),
-              trailing: Text(
-                entry.value['scored'] == 0
-                    ? 'Unavailable'
-                    : events.any((event) => '${event['pid']}' == entry.key)
-                    ? 'Needs review'
-                    : 'No sustained alert',
-              ),
+          if (!widget.history && runs!.length > 1)
+            TextButton.icon(
+              onPressed: () =>
+                  Navigator.of(context)
+                      .pushNamed('/health-history', arguments: _report),
+              icon: const Icon(Icons.history),
+              label: const Text('View recording history'),
             ),
-          for (final event in events)
-            ExpansionTile(
-              title: Text('${event['signal']} · ${event['direction']}'),
-              subtitle: Text('${event['context']} · ${event['detected_at']}'),
-              children: [
-                ListTile(
-                  subtitle: Text(
-                    'Observed ${event['observed']} ${event['unit']}. Expected '
-                    '${event['expected']} ${event['unit']}. Alert threshold '
-                    '${event['threshold']} ${event['unit']}.\n${event['suggested_check']}',
-                  ),
-                ),
-                for (final code
-                    in (event['related_session_codes'] as List? ?? []))
-                  ListTile(
-                    title: Text('${code['code']} · ${code['status']}'),
-                    subtitle: Text('Scan: ${code['scan_time']}'),
+          if (!widget.history) ...[
+            if (_report!['provisional'] == true)
+              const Text('Provisional baseline · No separate calibration day.'),
+            DropdownButton<int>(
+              isExpanded: true,
+              value: _selected,
+              items: [
+                for (var i = 0; i < runs!.length; i++)
+                  DropdownMenuItem(
+                    value: i,
+                    child: Text(
+                      'Recording ${i + 1} · ${_runLabel(runs[i] as Map)}',
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
               ],
+              onChanged: (value) {
+                if (value != null) setState(() => _selected = value);
+              },
             ),
+            if (run['simulation'] != null)
+              const Text(
+                'Simulated replay · Readings were modified for this test.',
+              ),
+            if (run['injection_result'] case final Map result)
+              Text(
+                result['detected'] == true
+                    ? 'Simulated deviation detected after ${result['delay_seconds']} s'
+                    : 'Simulated deviation did not trigger a finding',
+              ),
+            if (run['used_for_fit_or_calibration'] == true)
+              const Text(
+                'This recording contributed to model training or calibration.',
+              ),
+            for (final entry in checks)
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text('${entry.value['name']}'),
+                subtitle: Text(
+                  '${entry.value['scored']} of ${run['windows']} windows scored'
+                  '\n${entry.value['valid'] ?? 0} windows with a valid sensor reading',
+                ),
+                trailing: Text(
+                  entry.value['scored'] == 0
+                      ? 'Unavailable'
+                      : events.any((event) => '${event['pid']}' == entry.key)
+                      ? 'Needs review'
+                      : 'No sustained alert',
+                ),
+              ),
+            for (final event in events)
+              ExpansionTile(
+                title: Text('${event['signal']} · ${event['direction']}'),
+                subtitle: Text('${event['context']} · ${event['detected_at']}'),
+                children: [
+                  ListTile(
+                    subtitle: Text(
+                      'Observed ${event['observed']} ${event['unit']}. Expected '
+                      '${event['expected']} ${event['unit']}. Alert threshold '
+                      '${event['threshold']} ${event['unit']}.\n${event['suggested_check']}',
+                    ),
+                  ),
+                  for (final code
+                      in (event['related_session_codes'] as List? ?? []))
+                    ListTile(
+                      title: Text('${code['code']} · ${code['status']}'),
+                      subtitle: Text('Scan: ${code['scan_time']}'),
+                    ),
+                ],
+              ),
+          ],
         ],
       ],
     );

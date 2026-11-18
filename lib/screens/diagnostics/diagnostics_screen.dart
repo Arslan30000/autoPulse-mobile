@@ -3,6 +3,7 @@ import 'package:autopulse_ai/core/theme/app_colors.dart';
 import 'package:autopulse_ai/core/theme/app_text_styles.dart';
 import 'package:autopulse_ai/core/widgets/connection_sheet.dart';
 import 'package:autopulse_ai/models/obd_dtc.dart';
+import 'package:autopulse_ai/navigation/app_router.dart';
 import 'package:autopulse_ai/services/obd/obd_controller.dart';
 
 class DiagnosticsScreen extends StatefulWidget {
@@ -58,6 +59,13 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
                 style: AppTextStyles.bodyMedium,
               ),
               const SizedBox(height: 20),
+              OutlinedButton.icon(
+                onPressed: () =>
+                    Navigator.pushNamed(context, AppRouter.healthHistory),
+                icon: const Icon(Icons.history),
+                label: const Text('Recording diagnostic history'),
+              ),
+              const SizedBox(height: 12),
               _panel(
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,

@@ -99,10 +99,12 @@ original fit. Run a fresh holdout comparison before claiming improved accuracy.
 
 Run the Flutter app locally. Open Vehicle Health for live driving context.
 Open the report JSON on your device, copy its contents, and tap **Paste
-diagnostic report**. The view shows check coverage and expands findings into
-measured evidence and suggested inspection steps. It labels simulated and
-training runs. The imported report is kept for the current screen session.
-The score mock has been replaced here with check coverage and findings.
+diagnostic report**. Use **View recording history** to open the run list and
+select a **Drive Report**. You can also open **Recording diagnostic history**
+from Diagnostic Codes and paste the report there. Run details show check
+coverage, measured evidence, suggested inspection steps and any related scan
+evidence. The view labels simulated and training runs. The report stays in
+memory while the associated screens are open.
 
 The diagnostic branch removes the scheduled remote worker from its workflow.
 The schedule on the default branch changes when this workflow is merged there.
