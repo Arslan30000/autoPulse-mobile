@@ -39,8 +39,9 @@ class _VehicleHealthOverviewState extends State<VehicleHealthOverview> {
   }
 
   void _reload() {
-    if (mounted)
+    if (mounted) {
       setState(() => _summary = _service?.healthSummary(widget.vehicleId));
+    }
   }
 
   String _label(String condition) {
