@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart';
+import 'package:autopulse_ai/core/config/mobile_platform.dart';
 import 'package:flutter/services.dart';
 import 'package:autopulse_ai/models/obd.dart';
 
@@ -19,12 +19,11 @@ abstract interface class BluetoothTransport {
   Future<void> disconnect();
 }
 
-class ClassicBluetoothTransport implements BluetoothTransport {
+class MobileBluetoothTransport implements BluetoothTransport {
   static const _methods = MethodChannel('autopulse/obd/methods');
   static const _events = EventChannel('autopulse/obd/events');
   @override
-  bool get isSupported =>
-      !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
+  bool get isSupported => supportsMobileRecordings;
   @override
   Stream<BluetoothEvent> get events =>
       _events.receiveBroadcastStream().map((raw) {
@@ -34,21 +33,21 @@ class ClassicBluetoothTransport implements BluetoothTransport {
           event['bytes'] as Uint8List?,
         );
       });
-  void _requireAndroid() {
+  void _requireMobile() {
     if (!isSupported) {
-      throw UnsupportedError('Bluetooth Classic requires an Android phone.');
+      throw UnsupportedError('OBD Bluetooth requires an Android or iOS phone.');
     }
   }
 
   @override
   Future<bool> requestPermission() async {
-    _requireAndroid();
+    _requireMobile();
     return await _methods.invokeMethod<bool>('permission') ?? false;
   }
 
   @override
   Future<List<ObdDevice>> pairedDevices() async {
-    _requireAndroid();
+    _requireMobile();
     final devices = await _methods.invokeListMethod<dynamic>('devices') ?? [];
     return devices.map((raw) {
       final device = Map<String, dynamic>.from(raw as Map);
@@ -61,13 +60,13 @@ class ClassicBluetoothTransport implements BluetoothTransport {
 
   @override
   Future<void> openSettings() async {
-    _requireAndroid();
+    _requireMobile();
     await _methods.invokeMethod<void>('settings');
   }
 
   @override
   Future<void> connect(String address) async {
-    _requireAndroid();
+    _requireMobile();
     await _methods.invokeMethod<void>('connect', {'address': address});
   }
 

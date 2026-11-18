@@ -15,7 +15,7 @@ import 'package:autopulse_ai/services/diagnostics/vehicle_diagnostics.dart';
 /// App-scoped owner of the connection. Tabs never create independent pollers.
 class ObdController extends ChangeNotifier with WidgetsBindingObserver {
   static final instance = ObdController(
-    transport: ClassicBluetoothTransport(),
+    transport: MobileBluetoothTransport(),
     repository: SqliteObdRecordingRepository(),
   );
   final BluetoothTransport transport;
@@ -119,7 +119,7 @@ class ObdController extends ChangeNotifier with WidgetsBindingObserver {
     try {
       if (!transport.isSupported) {
         throw const ElmException(
-          'Bluetooth Classic requires an Android phone.',
+          'OBD Bluetooth requires an Android or iOS phone.',
         );
       }
       if (!await transport.requestPermission()) {

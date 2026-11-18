@@ -19,7 +19,9 @@ Future<void> showConnectionSheet(
           Text('Bluetooth connection', style: AppTextStyles.headlineMedium),
           const SizedBox(height: 8),
           Text(
-            'Pair your ELM327 in Android Bluetooth settings first.',
+            Theme.of(context).platform == TargetPlatform.iOS
+                ? 'Power on a compatible Bluetooth Low Energy OBD-II adapter, then scan for it here.'
+                : 'Pair your ELM327 in Android Bluetooth settings first.',
             style: AppTextStyles.bodyMedium,
           ),
           const SizedBox(height: 24),

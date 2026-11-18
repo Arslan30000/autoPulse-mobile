@@ -224,6 +224,8 @@ Map<String, dynamic> scoreDiagnosticWindows(
     String? lastContext, lastDirection;
     var absoluteError = 0.0;
     final quality = <String, int>{};
+    final observedByContext = <String, List<double>>{};
+    final referenceByContext = <String, Map<String, dynamic>>{};
     Map<String, dynamic>? event;
     for (final window in windows) {
       final reason = window.quality[pid]!;
@@ -231,6 +233,9 @@ Map<String, dynamic> scoreDiagnosticWindows(
       final observed = window.values[pid];
       if (observed != null) valid++;
       final context = window.context;
+      if (observed != null) {
+        observedByContext.putIfAbsent(context ?? 'all', () => []).add(observed);
+      }
       final model = context == null
           ? null
           : (models['$pid'] as Map?)?[diagnosticGroup(context, pid)] as Map?;
@@ -241,6 +246,12 @@ Map<String, dynamic> scoreDiagnosticWindows(
       final expected = diagnosticExpected(model, window.inputs);
       final delta = observed - expected;
       final threshold = (model['threshold'] as num).toDouble();
+      referenceByContext[context] = {
+        'low': expected - threshold,
+        'high': expected + threshold,
+        'value': observed,
+        'at': window.at.toIso8601String(),
+      };
       scored++;
       absoluteError += delta.abs();
       onScored?.call(window, pid, expected);
@@ -293,6 +304,12 @@ Map<String, dynamic> scoreDiagnosticWindows(
       'valid': valid,
       'mae': scored == 0 ? null : absoluteError / scored,
       'quality': quality,
+      'unit': parameter.unit,
+      'ranges': {
+        for (final entry in observedByContext.entries)
+          if (entry.value.length >= 5) entry.key: _observedRange(entry.value),
+      },
+      'reference_ranges': referenceByContext,
     };
   }
   events.sort(
@@ -300,4 +317,15 @@ Map<String, dynamic> scoreDiagnosticWindows(
         (a['detected_at'] as String).compareTo(b['detected_at'] as String),
   );
   return {'windows': windows.length, 'checks': checks, 'events': events};
+}
+
+Map<String, dynamic> _observedRange(List<double> values) {
+  final latest = values.last;
+  values.sort();
+  return {
+    'low': values[((values.length - 1) * .1).round()],
+    'high': values[((values.length - 1) * .9).round()],
+    'value': latest,
+    'count': values.length,
+  };
 }

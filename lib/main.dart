@@ -1,6 +1,8 @@
-import 'package:flutter/material.dart';
+import 'package:autopulse_ai/core/config/mobile_platform.dart';
 
 import 'dart:async';
+
+import 'package:flutter/material.dart';
 
 import 'package:flutter/services.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -14,7 +16,6 @@ import 'package:autopulse_ai/core/widgets/context_change_banner.dart';
 import 'package:autopulse_ai/navigation/app_router.dart';
 import 'package:autopulse_ai/services/account_service.dart';
 import 'package:autopulse_ai/services/account_data_service.dart';
-import 'package:flutter/foundation.dart';
 import 'package:autopulse_ai/services/obd/obd_controller.dart';
 import 'package:autopulse_ai/services/driving_context/context_model_loader.dart';
 import 'package:autopulse_ai/services/diagnostics/vehicle_diagnostics.dart';
@@ -34,7 +35,7 @@ Future<void> main() async {
   }
   final backend = await SupabaseConfig.load();
   backend.validate();
-  if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+  if (supportsMobileRecordings) {
     try {
       await (ObdController.instance.repository as SqliteObdRecordingRepository)
           .recoverInterruptedRecordings();
@@ -43,8 +44,9 @@ Future<void> main() async {
       // Keep the app's storage error/retry and offline navigation accessible.
     }
   }
-  if (backend.isConfigured) {
-    await Firebase.initializeApp(options: FirebaseConfig.options);
+  final firebaseOptions = FirebaseConfig.options;
+  if (backend.isConfigured && firebaseOptions != null) {
+    await Firebase.initializeApp(options: firebaseOptions);
     final client = SupabaseClient(
       backend.url,
       backend.publicKey,
@@ -63,7 +65,7 @@ Future<void> main() async {
         authOptions: const AuthClientOptions(autoRefreshToken: false),
       ),
     );
-    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+    if (supportsMobileRecordings) {
       final sync = RecordingSyncService(
         store: ObdController.instance.repository as RecordingStore,
         cloud: SupabaseRecordingRepository(
@@ -78,7 +80,7 @@ Future<void> main() async {
     }
   }
   SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
-  if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+  if (supportsMobileRecordings) {
     final diagnostics = VehicleDiagnostics(
       ObdController.instance.repository as SqliteObdRecordingRepository,
     );

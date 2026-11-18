@@ -79,6 +79,11 @@ void main() {
     );
     await pipeline.refresh();
     expect((await pipeline.result(unknown))?['dtc_gate'], 'unverified');
+    final recorded = (await pipeline.result(unknown))?['checks']['16'];
+    expect(recorded['scored'], 0);
+    expect(recorded['ranges']['idling:ordinary:initial']['low'], 3);
+    expect(recorded['ranges']['idling:ordinary:initial']['high'], 3);
+    expect(recorded['reference_ranges'], isEmpty);
     expect((await pipeline.result(fault))?['dtc_gate'], 'fault');
     expect(
       await (await store.database).query('diagnostic_references'),

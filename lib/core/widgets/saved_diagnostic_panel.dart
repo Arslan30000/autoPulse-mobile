@@ -1,6 +1,9 @@
 import 'package:autopulse_ai/repositories/obd_recording_repository.dart';
 import 'package:autopulse_ai/services/diagnostics/vehicle_diagnostics.dart';
+import 'package:autopulse_ai/services/account_data_service.dart';
 import 'package:flutter/material.dart';
+
+import 'sensor_range_meter.dart';
 
 class SavedDiagnosticPanel extends StatefulWidget {
   const SavedDiagnosticPanel({super.key, required this.sessionId});
@@ -47,7 +50,7 @@ class _SavedDiagnosticPanelState extends State<SavedDiagnosticPanel> {
             snapshot.hasError || pipeline?.error != null
                 ? 'Analysis unavailable. Tap to retry.'
                 : pipeline == null
-                ? 'Available on Android.'
+                ? 'Available on mobile.'
                 : 'Waiting for analysis.',
           ),
           onTap: pipeline == null
@@ -74,46 +77,37 @@ class DiagnosticResultView extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Recording diagnostics',
+          report['reference'] == true
+              ? 'Personal reference updated · v${report['reference_version']}'
+              : report['model_version'] == 0
+              ? 'Recorded sensor ranges'
+              : '${report['status']} · Personal reference v${report['model_version']}',
           style: Theme.of(context).textTheme.titleLarge,
         ),
         const SizedBox(height: 8),
-        Text(
-          report['reference'] == true
-              ? 'Reference updated · v${report['reference_version']}'
-              : '${report['status']} · Reference v${report['model_version']}',
-        ),
-        const SizedBox(height: 8),
         Text(switch (gate) {
-          'fault' =>
-            'ECU fault indication found. This drive is excluded from learning.',
-          'clean' => 'Opening and closing ECU scans completed without codes or check-engine light.',
-          _ => 'ECU scans are missing or incomplete. This drive is excluded from learning.',
+          'fault' => 'The ECU reported a fault indication. This drive is excluded from baseline learning.',
+          'clean' => 'Opening and closing ECU scans completed without fault indications.',
+          _ => 'Start and stop a drive with the adapter connected to qualify a personal model baseline.',
         }),
+        const SizedBox(height: 8),
+        const Text(
+          'Choose a driving condition to see its range. Observed bands show the middle 80% of recorded values.',
+        ),
+        const SizedBox(height: 12),
         if (codes.isNotEmpty)
           Text(
             'ECU codes: ${codes.map((code) => "${code['code']} (${code['status']})").join(', ')}',
           ),
         for (final entry in checks)
-          Builder(
-            builder: (context) {
-              final check = entry.value as Map;
-              final findings = events
-                  .where((e) => '${e['pid']}' == entry.key)
-                  .length;
-              return ListTile(
-                contentPadding: EdgeInsets.zero,
-                title: Text(check['name'] as String),
-                subtitle: Text(
-                  '${check['scored']} of ${report['windows']} windows scored · ${check['valid']} valid\n'
-                  '${check['scored'] == 0
-                      ? 'Unavailable'
-                      : findings == 0
-                      ? 'No sustained finding'
-                      : '$findings sustained findings'}',
-                ),
-              );
-            },
+          SensorRangeMeter(
+            key: ValueKey(entry.key),
+            check: entry.value as Map,
+            previous:
+                (report['previous_ranges'] as Map?)?[entry.key] as Map? ?? {},
+            findings: events
+                .where((event) => '${event['pid']}' == entry.key)
+                .length,
           ),
         for (final event in events)
           ExpansionTile(
@@ -227,10 +221,21 @@ class _DiagnosticRecordingListState extends State<DiagnosticRecordingList> {
               label: const Text('Check saved recordings'),
             ),
           if (runs.isEmpty && !snapshot.hasError)
-            Text(
-              pipeline == null
-                  ? 'Recording diagnostics are available on Android.'
-                  : 'No completed recordings for this view yet.',
+            ListenableBuilder(
+              listenable: AccountDataService.instance,
+              builder: (context, _) {
+                final account = AccountDataService.instance;
+                if (pipeline != null && account.busy) {
+                  return const Text(
+                    'Restoring saved drives. Sensor ranges appear as drives finish restoring.',
+                  );
+                }
+                return Text(
+                  pipeline == null
+                      ? 'Recording diagnostics are available on mobile.'
+                      : 'No completed recordings for this car yet.',
+                );
+              },
             ),
           for (final run in runs)
             if (widget.latestOnly)

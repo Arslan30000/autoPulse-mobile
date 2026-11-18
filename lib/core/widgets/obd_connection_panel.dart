@@ -7,6 +7,7 @@ class ObdConnectionPanel extends StatelessWidget {
   final ObdController controller;
   const ObdConnectionPanel({super.key, required this.controller});
   Future<void> _chooseDevice(BuildContext context) async {
+    final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
     await controller.loadDevices();
     if (!context.mounted || controller.error != null) return;
     final selected = await showModalBottomSheet<ObdDevice>(
@@ -15,17 +16,24 @@ class ObdConnectionPanel extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Padding(
-              padding: EdgeInsets.all(20),
+            Padding(
+              padding: const EdgeInsets.all(20),
               child: Text(
-                'Paired adapters',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                isIOS ? 'Nearby OBD adapters' : 'Paired adapters',
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
             if (controller.devices.isEmpty)
-              const Padding(
-                padding: EdgeInsets.all(24),
-                child: Text('No paired Bluetooth Classic devices'),
+              Padding(
+                padding: const EdgeInsets.all(24),
+                child: Text(
+                  isIOS
+                      ? 'No compatible BLE adapter found. Power it on and try again.'
+                      : 'No paired Bluetooth Classic devices',
+                ),
               ),
             Flexible(
               child: ListView(

@@ -150,6 +150,19 @@ class VehicleDiagnostics extends ChangeNotifier {
     return _owner() == owner ? runs : [];
   }
 
+  Future<void> evaluateRestored(String cloudId, String owner) async {
+    if (_owner() != owner) return;
+    final rows = await (await store.database).query(
+      'sessions',
+      columns: ['id'],
+      where: 'cloud_id = ? AND owner_id = ?',
+      whereArgs: [cloudId, owner],
+    );
+    if (_owner() == owner && rows.isNotEmpty) {
+      await evaluate(rows.single['id'] as int);
+    }
+  }
+
   String _referenceKey(ObdRecording run) =>
       '${run.ownerId ?? 'offline'}:${run.vehicle?.id ?? 'unknown'}';
 
@@ -174,7 +187,8 @@ class VehicleDiagnostics extends ChangeNotifier {
     final previous = cached.isEmpty
         ? null
         : jsonDecode(cached.single['payload'] as String) as Map;
-    if (previous?['vehicle_key'] == key &&
+    if (previous?['range_schema'] == 1 &&
+        previous?['vehicle_key'] == key &&
         (cached.single['version'] == version ||
             previous?['reference'] == true ||
             (previous?['checks'] as Map?)?.values.any(
@@ -213,10 +227,11 @@ class VehicleDiagnostics extends ChangeNotifier {
         (isYaris ? await _evaluator : const RulesContextEvaluator());
     // Keep parsing, feature replay and fitting off the Flutter UI isolate.
     final timer = Stopwatch()..start();
+    final wasReference = previous?['reference'] == true;
     final analysis = await compute(_runDiagnostics, (
       samples,
       evaluator,
-      models,
+      wasReference ? <String, dynamic>{} : models,
       gate == 'clean' && run.vehicle?.id != null && previous == null,
     ));
     timer.stop();
@@ -256,8 +271,11 @@ class VehicleDiagnostics extends ChangeNotifier {
       'dtc_gate': gate,
       'dtc_evidence': codes,
       'model_version': version,
-      'reference': updated != null,
-      'reference_version': nextVersion,
+      'reference': wasReference || updated != null,
+      'reference_version': wasReference
+          ? (previous?['reference_version'])
+          : nextVersion,
+      'range_schema': 1,
       'context_model': evaluator.version,
       'status': events.isNotEmpty
           ? 'Needs review'
@@ -307,7 +325,37 @@ class VehicleDiagnostics extends ChangeNotifier {
     if (rows.isEmpty || _owner() != owner) return null;
     final report =
         jsonDecode(rows.single['payload'] as String) as Map<String, dynamic>;
-    return report['vehicle_key'] == _referenceKey(run) ? report : null;
+    if (report['vehicle_key'] != _referenceKey(run) ||
+        report['range_schema'] != 1) {
+      return null;
+    }
+    final earlier = await (await store.database).rawQuery(
+      '''
+      SELECT d.payload FROM diagnostic_results d JOIN sessions s ON s.id = d.session_id
+      WHERE s.id <> ? AND s.vehicle_id = ? AND s.owner_id IS ?
+        AND julianday(s.started_at) < julianday(?)
+      ORDER BY julianday(s.started_at) DESC, s.id DESC LIMIT 12
+    ''',
+      [id, run.vehicle?.id, run.ownerId, run.startedAt.toIso8601String()],
+    );
+    if (_owner() != owner) return null;
+    final prior = <String, Map<String, dynamic>>{};
+    for (final row in earlier) {
+      final old = jsonDecode(row['payload'] as String) as Map;
+      if (old['vehicle_key'] != _referenceKey(run)) continue;
+      for (final entry in (old['checks'] as Map).entries) {
+        final ranges = entry.value['ranges'] as Map?;
+        if (ranges == null) continue;
+        final signal = prior.putIfAbsent(entry.key as String, () => {});
+        for (final range in ranges.entries) {
+          signal.putIfAbsent(
+            range.key as String,
+            () => {...range.value as Map, 'started_at': old['started_at']},
+          );
+        }
+      }
+    }
+    return {...report, 'previous_ranges': prior};
   }
 }
 

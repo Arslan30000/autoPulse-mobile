@@ -1,6 +1,7 @@
+import 'package:autopulse_ai/core/config/mobile_platform.dart';
+
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:autopulse_ai/models/vehicle.dart';
@@ -41,8 +42,7 @@ class AccountDataService extends ChangeNotifier with WidgetsBindingObserver {
   Future<void>? _pending;
   Completer<void>? _carsReady;
   bool _foreground = true;
-  bool get canStoreRuns =>
-      !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
+  bool get canStoreRuns => supportsMobileRecordings;
   void start() {
     WidgetsBinding.instance.addObserver(this);
     _activeOwner = AccountService.instance.userId;
@@ -290,6 +290,12 @@ class AccountDataService extends ChangeNotifier with WidgetsBindingObserver {
               _check(owner);
               existing.add(run['id']);
               restoredRuns++;
+              unawaited(
+                VehicleDiagnostics.instance?.evaluateRestored(
+                  run['id'] as String,
+                  owner,
+                ),
+              );
               message = '$restoredRuns drives restored and ready to open.';
               notifyListeners();
             } catch (error, stack) {
@@ -306,7 +312,6 @@ class AccountDataService extends ChangeNotifier with WidgetsBindingObserver {
         // Pending uploads can be large too. Do not make drive restoration wait
         // for them; their own durable queue and retry handling remain active.
         unawaited(RecordingSyncService.instance?.retryPending());
-        if (restoredRuns > 0) unawaited(VehicleDiagnostics.instance?.refresh());
       }
       var waiting = false;
       if (canStoreRuns) {
