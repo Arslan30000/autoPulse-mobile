@@ -12,6 +12,7 @@ import 'package:autopulse_ai/services/driving_context/context_model_loader.dart'
 import 'package:autopulse_ai/services/obd/dtc_monitor.dart';
 
 import 'diagnostic_scorer.dart';
+import 'vehicle_health_summary.dart';
 
 Map<String, dynamic> diagnosticScan(DtcMonitor monitor, DateTime since) {
   final milAt = monitor.milReadAt;
@@ -313,6 +314,43 @@ class VehicleDiagnostics extends ChangeNotifier {
     });
   }
 
+  Future<Map<String, dynamic>?> healthSummary(String? vehicleId) async {
+    if (vehicleId == null) return null;
+    final owner = _owner();
+    final db = await store.database;
+    final key = '${owner ?? 'offline'}:$vehicleId';
+    final rows = await db.rawQuery(
+      '''
+      SELECT s.id, d.payload, ? AS vehicle_key FROM sessions s
+      LEFT JOIN diagnostic_results d ON d.session_id = s.id
+      WHERE s.vehicle_id = ? AND s.owner_id IS ? AND s.ended_at IS NOT NULL
+      ORDER BY julianday(s.started_at) DESC, s.id DESC
+    ''',
+      [key, vehicleId, owner],
+    );
+    final references = await db.query(
+      'diagnostic_references',
+      columns: ['version', 'payload'],
+      where: 'vehicle_key = ?',
+      whereArgs: [key],
+    );
+    final version = references.isEmpty
+        ? 0
+        : references.single['version'] as int;
+    final models = references.isEmpty
+        ? <String, dynamic>{}
+        : jsonDecode(references.single['payload'] as String)
+              as Map<String, dynamic>;
+    final summary = await compute(_summarize, (rows, version, models));
+    return _owner() == owner ? {...summary, 'saved': rows.length} : null;
+  }
+
+  Future<ObdRecording?> visibleRecording(int id) async {
+    final owner = _owner();
+    final run = await store.recording(id);
+    return _owner() == owner && _visible(run, owner) ? run : null;
+  }
+
   Future<Map<String, dynamic>?> result(int id) async {
     final owner = _owner();
     final run = await store.recording(id);
@@ -412,3 +450,7 @@ class VehicleDiagnostics extends ChangeNotifier {
   }
   return (report, changed ? updated : null);
 }
+
+Map<String, dynamic> _summarize(
+  (List<Map<String, Object?>>, int, Map<String, dynamic>) input,
+) => summarizeVehicleHealth(input.$1, input.$2, input.$3);

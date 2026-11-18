@@ -203,6 +203,7 @@ Map<String, dynamic> fitDiagnosticReference(List<DiagnosticWindow> windows) {
         residuals[(.99 * residuals.length).ceil() - 1],
       );
       model['windows'] = rows.length;
+      model['example_inputs'] = rows[rows.length ~/ 2].inputs;
       fitted[group.key] = model;
     }
     if (fitted.isNotEmpty) models['$pid'] = fitted;

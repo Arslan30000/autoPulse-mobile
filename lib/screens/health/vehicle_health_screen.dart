@@ -1,6 +1,6 @@
 import 'package:autopulse_ai/core/theme/app_colors.dart';
 import 'package:autopulse_ai/core/widgets/driving_context_card.dart';
-import 'package:autopulse_ai/core/widgets/saved_diagnostic_panel.dart';
+import 'package:autopulse_ai/core/widgets/vehicle_health_overview.dart';
 import 'package:autopulse_ai/navigation/app_router.dart';
 import 'package:autopulse_ai/services/driving_context/driving_context_controller.dart';
 import 'package:autopulse_ai/services/obd/obd_controller.dart';
@@ -32,19 +32,18 @@ class VehicleHealthScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 24),
                   Text(
-                    'Recording diagnostics',
+                    'Vehicle baseline',
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
                   if (contextController == null)
                     ListenableBuilder(
                       listenable: ObdController.instance,
-                      builder: (_, _) => DiagnosticRecordingList(
+                      builder: (_, _) => VehicleHealthOverview(
                         vehicleId: ObdController.instance.vehicle.id,
-                        latestOnly: true,
                       ),
                     )
                   else
-                    const DiagnosticRecordingList(latestOnly: true),
+                    const VehicleHealthOverview(vehicleId: null),
                   TextButton.icon(
                     onPressed: () =>
                         Navigator.pushNamed(context, AppRouter.healthHistory),

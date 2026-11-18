@@ -243,9 +243,9 @@ void main() {
       await tester.pumpWidget(app(const VehicleHealthScreen()));
       await tester.pumpAndSettle();
       expect(find.byType(HealthScoreWidget), findsNothing);
-      expect(find.text('Recording diagnostics'), findsOneWidget);
+      expect(find.text('Vehicle baseline'), findsOneWidget);
       expect(find.text('View diagnostic history'), findsOneWidget);
-      final bounds = tester.getRect(find.text('Recording diagnostics'));
+      final bounds = tester.getRect(find.text('Vehicle baseline'));
       expect(bounds.left, greaterThanOrEqualTo(0));
       expect(bounds.right, lessThanOrEqualTo(width));
       await capture(tester, 'health-${width.round()}');

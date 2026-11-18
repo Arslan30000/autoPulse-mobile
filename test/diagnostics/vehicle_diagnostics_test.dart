@@ -110,8 +110,18 @@ void main() {
     final other = await record('car-b', 12);
     await pipeline.refresh();
     expect((await pipeline.result(other))?['model_version'], 0);
+    final summary = (await pipeline.healthSummary('car-a'))!;
+    expect(summary['reference_version'], 1);
+    expect(summary['saved'], 3);
+    expect(summary['checked'], 2);
+    expect(summary['findings'], isNotEmpty);
+    final range = summary['contexts']['idling:ordinary:initial']['16'];
+    expect(range['low'], 3);
+    expect(range['high'], 15);
+    expect(range['drives'], 3);
     owner = 'owner-b';
     expect(await pipeline.result(clean), isNull);
     expect(await pipeline.visibleRecordings(0), isEmpty);
+    expect((await pipeline.healthSummary('car-a'))?['saved'], 0);
   });
 }
